@@ -1,7 +1,7 @@
 package com.reedsloan.beekeepingapp.data.local.hive
 
 //TREATMENTS: CHECKMITE+, FUMAGILIM-B, TERRAMYCIN, APISTAN, MITE-A-THOL, TERR-PRO, MITE AWAY, FORMIC ACID, MITE-A-THOL, TYLAN, APIVAR, OTHER
-enum class Treatment(displayValue: String) {
+enum class Treatment(val displayValue: String) {
     CHECKMITE_PLUS("Checkmite+"),
     FUMAGILIM_B("Fumagilim-B"),
     TERRAMYCIN("Terramycin"),

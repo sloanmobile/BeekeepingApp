@@ -11,5 +11,6 @@ data class HiveTreatment(
     val treatment: Treatment,
     val dateApplied: String,
     val dateRemoved: String,
+    val treatmentNotes: String,
     val ipm: List<IPM>
 )

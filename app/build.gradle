@@ -106,4 +106,9 @@ dependencies {
     // accompanist permissions
     implementation "com.google.accompanist:accompanist-permissions:0.27.1"
 
+    // kotlin-csv
+    implementation 'com.github.doyaaaaaken:kotlin-csv-jvm:1.7.0' //for JVM platform
+
+    // kotlin dataframe
+    implementation 'org.jetbrains.kotlinx:dataframe:0.8.1'
 }

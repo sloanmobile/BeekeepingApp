@@ -1,6 +1,6 @@
 package com.reedsloan.beekeepingapp.data.local.hive
 
-enum class Odor(displayValue: String) {
+enum class Odor(val displayValue: String) {
     NORMAL("Normal"),
     FOUL("Foul")
 }

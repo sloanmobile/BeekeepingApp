@@ -120,5 +120,7 @@ fun AddScreen(navController: NavController, homeViewModel: HomeViewModel = hiltV
                 Text("Choose Photo")
             }
         }
+
+        
     }
 }

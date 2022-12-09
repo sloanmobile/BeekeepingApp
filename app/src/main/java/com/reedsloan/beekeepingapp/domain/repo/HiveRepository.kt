@@ -9,4 +9,5 @@ interface HiveRepository {
     suspend fun updateHive(hive: Hive)
     suspend fun deleteHive(hiveId: Int)
     suspend fun deleteAllHives()
+    suspend fun exportToCsv(): String
 }

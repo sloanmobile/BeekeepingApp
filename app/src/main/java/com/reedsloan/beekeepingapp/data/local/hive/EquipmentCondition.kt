@@ -1,8 +1,8 @@
 package com.reedsloan.beekeepingapp.data.local.hive
 
-enum class EquipmentCondition(displayValue: String) {
-    GOOD("Good"),
-    FAIR("Fair"),
-    POOR("Poor"),
-    DAMAGED("Damaged")
+enum class EquipmentCondition(val displayValue: String) {
+    GOOD("Good", "good"),
+    FAIR("Fair", "fair"),
+    POOR("Poor", "poor"),
+    DAMAGED("Damaged", "damaged"),
 }

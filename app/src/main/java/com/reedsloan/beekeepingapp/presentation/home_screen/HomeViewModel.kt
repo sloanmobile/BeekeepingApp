@@ -102,4 +102,16 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun exportToCsv() {
+        viewModelScope.launch {
+            state = state.copy(isLoading = true)
+            state = try {
+                hiveRepository.exportToCsv()
+                state.copy(isLoading = false, isSuccess = true)
+            } catch (e: Exception) {
+                state.copy(isLoading = false, isError = true, errorMessage = e.message ?: "")
+            }
+        }
+    }
+
 }
