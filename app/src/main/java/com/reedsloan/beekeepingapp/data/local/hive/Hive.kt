@@ -6,5 +6,5 @@ data class Hive(
     val hiveHealth: HiveHealth,
     val feeding: HiveFeeding,
     val hiveNotes: HiveNotes,
-    val localPhotoUris: List<String>
+    val localPhotoUris: List<String> = emptyList(),
 )

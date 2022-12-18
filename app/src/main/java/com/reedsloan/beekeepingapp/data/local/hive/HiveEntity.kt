@@ -5,6 +5,6 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "hive")
 data class HiveEntity(
-    @PrimaryKey val id: Int,
+    @PrimaryKey val id: String,
     val hive: Hive
 )

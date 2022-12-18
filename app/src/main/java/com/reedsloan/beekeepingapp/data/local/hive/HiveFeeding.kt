@@ -7,10 +7,10 @@ package com.reedsloan.beekeepingapp.data.local.hive
 //VITA FEED GOLD: Y/N
 //SUGAR SYRUP: Y/N
 data class HiveFeeding(
-    val honeyStores: HoneyStores,
-    val pollen: Pollen,
-    val honeyBHealthy: Boolean,
-    val megaBee: Boolean,
-    val vitaFeedGold: Boolean,
-    val sugarSyrup: Boolean,
+    val honeyStores: HoneyStores? = null,
+    val pollen: Pollen? = null,
+    val honeyBHealthy: Boolean = false,
+    val megaBee: Boolean = false,
+    val vitaFeedGold: Boolean = false,
+    val sugarSyrup: Boolean = false,
 )

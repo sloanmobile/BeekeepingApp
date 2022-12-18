@@ -17,16 +17,16 @@ class HiveConditions (
     LAYING PATTERN: SPOTTY, COMPACT, TIGHT, AVERAGE, NULL
     BROOD STAGE: EGG, LARVAE, PUPA
      */
-    val odor: Odor,
-    val equipmentCondition: EquipmentCondition,
-    val hiveCondition: HiveCondition,
-    val framesAndCombs: FramesAndCombs,
-    val foundationType: FoundationType,
-    val temperament: Temperament,
-    val population: Population,
-    val queenCells: QueenCells,
-    val queenSpotted: Boolean,
-    val queenMarker: QueenMarker,
-    val layingPattern: LayingPattern,
-    val broodStage: BroodStage,
+    val odor: Odor? = null,
+    val equipmentCondition: EquipmentCondition? = null,
+    val hiveCondition: HiveCondition? = null,
+    val framesAndCombs: FramesAndCombs? = null,
+    val foundationType: FoundationType? = null,
+    val temperament: Temperament? = null,
+    val population: Population? = null,
+    val queenCells: QueenCells? = null,
+    val queenSpotted: Boolean? = null,
+    val queenMarker: QueenMarker? = null,
+    val layingPattern: LayingPattern? = null,
+    val broodStage: BroodStage? = null,
 )

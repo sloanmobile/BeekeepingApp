@@ -7,5 +7,5 @@ enum class Weather(displayValue: String) {
     CLOUDY("Cloudy"),
     RAINY("Rainy"),
     SNOWY("Snowy"),
-    WINDY("Windy")
+    WINDY("Windy"),
 }

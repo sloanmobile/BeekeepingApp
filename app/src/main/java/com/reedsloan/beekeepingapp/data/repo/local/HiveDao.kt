@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.reedsloan.beekeepingapp.data.local.UserPreferencesEntity
 import com.reedsloan.beekeepingapp.data.local.hive.HiveEntity
 
 @Dao
@@ -21,8 +22,15 @@ interface HiveDao {
     suspend fun getAllHives(): List<HiveEntity>
 
     @Query("DELETE FROM hive WHERE id = :hiveId")
-    suspend fun deleteHive(hiveId: Int)
+    suspend fun deleteHive(hiveId: String)
 
     @Query("DELETE FROM hive")
     suspend fun deleteAllHives()
+
+    // user preferences
+    @Query("SELECT * FROM user_preferences")
+    suspend fun getUserPreferences(): UserPreferencesEntity
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun updateUserPreferences(userPreferences: UserPreferencesEntity)
 }

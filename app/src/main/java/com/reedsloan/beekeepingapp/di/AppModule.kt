@@ -18,7 +18,7 @@ object AppModule {
     @Singleton
     @Provides
     fun provideHiveRepository(app: Application): HiveRepository {
-        return HiveRepositoryImpl(db = provideHiveDatabase(app))
+        return HiveRepositoryImpl(db = provideHiveDatabase(app), app)
     }
 
     @Singleton

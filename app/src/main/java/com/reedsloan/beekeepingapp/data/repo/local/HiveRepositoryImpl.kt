@@ -1,9 +1,13 @@
 package com.reedsloan.beekeepingapp.data.repo.local
 
 import android.app.Application
+import com.reedsloan.beekeepingapp.data.UserPreferences
+import com.reedsloan.beekeepingapp.data.local.UserPreferencesEntity
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
 import com.reedsloan.beekeepingapp.data.mapper.toHive
 import com.reedsloan.beekeepingapp.data.mapper.toHiveEntity
+import com.reedsloan.beekeepingapp.data.mapper.toUserPreferences
+import com.reedsloan.beekeepingapp.data.mapper.toUserPreferencesEntity
 import com.reedsloan.beekeepingapp.domain.repo.HiveRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -36,7 +40,7 @@ class HiveRepositoryImpl @Inject constructor(db: HiveDatabase, private val app: 
         dao.updateHive(hive.toHiveEntity())
     }
 
-    override suspend fun deleteHive(hiveId: Int) {
+    override suspend fun deleteHive(hiveId: String) {
         dao.deleteHive(hiveId)
     }
 
@@ -74,28 +78,29 @@ class HiveRepositoryImpl @Inject constructor(db: HiveDatabase, private val app: 
 
         // HiveConditions
         // odor column
-        val odorColumn = df.add("odor") { hives.map { it.hiveConditions.odor.displayValue } }
+        val odorColumn = df.add("odor") { hives.map { it.hiveConditions.odor?.displayValue ?: ""} }
         // equipment condition column
         val equipmentConditionColumn =
-            df.add("equipmentCondition") { hives.map { it.hiveConditions.equipmentCondition.displayValue } }
+            df.add("equipmentCondition") { hives.map { it.hiveConditions.equipmentCondition?.displayValue
+                ?: "" } }
         // hive condition column
         val hiveConditionColumn =
-            df.add("hiveCondition") { hives.map { it.hiveConditions.hiveCondition.displayValue } }
+            df.add("hiveCondition") { hives.map { it.hiveConditions.hiveCondition?.displayValue ?: "" } }
         // frames and combs column
         val framesAndCombsColumn =
-            df.add("framesAndCombs") { hives.map { it.hiveConditions.framesAndCombs.displayValue } }
+            df.add("framesAndCombs") { hives.map { it.hiveConditions.framesAndCombs?.displayValue ?: "" } }
         // foundation type column
         val foundationTypeColumn =
-            df.add("foundationType") { hives.map { it.hiveConditions.foundationType.displayValue } }
+            df.add("foundationType") { hives.map { it.hiveConditions.foundationType?.displayValue ?: "" } }
         // temperament column
         val temperamentColumn =
-            df.add("temperament") { hives.map { it.hiveConditions.temperament.displayValue } }
+            df.add("temperament") { hives.map { it.hiveConditions.temperament?.displayValue ?: "" } }
         // population column
         val populationColumn =
-            df.add("population") { hives.map { it.hiveConditions.population.displayValue } }
+            df.add("population") { hives.map { it.hiveConditions.population?.displayValue ?: "" } }
         // queen cells column
         val queenCellsColumn =
-            df.add("queenCells") { hives.map { it.hiveConditions.queenCells.displayValue } }
+            df.add("queenCells") { hives.map { it.hiveConditions.queenCells?.displayValue ?: "" } }
         // queen spotted column
         val queenSpottedColumn =
             df.add("queenSpotted") { hives.map { it.hiveConditions.queenSpotted } }
@@ -104,10 +109,10 @@ class HiveRepositoryImpl @Inject constructor(db: HiveDatabase, private val app: 
             df.add("queenMarker") { hives.map { it.hiveConditions.queenMarker } }
         // laying pattern column
         val layingPatternColumn =
-            df.add("layingPattern") { hives.map { it.hiveConditions.layingPattern.displayValue } }
+            df.add("layingPattern") { hives.map { it.hiveConditions.layingPattern?.displayValue ?: "" } }
         // brood stage column
         val broodStageColumn =
-            df.add("broodStage") { hives.map { it.hiveConditions.broodStage.displayValue } }
+            df.add("broodStage") { hives.map { it.hiveConditions.broodStage?.displayValue ?: "" } }
 
         // HiveHealth
         // diseases column
@@ -132,9 +137,9 @@ class HiveRepositoryImpl @Inject constructor(db: HiveDatabase, private val app: 
         // HiveFeeding
         // honey stores column
         val honeyStoresColumn =
-            df.add("honeyStores") { hives.map { it.feeding.honeyStores.displayValue } }
+            df.add("honeyStores") { hives.map { it.feeding.honeyStores?.displayValue ?: "" } }
         // pollen column
-        val pollenColumn = df.add("pollen") { hives.map { it.feeding.pollen.displayValue } }
+        val pollenColumn = df.add("pollen") { hives.map { it.feeding.pollen?.displayValue ?: "" } }
         // honey b healthy column
         val honeyBHealthyColumn = df.add("honeyBHealthy") { hives.map { it.feeding.honeyBHealthy } }
         // mega bee column
@@ -157,5 +162,18 @@ class HiveRepositoryImpl @Inject constructor(db: HiveDatabase, private val app: 
             // return path
             return this.absolutePath
         }
+    }
+
+    override suspend fun getUserPreferences(): UserPreferences {
+        return dao.getUserPreferences().toUserPreferences()
+    }
+
+    override suspend fun updateUserPreferences(userPreferences: UserPreferences) {
+        dao.updateUserPreferences(userPreferences.toUserPreferencesEntity())
+    }
+
+    override suspend fun resetUserPreferences() {
+        // initialize a default user preferences object
+        dao.updateUserPreferences(UserPreferences().toUserPreferencesEntity())
     }
 }
