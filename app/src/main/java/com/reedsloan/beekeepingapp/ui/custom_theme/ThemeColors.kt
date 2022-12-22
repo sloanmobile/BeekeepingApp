@@ -7,6 +7,10 @@ data class ThemeColors(
     var primaryColor: Color,
     var onBackgroundText: Color,
     var backgroundColor: Color,
+    var onBackgroundColor: Color,
     var onPrimaryColor: Color,
     var onPrimaryText: Color,
+    var surfaceColor: Color,
+    var onSurfaceColor: Color,
+    var onSurfaceText: Color,
 )

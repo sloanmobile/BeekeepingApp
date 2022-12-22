@@ -50,8 +50,23 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun setTemperatureMeasurement(temperatureMeasurement: TemperatureMeasurement) {
-        updateUserPreferences(state.userPreferences.copy(temperatureMeasurement = temperatureMeasurement))
+    /**
+     * Sets the user's preferred temperature unit based on the [TemperatureMeasurement.displayValue]
+     * (e.g. "Fahrenheit")
+     *
+     * @param [TemperatureMeasurement.displayValue] The display value of the temperature unit.
+     */
+    fun setTemperatureMeasurement(string: String) {
+        val temperatureMeasurement = TemperatureMeasurement.values().find { it.name == string }
+        runCatching { temperatureMeasurement!! }
+            .onSuccess { updateUserPreferences(state.userPreferences.copy(temperatureMeasurement = it)) }
+            .onFailure {
+                Toast.makeText(
+                    app,
+                    "Error updating temperature unit measurement",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
     }
 
 

@@ -6,28 +6,30 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Button
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.Icon
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Hive
 import androidx.compose.runtime.*
-import androidx.compose.runtime.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.PopupProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.google.accompanist.permissions.*
@@ -50,7 +52,9 @@ fun AddScreen(navController: NavController, homeViewModel: HomeViewModel = hiltV
             bitmapOrNull = bitmap
         }
 
-    Column {
+    val addScreenScrollState = rememberScrollState()
+
+    Column(Modifier.scrollable(state = addScreenScrollState, orientation = Orientation.Vertical)) {
         NavigationBar(navController, homeViewModel)
         Text("This screen is a test.", fontSize = 24.sp)
 
@@ -140,20 +144,122 @@ fun AddScreen(navController: NavController, homeViewModel: HomeViewModel = hiltV
             }
         }
 
-        TemperatureMeasurementSelection(homeViewModel = homeViewModel)
-        // create new hive button
-        Button(onClick = {
-            // create new hive
-            homeViewModel.createHive()
-        }) {
-            Text("Create New Hive")
-        }
+        Container {
+            // Get the max width of the screen and use that to set the width of the popup window.
+            // This is so that the popup window is always the same width as the screen.
+            // Subtract 16.dp * 2 from the width to account for the padding on the popup window.
+            val maxWidth = with(LocalDensity.current) {
+                LocalContext.current.resources.displayMetrics.widthPixels.toDp() - 16.dp * 2
+            }
 
-        // show list of hives
-        HiveListSection(homeViewModel)
+
+            SelectionDropdown(
+                title = "Temperature",
+                options = listOf(
+                    TemperatureMeasurement.Fahrenheit.displayValue,
+                    TemperatureMeasurement.Celsius.displayValue
+                ),
+                selectedOption = state.userPreferences.temperatureMeasurement.displayValue,
+                onOptionSelected = { homeViewModel.setTemperatureMeasurement(it) },
+                modifier = Modifier
+                    .background(customTheme.surfaceColor, RoundedCornerShape(8.dp))
+                    .border(
+                        2.dp,
+                        customTheme.onSurfaceColor,
+                        RoundedCornerShape(8.dp)
+                    )
+                    .padding(8.dp),
+                dropdownWidth = maxWidth
+            )
+            // create new hive button
+            Button(onClick = {
+                // create new hive
+                homeViewModel.createHive()
+            }) {
+                Text("Create New Hive")
+            }
+
+            // show list of hives
+            HiveListSection(homeViewModel)
+        }
 
         HiveInfoSection(homeViewModel)
     }
+}
+
+/**
+ * A container to add padding to the left and right of the content.
+ */
+@Composable
+fun Container(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+    ) {
+        content()
+    }
+}
+
+@Composable
+fun SelectionDropdown(
+    title: String,
+    options: List<String>,
+    selectedOption: String,
+    onOptionSelected: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    dropdownWidth: Dp,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val interactionSource = remember { MutableInteractionSource() }
+    Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+    Column(modifier = modifier) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = { expanded = !expanded }
+                )
+                .padding(8.dp)
+        ) {
+            Text(selectedOption, fontSize = 16.sp)
+            Icon(
+                if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                contentDescription = null,
+                modifier = Modifier.align(Alignment.CenterEnd)
+            )
+        }
+    }
+    Column(modifier = Modifier.padding(top = 8.dp)) {
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = { expanded = false },
+        offset = DpOffset(0.dp, 0.dp),
+        modifier = Modifier
+            .width(dropdownWidth)
+            .background(customTheme.surfaceColor, RoundedCornerShape(8.dp))
+            .border(
+                2.dp,
+                customTheme.onSurfaceColor,
+                RoundedCornerShape(8.dp)
+            )
+    ) {
+        options.forEach { option ->
+            DropdownMenuItem(
+                onClick = {
+                    expanded = false
+                    onOptionSelected(option)
+                }
+            ) {
+                Text(option)
+            }
+        }
+    }}
 }
 
 @Composable
@@ -166,7 +272,11 @@ fun TemperatureMeasurementSelection(homeViewModel: HomeViewModel) {
             .border(2.dp, customTheme.primaryColor, RoundedCornerShape(8.dp))
             .width(128.dp)
             .padding(8.dp)
-            .clickable(onClick =  { expanded = !expanded}, interactionSource = MutableInteractionSource(), indication = null)
+            .clickable(
+                onClick = { expanded = !expanded },
+                interactionSource = MutableInteractionSource(),
+                indication = null
+            )
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -200,11 +310,15 @@ fun TemperatureMeasurementSelection(homeViewModel: HomeViewModel) {
                 // Fahrenheit option
                 Row(
                     modifier = Modifier
-                        .clickable(onClick = {
-                            homeViewModel.setTemperatureMeasurement(TemperatureMeasurement.Fahrenheit)
-                            expanded = false
-                        }, interactionSource = MutableInteractionSource(), indication = LocalIndication.current)
-                    .fillMaxWidth()
+                        .clickable(
+                            onClick = {
+                                homeViewModel.setTemperatureMeasurement(TemperatureMeasurement.Fahrenheit.displayValue)
+                                expanded = false
+                            },
+                            interactionSource = MutableInteractionSource(),
+                            indication = LocalIndication.current
+                        )
+                        .fillMaxWidth()
                         .height(32.dp)
                         .padding(0.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -226,10 +340,14 @@ fun TemperatureMeasurementSelection(homeViewModel: HomeViewModel) {
                 // Celsius option
                 Row(
                     modifier = Modifier
-                        .clickable(onClick = {
-                            homeViewModel.setTemperatureMeasurement(TemperatureMeasurement.Celsius)
-                            expanded = false
-                        }, interactionSource = MutableInteractionSource(), indication = LocalIndication.current)
+                        .clickable(
+                            onClick = {
+                                homeViewModel.setTemperatureMeasurement(TemperatureMeasurement.Celsius.displayValue)
+                                expanded = false
+                            },
+                            interactionSource = MutableInteractionSource(),
+                            indication = LocalIndication.current
+                        )
                         .fillMaxWidth()
                         .height(32.dp)
                         .padding(0.dp),
