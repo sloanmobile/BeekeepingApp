@@ -1,7 +1,11 @@
 package com.reedsloan.beekeepingapp.presentation.home_screen
 
+import android.app.Activity
 import android.app.Application
+import android.content.Context
 import android.icu.text.DateFormat
+import android.location.LocationManager
+import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -69,6 +73,17 @@ class HomeViewModel @Inject constructor(
             }
     }
 
+    fun hideKeyboard(context: Context) {
+        // hide the keyboard
+        val inputMethodManager =
+            context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+
+        inputMethodManager.hideSoftInputFromWindow(
+            (context as Activity).currentFocus?.windowToken,
+            0
+        )
+    }
+
 
     fun setHiveInfoMenuState(menuState: MenuState) {
         state = state.copy(hiveInfoMenuState = menuState)
@@ -77,6 +92,28 @@ class HomeViewModel @Inject constructor(
     fun setSelectedHive(hiveId: String) {
         // Set the selected hive in the state by finding the hive with the matching id
         state = state.copy(selectedHive = state.hives.find { it.hiveInfo.id == hiveId })
+
+    }
+
+    fun setHiveName(name: String) {
+        runCatching { state.selectedHive!! }
+            .onSuccess {
+                state = state.copy(
+                    selectedHive = it.copy(
+                        hiveInfo = it.hiveInfo.copy(
+                            name = name,
+                            dateModified = System.currentTimeMillis().toString()
+                        )
+                    )
+                )
+            }
+            .onFailure {
+                Toast.makeText(
+                    app,
+                    "Error updating hive name",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
     }
 
     fun toggleMenu() {
@@ -112,9 +149,9 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun dateMillisToDateString(dateMillis: String): String {
+    fun dateMillisToDateString(dateMillis: String, longFormat: Boolean = false): String {
         val format = DateFormat.getDateInstance(DateFormat.LONG)
-        return (format.format(dateMillis.toLong()))
+        return (format.format(dateMillis.toLong()) + if (longFormat) " at " + DateFormat.getTimeInstance(DateFormat.SHORT).format(dateMillis.toLong()) else "")
     }
 
     fun getTemperatureValue(temperatureFahrenheit: Double): Double {
@@ -136,11 +173,7 @@ class HomeViewModel @Inject constructor(
                     HiveInfo(
                         id = UUID.randomUUID().toString(),
                         name = "Hive ${hives.size + 1}",
-                    ),
-                    HiveConditions(),
-                    HiveHealth(),
-                    HiveFeeding(),
-                    HiveNotes()
+                    )
                 )
                 hiveRepository.createHive(hive)
             }.onSuccess {
@@ -157,7 +190,12 @@ class HomeViewModel @Inject constructor(
     fun updateHive(hive: Hive) {
         viewModelScope.launch {
             runCatching {
-                hiveRepository.updateHive(hive)
+                hiveRepository.updateHive(
+                    hive.copy(
+                        hiveInfo =
+                        hive.hiveInfo.copy(dateModified = System.currentTimeMillis().toString())
+                    )
+                )
             }.onSuccess {
                 getAllHives()
             }.onFailure {

@@ -11,6 +11,5 @@ enum class Treatment(val displayValue: String) {
     MITE_AWAY("Mite Away"),
     FORMIC_ACID("Formic Acid"),
     TYLAN("Tylan"),
-    APIVAR("Apivar"),
-    OTHER("Other")
+    APIVAR("Apivar")
 }

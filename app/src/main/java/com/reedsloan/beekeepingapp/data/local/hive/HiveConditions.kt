@@ -29,4 +29,6 @@ class HiveConditions (
     val queenMarker: QueenMarker? = null,
     val layingPattern: LayingPattern? = null,
     val broodStage: BroodStage? = null,
+    val weather: Weather? = null,
+    val temperatureFahrenheit: Double? = null,
 )
