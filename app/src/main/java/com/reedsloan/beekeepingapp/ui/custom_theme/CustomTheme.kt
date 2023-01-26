@@ -15,6 +15,8 @@ val defaultTheme = ThemeColors(
     surfaceColor = Color(0xFFFFFFFF),
     onSurfaceColor = Color(0xFF000000),
     onSurfaceText = Color(0xFF1C1C1C),
+    cancelColor = Color(0xFFFF4747),
+    onCancelColor = Color(0xFFFFFFFF)
 )
 
 var customTheme = defaultTheme

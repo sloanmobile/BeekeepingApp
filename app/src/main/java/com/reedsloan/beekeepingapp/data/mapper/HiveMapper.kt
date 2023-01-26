@@ -8,5 +8,5 @@ fun HiveEntity.toHive(): Hive {
 }
 
 fun Hive.toHiveEntity(): HiveEntity {
-    return HiveEntity(this.hiveInfo.id, this)
+    return HiveEntity(this.id, this)
 }

@@ -1,13 +1,13 @@
 package com.reedsloan.beekeepingapp.presentation.home_screen
 
 enum class MenuState {
-    Closed,
-    Open;
+    CLOSED,
+    OPEN;
 
     fun toggle(): MenuState {
         return when (this) {
-            Closed -> Open
-            Open -> Closed
+            CLOSED -> OPEN
+            OPEN -> CLOSED
         }
     }
 }

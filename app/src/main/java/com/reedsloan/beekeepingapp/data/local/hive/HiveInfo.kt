@@ -1,7 +1,6 @@
 package com.reedsloan.beekeepingapp.data.local.hive
 
 data class HiveInfo(
-    val id: String,
     val name: String,
     val location: String? = null,
     val notes: String? = null,

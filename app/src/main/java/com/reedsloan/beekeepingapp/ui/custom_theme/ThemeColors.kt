@@ -13,4 +13,6 @@ data class ThemeColors(
     var surfaceColor: Color,
     var onSurfaceColor: Color,
     var onSurfaceText: Color,
+    var cancelColor: Color,
+    var onCancelColor: Color
 )
