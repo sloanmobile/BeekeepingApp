@@ -6,8 +6,11 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.*
@@ -25,10 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.*
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -49,7 +50,6 @@ import com.reedsloan.beekeepingapp.data.local.CheckboxSelectionValues
 import com.reedsloan.beekeepingapp.presentation.home_screen.MenuState
 import com.reedsloan.beekeepingapp.presentation.screens.Screen
 import com.reedsloan.beekeepingapp.ui.custom_theme.customTheme
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.*
 
@@ -70,6 +70,8 @@ fun NavigationBar(navController: NavController, hiveViewModel: HiveViewModel) {
             modifier = Modifier
                 .size(48.dp)
                 .background(customTheme.onPrimaryColor, RoundedCornerShape(8.dp))
+                // used to get the ripple effect fit to the shape
+                .clip(RoundedCornerShape(8.dp))
                 .clickable {
                     hiveViewModel.onTapNavigationExpandButton()
                 }
@@ -80,13 +82,14 @@ fun NavigationBar(navController: NavController, hiveViewModel: HiveViewModel) {
                     bottom.linkTo(parent.bottom)
                 },
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Icon(
                 imageVector = when (state.navigationBarMenuState) {
                     MenuState.CLOSED -> Icons.Default.Menu
                     MenuState.OPEN -> Icons.Default.ExpandLess
                 },
-                contentDescription = null,
+                contentDescription = "Menu",
                 tint = customTheme.onPrimaryText
             )
         }
@@ -117,10 +120,7 @@ fun NavigationBar(navController: NavController, hiveViewModel: HiveViewModel) {
                     bottom.linkTo(parent.bottom)
                 },
         ) {
-            // loading indicator
-            AnimatedLoadingCircle(
-                color = customTheme.onPrimaryColor
-            )
+            LoadingIndicator(hiveViewModel.state.isLoading)
         }
     }
 
@@ -130,9 +130,36 @@ fun NavigationBar(navController: NavController, hiveViewModel: HiveViewModel) {
 }
 
 @Composable
+fun LoadingIndicator(isLoading: Boolean) {
+    val animatedAlpha = remember { Animatable(0F) }
+
+    LaunchedEffect(key1 = isLoading) {
+        animatedAlpha.animateTo(
+            targetValue = if (isLoading) 1f else 0f,
+            animationSpec = tween(
+                durationMillis = 150,
+                delayMillis = 150,
+                easing = FastOutLinearInEasing
+            )
+        )
+    }
+
+    Column(
+        Modifier
+            .padding(8.dp)
+            .size(32.dp)
+            .alpha(animatedAlpha.value)
+    ) {
+        CircularProgressIndicator(
+            color = customTheme.onPrimaryColor,
+            strokeWidth = 4.dp
+        )
+    }
+}
+
+@Composable
 fun Menu(navController: NavController, hiveViewModel: HiveViewModel) {
     val state = hiveViewModel.state
-    val scope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
@@ -351,130 +378,6 @@ fun Modifier.tapOrReleaseClickable(
 }
 
 @Composable
-fun AnimatedLoadingCircle(
-    color: Color = customTheme.onPrimaryColor,
-    strokeWidth: Dp = 4.dp,
-) {
-    val loadedPercent = remember { mutableStateOf(0f) }
-    val fadeTransition = remember { mutableStateOf(Animatable(1F)) }
-    // update percent over 3 seconds
-    LaunchedEffect(key1 = true) {
-        while (true) {
-            while (loadedPercent.value < 100f) {
-                delay(30)
-                loadedPercent.value += 1f
-            }
-            delay(1000)
-
-            fadeTransition.value.animateTo(
-                0F, animationSpec = // fade out
-                tween(durationMillis = 300, easing = FastOutSlowInEasing)
-            )
-
-            // reset
-            delay(3000)
-            loadedPercent.value = 0f
-            fadeTransition.value.snapTo(1F)
-        }
-    }
-
-    val rotationDuration = 2000
-
-    val animatedAngle = rememberInfiniteTransition().animateFloat(
-        initialValue = 0f,
-        targetValue = 720f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = rotationDuration,
-                easing = if (loadedPercent.value == 100f) FastOutSlowInEasing else LinearOutSlowInEasing
-            ),
-            repeatMode = RepeatMode.Restart
-        )
-    )
-    val fastOutSlowInAnimatedAngle = rememberInfiniteTransition().animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = rotationDuration, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Restart
-        )
-    )
-
-    val startAngle by remember {
-        mutableStateOf(Animatable(0F))
-    }
-
-    val endAngle by remember {
-        mutableStateOf(Animatable(0F))
-    }
-    val rotationAngle by remember {
-        mutableStateOf(Animatable(0F))
-    }
-
-    LaunchedEffect(key1 = animatedAngle.value) {
-        if(loadedPercent.value != 100f) {
-            endAngle.snapTo(
-                if (animatedAngle.value > 360) 360f - startAngle.value
-                else animatedAngle.value
-            )
-            startAngle.snapTo(
-                if (animatedAngle.value > 360) animatedAngle.value - 360
-                else 0f
-            )
-            rotationAngle.snapTo(animatedAngle.value)
-        } else if(loadedPercent.value == 100f) {
-            endAngle.snapTo(
-                startAngle.value + 360
-            )
-        }
-    }
-
-
-    Box(
-        Modifier
-            .alpha(fadeTransition.value.value)
-            .padding(4.dp)
-    ) {
-        // text to show percent
-        if (loadedPercent.value == 100f) {
-            // check mark icon
-            Icon(
-                imageVector = Icons.Default.Check,
-                contentDescription = "check",
-                tint = color,
-                modifier = Modifier
-                    .size(20.dp)
-                    .align(Alignment.Center)
-            )
-        } else {
-            Text(
-                text = "${loadedPercent.value.toInt()}%",
-                color = color,
-                fontSize = 12.sp,
-                modifier = Modifier
-                    .align(Alignment.Center)
-            )
-        }
-
-        // draw a portion of a circle
-        Canvas(
-            modifier = Modifier
-                .size(32.dp)
-                .rotate(rotationAngle.value)
-                .align(Alignment.Center)
-        ) {
-            drawArc(
-                color = color,
-                startAngle = startAngle.value,
-                sweepAngle = endAngle.value,
-                useCenter = false,
-                style = Stroke(strokeWidth.toPx())
-            )
-        }
-    }
-}
-
-@Composable
 fun CircleCornerButton(
     modifier: Modifier = Modifier,
     onTap: () -> Unit = {},
@@ -519,17 +422,9 @@ fun CircleCornerButton(
 @Composable
 fun CustomAnimatedCheckbox(
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
+    onCheckedChange: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val animatedProgress = animateFloatAsState(
-        targetValue = if (checked) 1f else 0f,
-        animationSpec = tween(
-            durationMillis = 200,
-            easing = LinearOutSlowInEasing
-        )
-    ).value
-
     val animatedColor = animateColorAsState(
         targetValue = if (checked) customTheme.primaryColor else Color.LightGray,
         animationSpec = tween(
@@ -540,14 +435,6 @@ fun CustomAnimatedCheckbox(
 
     val animatedStrokeWidth = animateDpAsState(
         targetValue = if (checked) 0.dp else 2.dp,
-        animationSpec = tween(
-            durationMillis = 200,
-            easing = LinearOutSlowInEasing
-        )
-    ).value
-
-    val animatedCornerRadius = animateDpAsState(
-        targetValue = if (checked) 0.dp else 4.dp,
         animationSpec = tween(
             durationMillis = 200,
             easing = LinearOutSlowInEasing
@@ -762,9 +649,10 @@ fun SelectionCheckboxMenu(
                 color = customTheme.onSurfaceColor,
             )
         }
-        Text(text = "Custom value:", fontWeight = FontWeight.Bold)
         // if the user has selected the "Other" option, show the text field to add a custom value
         if (showCustomValueTextField) {
+            Text(text = "Custom value:", fontWeight = FontWeight.Bold)
+
             Row {
                 // show a text field for the user to enter a custom value
                 TextField(

@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.icu.text.DateFormat
+import android.util.Log
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.compose.runtime.getValue
@@ -31,16 +32,16 @@ class HiveViewModel @Inject constructor(
     var state by mutableStateOf(HiveScreenState())
 
     init {
-        getUserPreferences()
-        getAllHives()
+        viewModelScope.launch {
+            getUserPreferences()
+            getAllHives()
+        }
     }
 
 
-    private fun getUserPreferences() {
-        viewModelScope.launch {
-            runCatching { hiveRepository.getUserPreferences() }.onSuccess {
-                state = state.copy(userPreferences = it)
-            }
+    private suspend fun getUserPreferences() {
+        runCatching { hiveRepository.getUserPreferences() }.onSuccess {
+            state = state.copy(userPreferences = it)
         }
     }
 
@@ -60,11 +61,11 @@ class HiveViewModel @Inject constructor(
     }
 
     fun onTapHiveListItem(selectedHiveId: String, navController: NavController) {
-        if(state.hiveDeleteMode) {
+        Log.d("HiveListItem", "Thread: ${Thread.currentThread().name}")
+        if (state.hiveDeleteMode) {
             toggleSelected(selectedHiveId)
             return
         }
-        closeOpenMenus()
         setSelectedHive(selectedHiveId)
         navController.navigate(Screen.HiveInfoScreen.route)
     }
@@ -86,13 +87,10 @@ class HiveViewModel @Inject constructor(
     }
 
     fun onTapDeleteHiveButton() {
-        deleteSelectedHives()
-        // disable delete mode
-        toggleHiveDeleteMode()
-    }
-
-    fun onTapWhileInDeleteMode(hiveId: String) {
-        toggleSelected(hiveId)
+        viewModelScope.launch {
+            deleteSelectedHives()
+            toggleHiveDeleteMode()
+        }
     }
 
     private fun addToSelectionList(hiveId: String) {
@@ -115,16 +113,13 @@ class HiveViewModel @Inject constructor(
         }
     }
 
-    fun isSelected(hiveId: String): Boolean {
-        return state.selectionList.contains(hiveId)
-    }
-
     private fun toggleHiveDeleteMode() {
-        // clear selection list
-        clearSelectionList()
         state = state.copy(hiveDeleteMode = !state.hiveDeleteMode)
     }
 
+    /**
+     * Closes all open menus and clears the selection list.
+     */
     private fun closeOpenMenus() {
         state = state.copy(
             navigationBarMenuState = MenuState.CLOSED,
@@ -132,12 +127,12 @@ class HiveViewModel @Inject constructor(
             hiveInfoMenuState = MenuState.CLOSED,
             showExtraButtons = false
         )
+        clearSelectionList()
     }
 
-    private fun deleteSelectedHives() {
+    private suspend fun deleteSelectedHives() {
         // delete all hives in selection list
         state.selectionList.forEach { deleteHive(it) }
-        // clear selection list
         clearSelectionList()
     }
 
@@ -178,11 +173,6 @@ class HiveViewModel @Inject constructor(
         inputMethodManager.hideSoftInputFromWindow(
             (context as Activity).currentFocus?.windowToken, 0
         )
-    }
-
-
-    private fun setHiveInfoMenuState(menuState: MenuState) {
-        state = state.copy(hiveInfoMenuState = menuState)
     }
 
     private fun setSelectedHive(hiveId: String) {
@@ -231,22 +221,24 @@ class HiveViewModel @Inject constructor(
         state = state.copy(isStoragePermissionAllowed = isAllowed)
     }
 
-    private fun getAllHives() {
-        viewModelScope.launch {
-            state = state.copy(isLoading = true)
-            runCatching {
-                hiveRepository.getAllHives()
-            }.onSuccess { hives ->
-                state = state.copy(
-                    isLoading = false, isSuccess = true, hives = hives
-                )
-            }.onFailure { error ->
-                state = state.copy(
-                    isLoading = false,
-                    isError = true,
-                    errorMessage = error.message ?: "Unknown error"
-                )
-            }
+    private suspend fun getAllHives() {
+        state = state.copy(isLoading = true)
+        runCatching {
+            hiveRepository.getAllHives()
+        }.onSuccess { hives ->
+            state = state.copy(
+                isLoading = false, isSuccess = true, hives = hives
+            )
+        }.onFailure { error ->
+            state = state.copy(
+                isLoading = false,
+                isError = true,
+                errorMessage = error.message ?: "Unknown error"
+            )
+            // make a toast
+            Toast.makeText(
+                app, "Error getting hives.", Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
@@ -262,10 +254,6 @@ class HiveViewModel @Inject constructor(
             TemperatureMeasurement.Fahrenheit -> temperatureFahrenheit
             TemperatureMeasurement.Celsius -> (temperatureFahrenheit - 32) * 5 / 9
         }
-    }
-
-    private fun fahrenheitToCelsius(fahrenheit: Double): Double {
-        return (fahrenheit - 32) * 5 / 9
     }
 
     private fun createHive() {
@@ -310,17 +298,20 @@ class HiveViewModel @Inject constructor(
         }
     }
 
-    fun deleteHive(hiveId: String) {
-        state = state.copy(isLoading = true)
+    private suspend fun deleteHive(hiveId: String) {
         runCatching {
-            viewModelScope.launch {
-                hiveRepository.deleteHive(hiveId)
-            }
+            state = state.copy(isLoading = true)
+            hiveRepository.deleteHive(hiveId)
         }.onSuccess {
+            // get all hives again
             getAllHives()
         }.onFailure {
             state =
-                state.copy(isLoading = false, isError = true, errorMessage = it.message ?: "")
+                state.copy(
+                    isLoading = false,
+                    isError = true,
+                    errorMessage = it.message ?: ""
+                )
             // Show error message
             Toast.makeText(app, it.message, Toast.LENGTH_SHORT).show()
         }
@@ -329,7 +320,7 @@ class HiveViewModel @Inject constructor(
     /**
      * **Use with caution.** This will delete all hives from the database.
      */
-    fun deleteAllHives() {
+    private fun deleteAllHives() {
         viewModelScope.launch {
             state = state.copy(isLoading = true)
             runCatching {
@@ -343,7 +334,7 @@ class HiveViewModel @Inject constructor(
         }
     }
 
-    fun exportToCsv() {
+    private fun exportToCsv() {
         viewModelScope.launch {
             state = state.copy(isLoading = true)
             runCatching {

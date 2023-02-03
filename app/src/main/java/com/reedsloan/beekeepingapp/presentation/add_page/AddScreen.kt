@@ -11,6 +11,8 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -24,8 +26,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -38,7 +40,6 @@ import com.google.accompanist.permissions.*
 import com.reedsloan.beekeepingapp.data.local.TemperatureMeasurement
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
 import com.reedsloan.beekeepingapp.presentation.common.*
-import com.reedsloan.beekeepingapp.presentation.home_screen.HiveScreenState
 import com.reedsloan.beekeepingapp.presentation.home_screen.MenuState
 import com.reedsloan.beekeepingapp.ui.custom_theme.customTheme
 import com.reedsloan.isPermanentlyDenied
@@ -83,7 +84,7 @@ fun AddScreen(navController: NavController, hiveViewModel: HiveViewModel) {
 
                     Container {
                         // show list of hives
-                        HiveListSection(hiveViewModel, state, navController)
+                        HiveListSection(hiveViewModel, navController)
                     }
 
                 }
@@ -104,7 +105,8 @@ fun AddScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                         Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = "Delete Hives",
-                            tint = customTheme.onCancelColor
+                            tint = customTheme.onCancelColor,
+                            modifier = Modifier.testTag("DeleteHiveButton")
                         )
                     }
                 } else {
@@ -114,7 +116,8 @@ fun AddScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = "Add Hive",
-                            tint = customTheme.onPrimaryColor
+                            tint = customTheme.onPrimaryColor,
+                            modifier = Modifier.testTag("AddHiveButton")
                         )
                     }
                 }
@@ -134,8 +137,6 @@ fun PermissionsTest(navController: NavController, hiveViewModel: HiveViewModel) 
             bitmapOrNull = bitmap
         }
 
-    val addScreenScrollState = rememberScrollState()
-    val heightOfContent = with(LocalDensity.current) { addScreenScrollState.maxValue.toDp() }
     val permissionsState = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         rememberMultiplePermissionsState(
             permissions = listOf(
@@ -418,22 +419,25 @@ fun TemperatureMeasurementSelection(hiveViewModel: HiveViewModel) {
 
 @Composable
 fun HiveListSection(
-    hiveViewModel: HiveViewModel, state: HiveScreenState, navController: NavController
+    hiveViewModel: HiveViewModel, navController: NavController
 ) {
+    val state = hiveViewModel.state
     val screenHeight = LocalContext.current.resources.displayMetrics.heightPixels.dp
-    val scrollState = rememberScrollState()
+    val hiveList = state.hives
 
-    Column(
-        Modifier
+    // list of hives
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxWidth()
             .height(screenHeight)
-            .verticalScroll(scrollState)
+            .testTag("HiveListSection")
+        ,
+        contentPadding = PaddingValues(8.dp),
     ) {
-        state.hives.forEach { hive ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                HiveListItem(
-                    hive = hive, hiveViewModel = hiveViewModel, navController = navController
-                )
-            }
+        // without the key, the list will not update when the list changes
+        // this is because the list is not aware of the changes
+        items(items = hiveList, key = { it.id }) {hive ->
+            HiveListItem(hive, hiveViewModel, navController)
         }
     }
 
@@ -443,7 +447,8 @@ fun HiveListSection(
 fun HiveListItem(hive: Hive, hiveViewModel: HiveViewModel, navController: NavController) {
     val state = hiveViewModel.state
     val haptic = LocalHapticFeedback.current
-    Row(Modifier.padding(vertical = 8.dp)) {
+
+    Row(Modifier.padding(vertical = 8.dp).testTag("HiveListItem")) {
         Box(modifier = Modifier
             .fillMaxWidth()
             .height(96.dp)
@@ -460,8 +465,10 @@ fun HiveListItem(hive: Hive, hiveViewModel: HiveViewModel, navController: NavCon
             }) {
             if (state.hiveDeleteMode) {
                 CustomAnimatedCheckbox(
-                    checked = hiveViewModel.isSelected(hive.id),
-                    onCheckedChange = { hiveViewModel.onTapWhileInDeleteMode(hive.id) },
+                    checked = hiveViewModel.state.selectionList.contains(hive.id),
+                    onCheckedChange = {
+                        hiveViewModel.onTapHiveListItem(hive.id, navController)
+                    },
                     modifier = Modifier.padding(8.dp)
                 )
             }
@@ -477,6 +484,13 @@ fun HiveListItem(hive: Hive, hiveViewModel: HiveViewModel, navController: NavCon
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
+                Text(
+                    text = hive.id,
+                    color = customTheme.onSurfaceText,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Normal
+                )
+
             }
         }
     }

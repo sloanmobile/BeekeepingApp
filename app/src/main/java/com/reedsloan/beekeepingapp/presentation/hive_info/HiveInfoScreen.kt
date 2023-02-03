@@ -19,7 +19,6 @@ import com.reedsloan.beekeepingapp.presentation.common.HiveViewModel
 import com.reedsloan.beekeepingapp.presentation.common.NavigationBar
 import com.reedsloan.beekeepingapp.presentation.common.SelectionCheckboxMenu
 
-
 @Composable
 fun HiveInfoScreen(navController: NavController, hiveViewModel: HiveViewModel) {
     Column(Modifier.fillMaxSize()) {
@@ -27,7 +26,6 @@ fun HiveInfoScreen(navController: NavController, hiveViewModel: HiveViewModel) {
         val maxWidth = with(LocalDensity.current) {
             LocalContext.current.resources.displayMetrics.widthPixels.toDp() - 16.dp * 2
         }
-        val state = hiveViewModel.state
 
         Text(
             text = "Hive Info Screen",
