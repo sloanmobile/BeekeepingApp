@@ -4,14 +4,20 @@ on: [ pull_request ]
 env:
   CACHE_VERSION: 1 # Increment this to invalidate the cache.
   JAVA_VERSION: 19 # The version of Java to use.
-
+  JAVA_DIST: adopt # The distribution of Java to use.
 jobs:
-  
+
   unit-tests:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
         uses: actions/checkout@v3
+
+      - name: Set up Java
+        uses: actions/setup-java@v2
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DIST }}
 
       - name: Gradle cache
         uses: gradle/gradle-build-action@v2
@@ -27,6 +33,12 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
+
+      - name: Set up Java
+        uses: actions/setup-java@v2
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DIST }}
 
       - name: Gradle cache
         uses: gradle/gradle-build-action@v2
