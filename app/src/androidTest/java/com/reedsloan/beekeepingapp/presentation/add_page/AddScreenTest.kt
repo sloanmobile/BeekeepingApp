@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp
+package com.reedsloan.beekeepingapp.presentation.add_page
 
 import androidx.activity.compose.setContent
 import androidx.compose.ui.test.*
@@ -7,8 +7,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.reedsloan.beekeepingapp.MainActivity
 import com.reedsloan.beekeepingapp.di.AppModule
-import com.reedsloan.beekeepingapp.presentation.add_page.AddScreen
 import com.reedsloan.beekeepingapp.presentation.common.HiveViewModel
 import com.reedsloan.beekeepingapp.presentation.home_screen.HomeScreen
 import com.reedsloan.beekeepingapp.presentation.screens.Screen
