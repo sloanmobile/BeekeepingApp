@@ -1,9 +1,8 @@
 name: CI
 on:
-  push:
-    branches: [ main ]
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
 env:
   CACHE_VERSION: 1 # Increment this to invalidate the cache.
