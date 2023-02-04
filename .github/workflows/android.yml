@@ -1,3 +1,6 @@
+name: Instrumented Android Tests
+on: pull_request
+
 jobs:
   test:
     runs-on: macos-latest

@@ -1,4 +1,4 @@
-name: Android Build
+name: Local Gradle Unit Tests
 on: pull_request
 
 jobs:
