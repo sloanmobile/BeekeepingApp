@@ -1,0 +1,48 @@
+name: CI
+on: [pull_request]
+
+env:
+  JAVA_VERSION: 19
+  JAVA_DIST: adopt
+
+jobs:
+  instrumented-tests:
+    name: Run Instrumented Tests
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        api-level: [ 31 ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          distribution: ${{ env.JAVA_DIST }}
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Run All Android Tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          arch: x86_64
+          profile: Nexus 6
+          script: ./gradlew connectedCheck --info
+
+  unit-tests:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          distribution: ${{ env.JAVA_DIST }}
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Run All Unit Tests
+        run: ./gradlew test --info
