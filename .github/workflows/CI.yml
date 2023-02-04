@@ -6,7 +6,7 @@ env:
   JAVA_DIST: adopt
 
 jobs:
-  test:
+  instrumented-tests:
     runs-on: macos-latest
     strategy:
       matrix:
