@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -21,7 +22,7 @@ import com.reedsloan.beekeepingapp.presentation.common.SelectionCheckboxMenu
 
 @Composable
 fun HiveInfoScreen(navController: NavController, hiveViewModel: HiveViewModel) {
-    Column(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize().testTag("HiveInfoScreen")) {
         NavigationBar(navController, hiveViewModel)
         val maxWidth = with(LocalDensity.current) {
             LocalContext.current.resources.displayMetrics.widthPixels.toDp() - 16.dp * 2

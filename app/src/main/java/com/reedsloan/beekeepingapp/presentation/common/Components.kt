@@ -158,6 +158,93 @@ fun LoadingIndicator(isLoading: Boolean) {
 }
 
 @Composable
+fun TextInput(
+    label: String,
+    value: String,
+    onSubmit: (String) -> Unit,
+    hiveViewModel: HiveViewModel,
+    modifier: Modifier = Modifier,
+    submitButtonText: String = "Submit",
+    customInputValidationFunction: (String) -> Boolean = { true },
+) {
+    var editableValue by remember { mutableStateOf(value) }
+    val context = LocalContext.current
+    // side effect to reset the value when the selected hive id is changed
+    LaunchedEffect(key1 = hiveViewModel.state.selectedHiveToBeEdited?.id) {
+        hiveViewModel.hideKeyboard(context)
+        editableValue = value
+    }
+    // title
+    Text(label, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+
+    Row(modifier = modifier) {
+        // show a text field for the user to enter a custom value
+        TextField(
+            value = editableValue,
+            onValueChange = { string ->
+                // capitalize the first letter of the value
+                editableValue = string.replaceFirstChar {
+                    if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString()
+                }
+            },
+            modifier = Modifier
+                .height(48.dp)
+                .weight(0.8F),
+            colors = TextFieldDefaults.textFieldColors(
+                backgroundColor = customTheme.surfaceColor,
+                focusedIndicatorColor = customTheme.primaryColor,
+                unfocusedIndicatorColor = customTheme.onSurfaceColor.copy(alpha = 0.5f),
+                textColor = customTheme.onSurfaceColor,
+                cursorColor = customTheme.primaryColor,
+                disabledIndicatorColor = customTheme.onSurfaceColor.copy(alpha = 0.5f),
+                disabledLabelColor = customTheme.onSurfaceColor.copy(alpha = 0.5f),
+                disabledTextColor = customTheme.onSurfaceColor.copy(alpha = 0.5f),
+                focusedLabelColor = customTheme.primaryColor,
+                unfocusedLabelColor = customTheme.onSurfaceColor.copy(alpha = 0.5f)
+            ),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text, imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(onDone = {
+                // show toast
+                if (editableValue.isNotBlank() && customInputValidationFunction(editableValue)) {
+                    // submit the value
+                    onSubmit(editableValue)
+
+                    // hide the keyboard
+                    hiveViewModel.hideKeyboard(context)
+                } else {
+                    Toast.makeText(
+                        context, "Please enter a valid value.", Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }),
+        )
+        CustomButton(
+            onClick = {
+                // show toast
+                if (editableValue.isNotBlank() && customInputValidationFunction(editableValue)) {
+                    // submit the value
+                    onSubmit(editableValue)
+
+                    // hide the keyboard
+                    hiveViewModel.hideKeyboard(context)
+                } else {
+                    Toast.makeText(
+                        context, "Please enter a valid value.", Toast.LENGTH_SHORT
+                    ).show()
+                }
+            },
+            Modifier
+                .weight(0.2F)
+                .height(48.dp)
+        ) {
+            Text(text = submitButtonText)
+        }
+    }
+}
+
+@Composable
 fun Menu(navController: NavController, hiveViewModel: HiveViewModel) {
     val state = hiveViewModel.state
 
