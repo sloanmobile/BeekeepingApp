@@ -7,7 +7,7 @@ env:
 
 jobs:
   instrumented-tests:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     strategy:
       matrix:
         api-level: [ 31 ]
