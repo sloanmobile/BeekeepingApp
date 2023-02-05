@@ -57,6 +57,7 @@ class AddScreenTest {
     fun createHive() {
         composeRule.onNodeWithTag("HiveListItem").assertDoesNotExist()
         pressAddHiveButton()
+        composeRule.waitForIdle()
         composeRule.onNodeWithTag("HiveListItem").assertExists()
     }
 
@@ -65,6 +66,7 @@ class AddScreenTest {
         pressMenuButton()
         pressHomeButton()
         // verify we are on the home screen
+        composeRule.waitForIdle()
         composeRule.onNodeWithTag("HiveListItem").assertDoesNotExist()
         composeRule.onNodeWithTag("HomeScreen").assertExists()
     }
@@ -73,9 +75,11 @@ class AddScreenTest {
     fun deleteHive() {
         composeRule.onNodeWithTag("HiveListItem").assertDoesNotExist()
         pressAddHiveButton()
+        composeRule.waitForIdle()
         composeRule.onNodeWithTag("HiveListItem").assertExists()
         composeRule.onNodeWithTag("HiveListItem").performTouchInput { longClick() }
         pressDeleteHiveButton()
+        composeRule.waitForIdle()
         composeRule.onNodeWithTag("HiveListItem").assertDoesNotExist()
     }
 
@@ -85,12 +89,14 @@ class AddScreenTest {
         repeat(3) { pressAddHiveButton() }
         longClickHiveListItem()
         // the first hive is automatically selected, so we need to select the other two hives
+        composeRule.waitForIdle()
         for(i in 1..2) {
             tapHiveListItem(i)
         }
         // delete the hives
         pressDeleteHiveButton()
         // assert that the hives were deleted
+        composeRule.waitForIdle()
         composeRule.onNodeWithTag("HiveListItem").assertDoesNotExist()
     }
 
