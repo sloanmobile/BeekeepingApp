@@ -9,6 +9,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -446,24 +447,26 @@ fun WorkInProgressOverlayText() {
 fun Modifier.tapOrReleaseClickable(
     interactionSource: MutableInteractionSource,
     onTap: () -> Unit,
-    onLongPress: () -> Unit,
+    onLongPress: () -> Unit
 ): Modifier = composed {
     val haptic = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
 
     pointerInput(interactionSource) {
         val pressInteraction = PressInteraction.Press(Offset.Zero)
-        val cancelInteraction = PressInteraction.Cancel(pressInteraction)
+        val releaseInteraction = PressInteraction.Release(pressInteraction)
         detectTapGestures(
             onPress = {
                 interactionSource.tryEmit(pressInteraction)
+                // await the release
+                tryAwaitRelease()
+                interactionSource.tryEmit(releaseInteraction)
             },
             onTap = {
-                interactionSource.tryEmit(cancelInteraction)
                 onTap()
             },
             onLongPress = {
-                interactionSource.tryEmit(cancelInteraction)
+                interactionSource.tryEmit(pressInteraction)
                 scope.launch {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 }
@@ -704,7 +707,7 @@ fun Calendar(hiveViewModel: HiveViewModel) {
             val isToday = day == dateTimeNow
             val textColor =
                 if (isCurrentMonth) customTheme.onPrimaryText else customTheme.onPrimaryText.copy(
-                    alpha = 0.5F
+                    alpha = 0.4F
                 )
             val backgroundColor = if (isToday) customTheme.primaryColor else Color.Transparent
             val dayText = dayOfMonth.toString()
