@@ -3,7 +3,6 @@ package com.reedsloan.beekeepingapp.presentation.add_page
 import android.Manifest
 import android.graphics.Bitmap
 import android.os.Build
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -14,8 +13,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -29,8 +26,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
@@ -98,7 +93,7 @@ fun AddScreen(navController: NavController, hiveViewModel: HiveViewModel) {
         ) {
             if (state.hiveInfoMenuState == MenuState.CLOSED && state.navigationBarMenuState == MenuState.CLOSED) {
                 if (state.hiveDeleteMode) {
-                    CircleCornerButton(
+                    CircleButton(
                         onTap = { hiveViewModel.onTapDeleteHiveButton() },
                         backgroundColor = customTheme.cancelColor
                     ) {
@@ -110,7 +105,7 @@ fun AddScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                         )
                     }
                 } else {
-                    CircleCornerButton(
+                    CircleButton(
                         onTap = { hiveViewModel.onTapAddHiveButton() }
                     ) {
                         Icon(

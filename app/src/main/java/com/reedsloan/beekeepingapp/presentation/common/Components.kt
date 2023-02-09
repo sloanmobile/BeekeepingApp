@@ -14,6 +14,9 @@ import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -39,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
@@ -51,6 +55,11 @@ import com.reedsloan.beekeepingapp.presentation.home_screen.MenuState
 import com.reedsloan.beekeepingapp.presentation.screens.Screen
 import com.reedsloan.beekeepingapp.ui.custom_theme.customTheme
 import kotlinx.coroutines.launch
+import org.apache.commons.math3.geometry.spherical.twod.Circle
+import java.lang.reflect.Array.get
+import java.time.DayOfWeek
+import java.time.LocalDateTime
+import java.time.Month
 import java.util.*
 
 
@@ -465,7 +474,7 @@ fun Modifier.tapOrReleaseClickable(
 }
 
 @Composable
-fun CircleCornerButton(
+fun CircleButton(
     modifier: Modifier = Modifier,
     onTap: () -> Unit = {},
     onLongPress: () -> Unit = {},
@@ -509,8 +518,8 @@ fun CircleCornerButton(
 @Composable
 fun CustomAnimatedCheckbox(
     checked: Boolean,
+    modifier: Modifier = Modifier,
     onCheckedChange: (Boolean) -> Unit = {},
-    modifier: Modifier = Modifier
 ) {
     val animatedColor = animateColorAsState(
         targetValue = if (checked) customTheme.primaryColor else Color.LightGray,
@@ -529,7 +538,7 @@ fun CustomAnimatedCheckbox(
     ).value
 
     val animatedIconSize = animateDpAsState(
-        targetValue = if (checked) 24.dp else 0.dp,
+        targetValue = if (checked) 20.dp else 0.dp,
         animationSpec = tween(
             durationMillis = 200,
             easing = LinearOutSlowInEasing
@@ -582,7 +591,8 @@ fun CustomAnimatedCheckbox(
                 .clip(CircleShape)
                 .clickable {
                     onCheckedChange(!checked)
-                }
+                },
+            contentAlignment = Alignment.Center,
         ) {
             // icon
             Icon(
@@ -596,6 +606,122 @@ fun CustomAnimatedCheckbox(
         }
     }
 }
+
+/**
+ * Calendar using kotlin datetime
+ */
+@Composable
+fun Calendar(hiveViewModel: HiveViewModel) {
+    var dateTimeNow by remember { mutableStateOf(LocalDateTime.now()) }
+    val firstDayOfMonth = dateTimeNow.withDayOfMonth(1)
+    val year = dateTimeNow.year
+    val month = dateTimeNow.month
+
+    val daysOfCalendar = hiveViewModel.getDaysOfCalendar(dateTimeNow)
+
+    val daysOfWeekNames by remember {
+        mutableStateOf(
+            listOf(
+                "Su",
+                "Mo",
+                "Tu",
+                "We",
+                "Th",
+                "Fr",
+                "Sa"
+            )
+        )
+    }
+
+    // Year and month
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "${
+                month.name.lowercase()
+                    .replaceFirstChar {
+                        if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString()
+                    }
+            } $year",
+            fontWeight = FontWeight.Bold,
+            fontSize = 20.sp
+        )
+        Row {
+            // previous month
+            CircleButton(
+                onTap = { dateTimeNow = dateTimeNow.minusMonths(1) },
+                icon = Icons.Default.ChevronLeft,
+                iconColor = Color.White,
+                backgroundColor = customTheme.primaryColor,
+                size = 40.dp,
+                padding = 8.dp
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            // next month
+            CircleButton(
+                onTap = { dateTimeNow = dateTimeNow.plusMonths(1) },
+                icon = Icons.Default.ChevronRight,
+                iconColor = Color.White,
+                backgroundColor = customTheme.primaryColor,
+                size = 40.dp,
+                padding = 8.dp
+            )
+        }
+    }
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(7),
+        contentPadding = PaddingValues(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(daysOfWeekNames) {
+            // 0.dp padding to remove the default padding of LazyVerticalGrid items
+            Column(Modifier.padding(0.dp)) {
+                Column(
+                    modifier = Modifier.size(40.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = it,
+                        color = customTheme.onBackgroundText,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+
+        items(items = daysOfCalendar) { day ->
+            val dayOfMonth = day.dayOfMonth
+            val isCurrentMonth = day.month == month
+            val isToday = day == dateTimeNow
+            val textColor =
+                if (isCurrentMonth) customTheme.onPrimaryText else customTheme.onPrimaryText.copy(
+                    alpha = 0.5F
+                )
+            val backgroundColor = if (isToday) customTheme.primaryColor else Color.Transparent
+            val dayText = dayOfMonth.toString()
+            CircleButton(
+                backgroundColor = backgroundColor,
+                size = 40.dp,
+            ) {
+                Text(
+                    text = dayText,
+                    color = textColor,
+                    fontSize = 16.sp
+                )
+            }
+        }
+    }
+}
+
 
 @Composable
 fun SelectionCheckboxMenu(

@@ -16,6 +16,7 @@ import com.reedsloan.beekeepingapp.presentation.screens.Screen
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
+import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Rule
@@ -63,6 +64,11 @@ class HiveInfoScreenTest {
     fun checkHiveInfo() {
         // check that HiveInfoScreen is displayed
         composeRule.onNodeWithTag("HiveInfoScreen").assertExists()
+    }
+
+    @After
+    fun tearDown() {
+        composeRule.activity.finish()
     }
 
 }

@@ -158,5 +158,4 @@ dependencies {
     // Kotlin extensions for androidx.test.ext.junit
     androidTestImplementation "androidx.test.ext:junit-ktx:1.1.5"
 
-
 }

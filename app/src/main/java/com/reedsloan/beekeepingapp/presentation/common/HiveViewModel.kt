@@ -22,6 +22,7 @@ import com.reedsloan.beekeepingapp.presentation.home_screen.MenuState
 import com.reedsloan.beekeepingapp.presentation.screens.Screen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import java.time.*
 import java.util.UUID
 import javax.inject.Inject
 
@@ -36,6 +37,63 @@ class HiveViewModel @Inject constructor(
             getUserPreferences()
             getAllHives()
         }
+    }
+
+    fun getDaysOfCalendar(dateTimeNow: LocalDateTime): List<LocalDateTime> {
+        val year = dateTimeNow.year
+
+        val month = dateTimeNow.month
+        val isLeapYear = Year.isLeap(year.toLong())
+
+        val daysInMonth =
+            when (month) {
+                Month.FEBRUARY -> if (isLeapYear) 29 else 28
+                Month.APRIL, Month.JUNE, Month.SEPTEMBER, Month.NOVEMBER -> 30
+                else -> 31
+            }
+        val firstDayOfMonth = dateTimeNow.withDayOfMonth(1)
+
+        val days: MutableList<LocalDateTime> = mutableListOf()
+
+        val daysFromSunday = when(firstDayOfMonth.dayOfWeek) {
+            DayOfWeek.SUNDAY -> 0
+            DayOfWeek.MONDAY -> 1
+            DayOfWeek.TUESDAY -> 2
+            DayOfWeek.WEDNESDAY -> 3
+            DayOfWeek.THURSDAY -> 4
+            DayOfWeek.FRIDAY -> 5
+            DayOfWeek.SATURDAY -> 6
+            else -> 0
+        }
+
+        val firstDayInNextMonth = firstDayOfMonth.plusMonths(1).withDayOfMonth(1)
+
+        val daysInPreviousMonth = when (dateTimeNow.minusMonths(1).withDayOfMonth(1).month) {
+            Month.FEBRUARY -> if (isLeapYear) 29 else 28
+            Month.APRIL, Month.JUNE, Month.SEPTEMBER, Month.NOVEMBER -> 30
+            else -> 31
+        }
+        val finalDayInPreviousMonth = dateTimeNow.minusMonths(1).withDayOfMonth(daysInPreviousMonth)
+
+
+
+        // add days from previous month (or skip if first day of month is Sunday)
+        for (i in daysFromSunday downTo 1) {
+            days.add(finalDayInPreviousMonth.minusDays(i-1.toLong()))
+        }
+
+        // add days from current month
+        for (i in 0 until daysInMonth) {
+            days.add(firstDayOfMonth.plusDays(i.toLong()))
+        }
+
+        // add days from next month (or skip if last day of month is Saturday)
+        for (i in 0 until 42-days.size) {
+            days.add(firstDayInNextMonth.plusDays((i).toLong()))
+        }
+
+
+        return days.toList()
     }
 
 
@@ -346,6 +404,10 @@ class HiveViewModel @Inject constructor(
                     state.copy(isLoading = false, isError = true, errorMessage = it.message ?: "")
             }
         }
+    }
+
+    fun onDateSelected(localDate: LocalDate) {
+
     }
 
 }
