@@ -13,6 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import com.reedsloan.beekeepingapp.data.TimeFormat
 import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.TemperatureMeasurement
 import com.reedsloan.beekeepingapp.data.local.hive.*
@@ -23,8 +24,8 @@ import com.reedsloan.beekeepingapp.presentation.screens.Screen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import java.time.*
+import java.time.format.DateTimeFormatter
 import java.util.UUID
-import java.util.concurrent.Flow
 import javax.inject.Inject
 
 @HiltViewModel
@@ -38,6 +39,137 @@ class HiveViewModel @Inject constructor(
             getUserPreferences()
             getAllHives()
         }
+    }
+
+    fun incrementDatePicker() {
+        when (state.dateSelection.dateSelectionMode) {
+            DateSelectionMode.DAY_OF_MONTH -> {
+                // month
+                val nextMonth = state.dateSelection.selectedDate.plusMonths(1)
+                setSelectedDate(nextMonth)
+            }
+            DateSelectionMode.YEAR -> {
+                // nothing
+            }
+            DateSelectionMode.MONTH -> {
+                // year
+                val nextYear = state.dateSelection.selectedDate.plusYears(1)
+                setSelectedDate(nextYear)
+            }
+            DateSelectionMode.HOUR_AND_MINUTE -> {
+                // hour
+                val nextHour = state.dateSelection.selectedDate.plusHours(1)
+                setSelectedDate(nextHour)
+            }
+        }
+    }
+
+    fun increaseDateSelectionScope() {
+        when (state.dateSelection.dateSelectionMode) {
+            DateSelectionMode.DAY_OF_MONTH -> {
+                // increase to month
+                state = state.copy(
+                    dateSelection =
+                    state.dateSelection.copy(dateSelectionMode = DateSelectionMode.MONTH)
+                )
+            }
+            DateSelectionMode.YEAR -> {
+                // nothing it is the highest allowed
+            }
+            DateSelectionMode.MONTH -> {
+                // increase to year
+                state = state.copy(
+                    dateSelection =
+                    state.dateSelection.copy(dateSelectionMode = DateSelectionMode.YEAR)
+                )
+            }
+            DateSelectionMode.HOUR_AND_MINUTE -> {
+                // increase to day
+                state = state.copy(
+                    dateSelection =
+                    state.dateSelection.copy(dateSelectionMode = DateSelectionMode.DAY_OF_MONTH)
+                )
+            }
+        }
+    }
+
+    private fun decreaseDateSelectionScope() {
+        when (state.dateSelection.dateSelectionMode) {
+            DateSelectionMode.DAY_OF_MONTH -> {
+                // decrease to hour
+                state = state.copy(
+                    dateSelection =
+                    state.dateSelection.copy(dateSelectionMode = DateSelectionMode.HOUR_AND_MINUTE)
+                )
+            }
+            DateSelectionMode.YEAR -> {
+                // decrease to month
+                state = state.copy(
+                    dateSelection =
+                    state.dateSelection.copy(dateSelectionMode = DateSelectionMode.MONTH)
+                )
+            }
+            DateSelectionMode.MONTH -> {
+                // decrease to day
+                state = state.copy(
+                    dateSelection =
+                    state.dateSelection.copy(dateSelectionMode = DateSelectionMode.DAY_OF_MONTH)
+                )
+            }
+            DateSelectionMode.HOUR_AND_MINUTE -> {
+                // nothing it is the lowest allowed
+            }
+        }
+    }
+
+    fun onHourSelected(localDate: LocalDateTime) {
+        setSelectedDate(localDate)
+        decreaseDateSelectionScope()
+    }
+
+    fun onDaySelected(date: LocalDateTime) {
+        setSelectedDate(date)
+        decreaseDateSelectionScope()
+    }
+
+    fun getHourMinuteString(date: LocalDateTime): String {
+//        return date.format(DateTimeFormatter.ofPattern("HH:mm"))
+        // adjust to user preferences of 24 hour or 12 hour
+        return when (state.userPreferences.timeFormat) {
+            TimeFormat.TWENTY_FOUR_HOUR -> {
+                date.format(DateTimeFormatter.ofPattern("HH:mm"))
+            }
+            TimeFormat.TWELVE_HOUR -> {
+                date.format(DateTimeFormatter.ofPattern("hh:mm a"))
+            }
+        }
+    }
+
+    fun decrementDatePicker() {
+        when (state.dateSelection.dateSelectionMode) {
+            DateSelectionMode.DAY_OF_MONTH -> {
+                // month
+                val nextMonth = state.dateSelection.selectedDate.minusMonths(1)
+                setSelectedDate(nextMonth)
+            }
+            DateSelectionMode.YEAR -> {
+                // nothing
+            }
+            DateSelectionMode.MONTH -> {
+                // year
+                val nextYear = state.dateSelection.selectedDate.minusYears(1)
+                setSelectedDate(nextYear)
+            }
+            DateSelectionMode.HOUR_AND_MINUTE -> {
+                // hour
+                val nextHour = state.dateSelection.selectedDate.minusHours(1)
+                setSelectedDate(nextHour)
+            }
+        }
+    }
+
+    private fun setSelectedDate(date: LocalDateTime) {
+        state = state.copy(dateSelection = state.dateSelection.copy(selectedDate = date))
     }
 
     fun getDaysOfCalendar(dateTimeNow: LocalDateTime): List<LocalDateTime> {
@@ -56,7 +188,7 @@ class HiveViewModel @Inject constructor(
 
         val days: MutableList<LocalDateTime> = mutableListOf()
 
-        val daysFromSunday = when(firstDayOfMonth.dayOfWeek) {
+        val daysFromSunday = when (firstDayOfMonth.dayOfWeek) {
             DayOfWeek.SUNDAY -> 0
             DayOfWeek.MONDAY -> 1
             DayOfWeek.TUESDAY -> 2
@@ -77,10 +209,9 @@ class HiveViewModel @Inject constructor(
         val finalDayInPreviousMonth = dateTimeNow.minusMonths(1).withDayOfMonth(daysInPreviousMonth)
 
 
-
         // add days from previous month (or skip if first day of month is Sunday)
         for (i in daysFromSunday downTo 1) {
-            days.add(finalDayInPreviousMonth.minusDays(i-1.toLong()))
+            days.add(finalDayInPreviousMonth.minusDays(i - 1.toLong()))
         }
 
         // add days from current month
@@ -89,7 +220,7 @@ class HiveViewModel @Inject constructor(
         }
 
         // add days from next month (or skip if last day of month is Saturday)
-        for (i in 0 until 42-days.size) {
+        for (i in 0 until 42 - days.size) {
             days.add(firstDayInNextMonth.plusDays((i).toLong()))
         }
 
@@ -310,8 +441,8 @@ class HiveViewModel @Inject constructor(
 
     fun getTemperatureValue(temperatureFahrenheit: Double): Double {
         return when (state.userPreferences.temperatureMeasurement) {
-            TemperatureMeasurement.Fahrenheit -> temperatureFahrenheit
-            TemperatureMeasurement.Celsius -> (temperatureFahrenheit - 32) * 5 / 9
+            TemperatureMeasurement.FAHRENHEIT -> temperatureFahrenheit
+            TemperatureMeasurement.CELSIUS -> (temperatureFahrenheit - 32) * 5 / 9
         }
     }
 
@@ -407,8 +538,19 @@ class HiveViewModel @Inject constructor(
         }
     }
 
-    fun onDateSelected(localDate: LocalDate) {
 
+    fun onYearSelected(localDate: LocalDateTime) {
+        setSelectedDate(localDate)
+        // decrement date picker
+        decreaseDateSelectionScope()
     }
+
+    fun onMonthSelected(localDate: LocalDateTime) {
+        setSelectedDate(localDate)
+        // decrement date picker
+        decreaseDateSelectionScope()
+    }
+
+
 
 }

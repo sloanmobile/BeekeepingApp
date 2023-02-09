@@ -9,7 +9,6 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -18,6 +17,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -39,11 +39,11 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
@@ -56,9 +56,6 @@ import com.reedsloan.beekeepingapp.presentation.home_screen.MenuState
 import com.reedsloan.beekeepingapp.presentation.screens.Screen
 import com.reedsloan.beekeepingapp.ui.custom_theme.customTheme
 import kotlinx.coroutines.launch
-import org.apache.commons.math3.geometry.spherical.twod.Circle
-import java.lang.reflect.Array.get
-import java.time.DayOfWeek
 import java.time.LocalDateTime
 import java.time.Month
 import java.util.*
@@ -614,10 +611,236 @@ fun CustomAnimatedCheckbox(
  * Calendar using kotlin datetime
  */
 @Composable
-fun Calendar(hiveViewModel: HiveViewModel) {
-    var dateTimeNow by remember { mutableStateOf(LocalDateTime.now()) }
-    val firstDayOfMonth = dateTimeNow.withDayOfMonth(1)
-    val year = dateTimeNow.year
+fun DatePicker(hiveViewModel: HiveViewModel) {
+    val selectedDate = hiveViewModel.state.dateSelection.selectedDate
+    val month = selectedDate.month
+    val year = selectedDate.year
+    val dateSelectionMode = hiveViewModel.state.dateSelection.dateSelectionMode
+    val dayOfMonth = selectedDate.dayOfMonth
+
+    // Year and month
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        CustomButton(onClick = { hiveViewModel.increaseDateSelectionScope() }) {
+            Text(
+                text = when (dateSelectionMode) {
+                    DateSelectionMode.DAY_OF_MONTH -> {
+                        "${month.name} $year"
+                    }
+                    DateSelectionMode.MONTH -> {
+                        "$year"
+                    }
+                    DateSelectionMode.YEAR -> {
+                        "${year - 10} - ${year + 10}"
+                    }
+                    DateSelectionMode.HOUR_AND_MINUTE -> {
+                        "${month.name} $dayOfMonth, $year"
+                    }
+                    else -> {
+                        ""
+                    }
+                },
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            )
+        }
+        Row {
+            // previous month
+            CircleButton(
+                onTap = { hiveViewModel.decrementDatePicker() },
+                icon = Icons.Default.ChevronLeft,
+                iconColor = customTheme.primaryColor,
+                backgroundColor = customTheme.surfaceColor,
+                size = 40.dp,
+                padding = 8.dp
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            // next month
+            CircleButton(
+                onTap = { hiveViewModel.incrementDatePicker() },
+                icon = Icons.Default.ChevronRight,
+                iconColor = customTheme.primaryColor,
+                backgroundColor = customTheme.surfaceColor,
+                size = 40.dp,
+                padding = 8.dp
+            )
+        }
+    }
+
+    when (dateSelectionMode) {
+        DateSelectionMode.HOUR_AND_MINUTE -> {
+            HourPicker(
+                dateTimeNow = selectedDate,
+                hiveViewModel = hiveViewModel,
+                onHourSelected = { hiveViewModel.onHourSelected(it) }
+            )
+        }
+        DateSelectionMode.DAY_OF_MONTH -> {
+            DayPicker(
+                dateTimeNow = selectedDate,
+                hiveViewModel = hiveViewModel,
+                disabledDays = hiveViewModel.state.dateSelection.disabledDays,
+                onDaySelected = { hiveViewModel.onDaySelected(it) },
+                highlightedDays = hiveViewModel.state.dateSelection.highlightedDays
+            )
+        }
+        DateSelectionMode.MONTH -> {
+            MonthPicker(
+                dateTimeNow = selectedDate,
+                hiveViewModel = hiveViewModel,
+                onMonthSelected = { hiveViewModel.onMonthSelected(it) }
+            )
+        }
+        DateSelectionMode.YEAR -> {
+            YearPicker(
+                dateTimeNow = selectedDate,
+                hiveViewModel = hiveViewModel,
+                onYearSelected = { hiveViewModel.onYearSelected(it) }
+            )
+        }
+        else -> {}
+    }
+}
+
+@Composable
+fun YearPicker(
+    dateTimeNow: LocalDateTime,
+    hiveViewModel: HiveViewModel,
+    onYearSelected: (LocalDateTime) -> Unit
+) {
+    // 4x4 grid of years (16 years)
+    val previousDecadeStart = dateTimeNow.year - (dateTimeNow.year % 10)
+    val endRange = previousDecadeStart + 15
+    val selectedYear = dateTimeNow.year
+    val years = (previousDecadeStart..endRange).toList()
+    val yearRows = years.chunked(4)
+    Column {
+        yearRows.forEach { yearRow ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                yearRow.forEach { year ->
+                    val isCurrentYear = year == dateTimeNow.year
+                    val textColor =
+                        if (isCurrentYear) customTheme.onPrimaryText else customTheme.onSurfaceText
+                    val backgroundColor =
+                        if (isCurrentYear) customTheme.primaryColor else Color.Transparent
+                    CircleButton(
+                        onTap = {
+                            onYearSelected(
+                                dateTimeNow.withYear(year)
+                            )
+                        },
+                        icon = null,
+                        iconColor = textColor,
+                        backgroundColor = backgroundColor,
+                        size = 64.dp,
+                        padding = 8.dp,
+                    ) {
+                        Text(
+                            text = year.toString(),
+                            fontSize = 20.sp,
+                            color = if (year == selectedYear) customTheme.onPrimaryColor else customTheme.onSurfaceColor
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MonthPicker(
+    dateTimeNow: LocalDateTime,
+    hiveViewModel: HiveViewModel,
+    onMonthSelected: (LocalDateTime) -> Unit
+) {
+    // 4x4 grid of months
+    val selectedMonth = dateTimeNow.month
+    val months = Month.values().toList() + Month.values().toList().take(4)
+    val monthRows = months.chunked(4)
+    Column {
+        monthRows.forEachIndexed { index, monthRow ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                monthRow.forEach { month ->
+                    val isCurrentMonth = month == dateTimeNow.month
+                    val monthInNextYear =
+                        monthRow == monthRows.last() && index == monthRows.lastIndex
+                    val textColor =
+                        if (!monthInNextYear && isCurrentMonth) customTheme.onPrimaryText
+                        else if(monthInNextYear) customTheme.onSurfaceText.copy(alpha = 0.5f)
+                        else customTheme.onSurfaceText
+                    val backgroundColor =
+                        if (!monthInNextYear && isCurrentMonth) customTheme.primaryColor
+                        else Color.Transparent
+                    CircleButton(
+                        onTap = {
+                            if (monthInNextYear) {
+                                onMonthSelected(
+                                    dateTimeNow.withMonth(month.value)
+                                        .withYear(dateTimeNow.year + 1)
+                                )
+                            } else {
+                                hiveViewModel.onMonthSelected(
+                                    dateTimeNow.withMonth(month.value)
+                                )
+                            }
+                        },
+                        backgroundColor = backgroundColor,
+                        size = 64.dp,
+                        padding = 8.dp,
+                    ) {
+                        Text(
+                            text = month.name.substring(0, 3).lowercase()
+                                .replaceFirstChar {
+                                    if (it.isLowerCase()) it.titlecase(Locale.ROOT)
+                                    else it.toString()
+                                },
+                            fontSize = 20.sp,
+                            color = textColor
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun HourPicker(
+    dateTimeNow: LocalDateTime,
+    hiveViewModel: HiveViewModel,
+    onHourSelected: (LocalDateTime) -> Unit,
+) {
+    CustomButton(onClick = { onHourSelected(dateTimeNow) }) {
+        Text(
+            text = hiveViewModel.getHourMinuteString(dateTimeNow),
+            fontWeight = FontWeight.Bold,
+            fontSize = 20.sp,
+            color = customTheme.onPrimaryColor
+        )
+    }
+}
+
+@Composable
+fun DayPicker(
+    dateTimeNow: LocalDateTime,
+    hiveViewModel: HiveViewModel,
+    disabledDays: List<LocalDateTime>,
+    onDaySelected: (LocalDateTime) -> Unit,
+    highlightedDays: List<LocalDateTime> = emptyList(),
+) {
     val month = dateTimeNow.month
 
     val daysOfCalendar = hiveViewModel.getDaysOfCalendar(dateTimeNow)
@@ -635,48 +858,6 @@ fun Calendar(hiveViewModel: HiveViewModel) {
             )
         )
     }
-
-    // Year and month
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = "${
-                month.name.lowercase()
-                    .replaceFirstChar {
-                        if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString()
-                    }
-            } $year",
-            fontWeight = FontWeight.Bold,
-            fontSize = 20.sp
-        )
-        Row {
-            // previous month
-            CircleButton(
-                onTap = { dateTimeNow = dateTimeNow.minusMonths(1) },
-                icon = Icons.Default.ChevronLeft,
-                iconColor = Color.White,
-                backgroundColor = customTheme.primaryColor,
-                size = 40.dp,
-                padding = 8.dp
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            // next month
-            CircleButton(
-                onTap = { dateTimeNow = dateTimeNow.plusMonths(1) },
-                icon = Icons.Default.ChevronRight,
-                iconColor = Color.White,
-                backgroundColor = customTheme.primaryColor,
-                size = 40.dp,
-                padding = 8.dp
-            )
-        }
-    }
-
     LazyVerticalGrid(
         columns = GridCells.Fixed(7),
         contentPadding = PaddingValues(8.dp),
@@ -705,15 +886,27 @@ fun Calendar(hiveViewModel: HiveViewModel) {
             val dayOfMonth = day.dayOfMonth
             val isCurrentMonth = day.month == month
             val isToday = day == dateTimeNow
-            val textColor =
+            val isHighlighted = day in highlightedDays
+            val isDisabled = day in disabledDays
+            val textColor = if (isHighlighted) customTheme.primaryColor else
                 if (isCurrentMonth) customTheme.onPrimaryText else customTheme.onPrimaryText.copy(
                     alpha = 0.4F
                 )
-            val backgroundColor = if (isToday) customTheme.primaryColor else Color.Transparent
+            val backgroundColor =
+                if (isToday) customTheme.primaryColor else if (isHighlighted) customTheme.primaryColor.copy(
+                    alpha = 0.2F
+                ) else Color.Transparent
+
             val dayText = dayOfMonth.toString()
+
             CircleButton(
                 backgroundColor = backgroundColor,
                 size = 40.dp,
+                onTap = {
+                    if (!isDisabled) {
+                        onDaySelected(day)
+                    }
+                },
             ) {
                 Text(
                     text = dayText,
@@ -724,7 +917,6 @@ fun Calendar(hiveViewModel: HiveViewModel) {
         }
     }
 }
-
 
 @Composable
 fun SelectionCheckboxMenu(

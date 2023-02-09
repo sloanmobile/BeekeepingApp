@@ -270,7 +270,7 @@ fun TemperatureMeasurementSelection(hiveViewModel: HiveViewModel) {
                         .clickable(
                             onClick = {
                                 hiveViewModel.setTemperatureMeasurement(
-                                    TemperatureMeasurement.Fahrenheit.displayValue
+                                    TemperatureMeasurement.FAHRENHEIT.displayValue
                                 )
                                 expanded = false
                             },
@@ -283,7 +283,7 @@ fun TemperatureMeasurementSelection(hiveViewModel: HiveViewModel) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        TemperatureMeasurement.Fahrenheit.displayValue,
+                        TemperatureMeasurement.FAHRENHEIT.displayValue,
                         Modifier.padding(8.dp),
                     )
                 }
@@ -302,7 +302,7 @@ fun TemperatureMeasurementSelection(hiveViewModel: HiveViewModel) {
                         .clickable(
                             onClick = {
                                 hiveViewModel.setTemperatureMeasurement(
-                                    TemperatureMeasurement.Celsius.displayValue
+                                    TemperatureMeasurement.CELSIUS.displayValue
                                 )
                                 expanded = false
                             },
@@ -315,7 +315,7 @@ fun TemperatureMeasurementSelection(hiveViewModel: HiveViewModel) {
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        TemperatureMeasurement.Celsius.displayValue,
+                        TemperatureMeasurement.CELSIUS.displayValue,
                         Modifier.padding(8.dp),
                     )
                 }

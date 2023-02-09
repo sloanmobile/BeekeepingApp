@@ -37,7 +37,7 @@ fun HiveInfoScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                     modifier = Modifier.padding(16.dp)
                 )
 
-                Calendar(
+                DatePicker(
                     hiveViewModel = hiveViewModel
                 )
 
