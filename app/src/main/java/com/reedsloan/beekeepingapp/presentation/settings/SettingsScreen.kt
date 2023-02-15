@@ -12,6 +12,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.reedsloan.beekeepingapp.data.TimeFormat
 import com.reedsloan.beekeepingapp.data.local.TemperatureMeasurement
 import com.reedsloan.beekeepingapp.presentation.common.Container
 import com.reedsloan.beekeepingapp.presentation.common.HiveViewModel
@@ -39,6 +40,21 @@ fun SettingsScreen(
                 options = TemperatureMeasurement.values().map { it.displayValue },
                 selectedOption = state.userPreferences.temperatureMeasurement.displayValue,
                 onOptionSelected = { hiveViewModel.setTemperatureMeasurement(it.first()) },
+                modifier = Modifier
+                    .background(customTheme.surfaceColor, RoundedCornerShape(8.dp))
+                    .border(
+                        2.dp, customTheme.onSurfaceColor, RoundedCornerShape(8.dp)
+                    )
+                    .padding(8.dp),
+                dropdownWidth = maxWidth,
+                hiveViewModel = hiveViewModel
+            )
+            // Time format setting
+            SelectionDropdownMenu(
+                title = "Time Format",
+                options = TimeFormat.values().map { it.displayValue },
+                selectedOption = state.userPreferences.timeFormat.displayValue,
+                onOptionSelected = { hiveViewModel.setTimeFormat(it.first()) },
                 modifier = Modifier
                     .background(customTheme.surfaceColor, RoundedCornerShape(8.dp))
                     .border(

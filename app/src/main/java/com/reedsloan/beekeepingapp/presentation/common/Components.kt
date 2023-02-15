@@ -6,18 +6,17 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.indication
+import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -39,7 +38,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.input.ImeAction
@@ -50,11 +48,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.reedsloan.beekeepingapp.data.local.CheckboxSelectionValues
 import com.reedsloan.beekeepingapp.presentation.home_screen.MenuState
 import com.reedsloan.beekeepingapp.presentation.screens.Screen
 import com.reedsloan.beekeepingapp.ui.custom_theme.customTheme
+import dev.chrisbanes.snapper.ExperimentalSnapperApi
+import dev.chrisbanes.snapper.rememberSnapperFlingBehavior
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.Month
@@ -73,21 +74,20 @@ fun NavigationBar(navController: NavController, hiveViewModel: HiveViewModel) {
     ) {
         val (menuButton, title, loading) = createRefs()
         // hamburger menu button
-        Column(
-            modifier = Modifier
-                .size(48.dp)
-                .background(customTheme.onPrimaryColor, RoundedCornerShape(8.dp))
-                // used to get the ripple effect fit to the shape
-                .clip(RoundedCornerShape(8.dp))
-                .clickable {
-                    hiveViewModel.onTapNavigationExpandButton()
-                }
-                .constrainAs(menuButton) {
-                    start.linkTo(parent.start)
-                    end.linkTo(title.start)
-                    top.linkTo(parent.top)
-                    bottom.linkTo(parent.bottom)
-                },
+        Column(modifier = Modifier
+            .size(48.dp)
+            .background(customTheme.onPrimaryColor, RoundedCornerShape(8.dp))
+            // used to get the ripple effect fit to the shape
+            .clip(RoundedCornerShape(8.dp))
+            .clickable {
+                hiveViewModel.onTapNavigationExpandButton()
+            }
+            .constrainAs(menuButton) {
+                start.linkTo(parent.start)
+                end.linkTo(title.start)
+                top.linkTo(parent.top)
+                bottom.linkTo(parent.bottom)
+            },
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -95,15 +95,12 @@ fun NavigationBar(navController: NavController, hiveViewModel: HiveViewModel) {
                 imageVector = when (state.navigationBarMenuState) {
                     MenuState.CLOSED -> Icons.Default.Menu
                     MenuState.OPEN -> Icons.Default.ExpandLess
-                },
-                contentDescription = "Menu",
-                tint = customTheme.onPrimaryText
+                }, contentDescription = "Menu", tint = customTheme.onPrimaryText
             )
         }
 
         // title
-        Text(
-            text = "Beekeeping App",
+        Text(text = "Beekeeping App",
             fontWeight = Bold,
             color = customTheme.onPrimaryColor,
             fontSize = 24.sp,
@@ -114,8 +111,7 @@ fun NavigationBar(navController: NavController, hiveViewModel: HiveViewModel) {
                     end.linkTo(parent.end)
                     top.linkTo(parent.top)
                     bottom.linkTo(parent.bottom)
-                }
-        )
+                })
         Column(
             Modifier
                 .padding(8.dp)
@@ -142,11 +138,8 @@ fun LoadingIndicator(isLoading: Boolean) {
 
     LaunchedEffect(key1 = isLoading) {
         animatedAlpha.animateTo(
-            targetValue = if (isLoading) 1f else 0f,
-            animationSpec = tween(
-                durationMillis = 150,
-                delayMillis = 150,
-                easing = FastOutLinearInEasing
+            targetValue = if (isLoading) 1f else 0f, animationSpec = tween(
+                durationMillis = 150, delayMillis = 150, easing = FastOutLinearInEasing
             )
         )
     }
@@ -158,8 +151,7 @@ fun LoadingIndicator(isLoading: Boolean) {
             .alpha(animatedAlpha.value)
     ) {
         CircularProgressIndicator(
-            color = customTheme.onPrimaryColor,
-            strokeWidth = 4.dp
+            color = customTheme.onPrimaryColor, strokeWidth = 4.dp
         )
     }
 }
@@ -442,9 +434,7 @@ fun WorkInProgressOverlayText() {
 }
 
 fun Modifier.tapOrReleaseClickable(
-    interactionSource: MutableInteractionSource,
-    onTap: () -> Unit,
-    onLongPress: () -> Unit
+    interactionSource: MutableInteractionSource, onTap: () -> Unit, onLongPress: () -> Unit
 ): Modifier = composed {
     val haptic = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
@@ -452,24 +442,20 @@ fun Modifier.tapOrReleaseClickable(
     pointerInput(interactionSource) {
         val pressInteraction = PressInteraction.Press(Offset.Zero)
         val releaseInteraction = PressInteraction.Release(pressInteraction)
-        detectTapGestures(
-            onPress = {
-                interactionSource.tryEmit(pressInteraction)
-                // await the release
-                tryAwaitRelease()
-                interactionSource.tryEmit(releaseInteraction)
-            },
-            onTap = {
-                onTap()
-            },
-            onLongPress = {
-                interactionSource.tryEmit(pressInteraction)
-                scope.launch {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                }
-                onLongPress()
+        detectTapGestures(onPress = {
+            interactionSource.tryEmit(pressInteraction)
+            // await the release
+            tryAwaitRelease()
+            interactionSource.tryEmit(releaseInteraction)
+        }, onTap = {
+            onTap()
+        }, onLongPress = {
+            interactionSource.tryEmit(pressInteraction)
+            scope.launch {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             }
-        )
+            onLongPress()
+        })
     }
 }
 
@@ -487,8 +473,7 @@ fun CircleButton(
 ) {
     // replace with a column instead of a button
     val interactionSource = remember { MutableInteractionSource() }
-    val indication =
-        rememberRipple(bounded = false, radius = size / 2)
+    val indication = rememberRipple(bounded = false, radius = size / 2)
 
     Column(modifier = Modifier.padding(padding)) {
         Column(
@@ -496,9 +481,7 @@ fun CircleButton(
                 .size(size)
                 .background(backgroundColor, CircleShape)
                 .tapOrReleaseClickable(
-                    interactionSource = interactionSource,
-                    onTap = onTap,
-                    onLongPress = onLongPress
+                    interactionSource = interactionSource, onTap = onTap, onLongPress = onLongPress
                 )
                 .indication(interactionSource, indication),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -524,56 +507,44 @@ fun CustomAnimatedCheckbox(
     val animatedColor = animateColorAsState(
         targetValue = if (checked) customTheme.primaryColor else Color.LightGray,
         animationSpec = tween(
-            durationMillis = 200,
-            easing = LinearOutSlowInEasing
+            durationMillis = 200, easing = LinearOutSlowInEasing
         )
     ).value
 
     val animatedStrokeWidth = animateDpAsState(
-        targetValue = if (checked) 0.dp else 2.dp,
-        animationSpec = tween(
-            durationMillis = 200,
-            easing = LinearOutSlowInEasing
+        targetValue = if (checked) 0.dp else 2.dp, animationSpec = tween(
+            durationMillis = 200, easing = LinearOutSlowInEasing
         )
     ).value
 
     val animatedIconSize = animateDpAsState(
-        targetValue = if (checked) 20.dp else 0.dp,
-        animationSpec = tween(
-            durationMillis = 200,
-            easing = LinearOutSlowInEasing
+        targetValue = if (checked) 20.dp else 0.dp, animationSpec = tween(
+            durationMillis = 200, easing = LinearOutSlowInEasing
         )
     ).value
 
     val animatedIconColor = animateColorAsState(
         targetValue = if (checked) customTheme.onPrimaryColor else Color.LightGray,
         animationSpec = tween(
-            durationMillis = 200,
-            easing = LinearOutSlowInEasing
+            durationMillis = 200, easing = LinearOutSlowInEasing
         )
     ).value
 
     val animatedIcon = animateDpAsState(
-        targetValue = if (checked) 0.dp else 4.dp,
-        animationSpec = tween(
-            durationMillis = 200,
-            easing = LinearOutSlowInEasing
+        targetValue = if (checked) 0.dp else 4.dp, animationSpec = tween(
+            durationMillis = 200, easing = LinearOutSlowInEasing
         )
     ).value
 
     val animatedIconPadding = animateDpAsState(
-        targetValue = if (checked) 0.dp else 4.dp,
-        animationSpec = tween(
-            durationMillis = 200,
-            easing = LinearOutSlowInEasing
+        targetValue = if (checked) 0.dp else 4.dp, animationSpec = tween(
+            durationMillis = 200, easing = LinearOutSlowInEasing
         )
     ).value
 
     val animatedIconAlpha = animateFloatAsState(
-        targetValue = if (checked) 1f else 0f,
-        animationSpec = tween(
-            durationMillis = 200,
-            easing = LinearOutSlowInEasing
+        targetValue = if (checked) 1f else 0f, animationSpec = tween(
+            durationMillis = 200, easing = LinearOutSlowInEasing
         )
     ).value
     Box(modifier) {
@@ -583,9 +554,7 @@ fun CustomAnimatedCheckbox(
                 .size(24.dp)
                 .background(animatedColor, CircleShape)
                 .border(
-                    width = animatedStrokeWidth,
-                    color = Color.LightGray,
-                    shape = CircleShape
+                    width = animatedStrokeWidth, color = Color.LightGray, shape = CircleShape
                 )
                 .padding(animatedIconPadding)
                 .clip(CircleShape)
@@ -644,9 +613,7 @@ fun DatePicker(hiveViewModel: HiveViewModel) {
                     else -> {
                         ""
                     }
-                },
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp
+                }, fontWeight = FontWeight.Bold, fontSize = 20.sp
             )
         }
         Row {
@@ -676,8 +643,8 @@ fun DatePicker(hiveViewModel: HiveViewModel) {
         DateSelectionMode.HOUR_AND_MINUTE -> {
             HourPicker(
                 dateTimeNow = selectedDate,
+                onHourSelected = { hiveViewModel.onHourSelected(it) },
                 hiveViewModel = hiveViewModel,
-                onHourSelected = { hiveViewModel.onHourSelected(it) }
             )
         }
         DateSelectionMode.DAY_OF_MONTH -> {
@@ -690,18 +657,14 @@ fun DatePicker(hiveViewModel: HiveViewModel) {
             )
         }
         DateSelectionMode.MONTH -> {
-            MonthPicker(
-                dateTimeNow = selectedDate,
+            MonthPicker(dateTimeNow = selectedDate,
                 hiveViewModel = hiveViewModel,
-                onMonthSelected = { hiveViewModel.onMonthSelected(it) }
-            )
+                onMonthSelected = { hiveViewModel.onMonthSelected(it) })
         }
         DateSelectionMode.YEAR -> {
-            YearPicker(
-                dateTimeNow = selectedDate,
+            YearPicker(dateTimeNow = selectedDate,
                 hiveViewModel = hiveViewModel,
-                onYearSelected = { hiveViewModel.onYearSelected(it) }
-            )
+                onYearSelected = { hiveViewModel.onYearSelected(it) })
         }
         else -> {}
     }
@@ -722,9 +685,7 @@ fun YearPicker(
     Column {
         yearRows.forEach { yearRow ->
             Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 yearRow.forEach { year ->
                     val isCurrentYear = year == dateTimeNow.year
@@ -769,9 +730,7 @@ fun MonthPicker(
     Column {
         monthRows.forEachIndexed { index, monthRow ->
             Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 monthRow.forEach { month ->
                     val isCurrentMonth = month == dateTimeNow.month
@@ -779,7 +738,7 @@ fun MonthPicker(
                         monthRow == monthRows.last() && index == monthRows.lastIndex
                     val textColor =
                         if (!monthInNextYear && isCurrentMonth) customTheme.onPrimaryText
-                        else if(monthInNextYear) customTheme.onSurfaceText.copy(alpha = 0.5f)
+                        else if (monthInNextYear) customTheme.onSurfaceText.copy(alpha = 0.5f)
                         else customTheme.onSurfaceText
                     val backgroundColor =
                         if (!monthInNextYear && isCurrentMonth) customTheme.primaryColor
@@ -802,13 +761,10 @@ fun MonthPicker(
                         padding = 8.dp,
                     ) {
                         Text(
-                            text = month.name.substring(0, 3).lowercase()
-                                .replaceFirstChar {
-                                    if (it.isLowerCase()) it.titlecase(Locale.ROOT)
-                                    else it.toString()
-                                },
-                            fontSize = 20.sp,
-                            color = textColor
+                            text = month.name.substring(0, 3).lowercase().replaceFirstChar {
+                                if (it.isLowerCase()) it.titlecase(Locale.ROOT)
+                                else it.toString()
+                            }, fontSize = 20.sp, color = textColor
                         )
                     }
                 }
@@ -817,19 +773,85 @@ fun MonthPicker(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class, ExperimentalSnapperApi::class)
 @Composable
 fun HourPicker(
     dateTimeNow: LocalDateTime,
-    hiveViewModel: HiveViewModel,
     onHourSelected: (LocalDateTime) -> Unit,
+    calendarViewModel: CalendarViewModel = hiltViewModel(),
+    hiveViewModel: HiveViewModel
 ) {
-    CustomButton(onClick = { onHourSelected(dateTimeNow) }) {
-        Text(
-            text = hiveViewModel.getHourMinuteString(dateTimeNow),
-            fontWeight = FontWeight.Bold,
-            fontSize = 20.sp,
-            color = customTheme.onPrimaryColor
-        )
+    val hours = (0..23).toList()
+    val minutes = (0..59).toList()
+    val height = 240.dp
+    val width = 64.dp
+
+    val selectedHour by calendarViewModel.selectedHour.collectAsState()
+    val selectedMinute by calendarViewModel.selectedMinute.collectAsState()
+    val isPressed by calendarViewModel.isPressed.collectAsState()
+
+    val hourListState = rememberLazyListState(Int.MAX_VALUE / 2 + selectedHour, 0)
+
+    Text("Hour $selectedHour")
+
+//    val lifecycleOwner = LocalLifecycleOwner.current
+//
+//    LaunchedEffect(lifecycleOwner) {
+//        // scrolling half the height of the list to get the middle item in the list
+//        hourListState.scrollBy(0.dp.value)
+//    }
+
+    LaunchedEffect(key1 = hourListState.isScrollInProgress) {
+        // return since we only want to run this effect when the scroll is not in progress
+        if (hourListState.isScrollInProgress) return@LaunchedEffect
+        // We add 2 as the offset to get the middle item in the list of 5
+        val offset = 1
+        // log
+        val hour = ((hourListState.firstVisibleItemIndex + offset) % hours.size)
+        calendarViewModel.setSelectedHour(hour)
+    }
+
+    InfinityScrollColumn(
+        width = width,
+        height = height,
+        lazyListState = hourListState,
+        items = hours.map { hiveViewModel.getHourString(dateTimeNow.withHour(it)) },
+        selectedItem = selectedHour.toString()
+    )
+}
+
+@OptIn(ExperimentalSnapperApi::class)
+@Composable
+fun InfinityScrollColumn(
+    width: Dp,
+    height: Dp,
+    lazyListState: LazyListState,
+    items: List<String>,
+    selectedItem: String
+) {
+    LazyColumn(
+        modifier = Modifier
+            .width(width)
+            .height(height),
+        flingBehavior = rememberSnapperFlingBehavior(lazyListState = lazyListState),
+        state = lazyListState,
+        verticalArrangement = Arrangement.SpaceEvenly
+    ) {
+        items(Int.MAX_VALUE) {
+            val item = items[it % items.size]
+            val fontColor = when (item) {
+                selectedItem -> customTheme.onBackgroundText
+                else -> customTheme.onBackgroundText.copy(alpha = 0.5f)
+            }
+            Box(
+                modifier = Modifier
+                    .height(80.dp)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(item, fontSize = 36.sp, color = fontColor, fontWeight = FontWeight.Bold)
+            }
+        }
     }
 }
 
@@ -848,13 +870,7 @@ fun DayPicker(
     val daysOfWeekNames by remember {
         mutableStateOf(
             listOf(
-                "Su",
-                "Mo",
-                "Tu",
-                "We",
-                "Th",
-                "Fr",
-                "Sa"
+                "Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"
             )
         )
     }
@@ -888,8 +904,8 @@ fun DayPicker(
             val isToday = day == dateTimeNow
             val isHighlighted = day in highlightedDays
             val isDisabled = day in disabledDays
-            val textColor = if (isHighlighted) customTheme.primaryColor else
-                if (isCurrentMonth) customTheme.onPrimaryText else customTheme.onPrimaryText.copy(
+            val textColor =
+                if (isHighlighted) customTheme.primaryColor else if (isCurrentMonth) customTheme.onPrimaryText else customTheme.onPrimaryText.copy(
                     alpha = 0.4F
                 )
             val backgroundColor =
@@ -909,9 +925,7 @@ fun DayPicker(
                 },
             ) {
                 Text(
-                    text = dayText,
-                    color = textColor,
-                    fontSize = 16.sp
+                    text = dayText, color = textColor, fontSize = 16.sp
                 )
             }
         }
@@ -938,7 +952,8 @@ fun SelectionCheckboxMenu(
     if (checkboxSelectionValues.showSelectionInstructions) {
         // instructions for the user (e.g. "Select up to 3 options")
         Text(
-            "Select ${checkboxSelectionValues.maxSelectionCount} " + if (checkboxSelectionValues.maxSelectionCount == 1) "option" else {
+            "Select ${checkboxSelectionValues.maxSelectionCount} " + if (checkboxSelectionValues.maxSelectionCount == 1) "option"
+            else {
                 "options"
             } + ":", fontWeight = FontWeight.Bold
         )

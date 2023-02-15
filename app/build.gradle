@@ -158,4 +158,5 @@ dependencies {
     // Kotlin extensions for androidx.test.ext.junit
     androidTestImplementation "androidx.test.ext:junit-ktx:1.1.5"
 
+    implementation "dev.chrisbanes.snapper:snapper:0.3.0"
 }

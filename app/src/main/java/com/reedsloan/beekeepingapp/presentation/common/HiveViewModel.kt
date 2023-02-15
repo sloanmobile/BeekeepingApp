@@ -145,6 +145,17 @@ class HiveViewModel @Inject constructor(
         }
     }
 
+    fun getHourString(date: LocalDateTime): String {
+        return when (state.userPreferences.timeFormat) {
+            TimeFormat.TWENTY_FOUR_HOUR -> {
+                date.format(DateTimeFormatter.ofPattern("HH"))
+            }
+            TimeFormat.TWELVE_HOUR -> {
+                date.format(DateTimeFormatter.ofPattern("hh"))
+            }
+        }
+    }
+
     fun decrementDatePicker() {
         when (state.dateSelection.dateSelectionMode) {
             DateSelectionMode.DAY_OF_MONTH -> {
@@ -345,12 +356,31 @@ class HiveViewModel @Inject constructor(
      * @param [TemperatureMeasurement.displayValue] The display value of the temperature unit.
      */
     fun setTemperatureMeasurement(string: String) {
-        val temperatureMeasurement = TemperatureMeasurement.values().find { it.name == string }
+        val temperatureMeasurement = TemperatureMeasurement.values().find { it.displayValue == string }
         runCatching { temperatureMeasurement!! }.onSuccess {
             updateUserPreferences(state.userPreferences.copy(temperatureMeasurement = it))
         }.onFailure {
             Toast.makeText(
                 app, "Error updating temperature unit measurement", Toast.LENGTH_SHORT
+            ).show()
+            // log error
+            Log.e("HiveViewModel", "Error updating temperature unit measurement ${it.stackTraceToString()}")
+        }
+    }
+
+    /**
+     * Sets the user's preferred time format based on the [TimeFormat.displayValue]
+     * (e.g. "12-hour", "24-hour")
+     * @param [TimeFormat.displayValue] The display value of the time format.
+     * @see [TimeFormat]
+     */
+    fun setTimeFormat(string: String) {
+        val timeFormat = TimeFormat.values().find { it.displayValue == string }
+        runCatching { timeFormat!! }.onSuccess {
+            updateUserPreferences(state.userPreferences.copy(timeFormat = it))
+        }.onFailure {
+            Toast.makeText(
+                app, "Error updating time format", Toast.LENGTH_SHORT
             ).show()
         }
     }
