@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import java.time.LocalDateTime
 import javax.inject.Inject
 
@@ -25,27 +26,25 @@ class CalendarViewModel @Inject constructor(
     init {
         // update values with current time
         val dateTime: LocalDateTime = LocalDateTime.now()
-        _selectedHour.value = dateTime.hour
-        _selectedMinute.value = dateTime.minute
+        _selectedHour.update { dateTime.hour }
+        _selectedMinute.update { dateTime.minute }
     }
 
     /**
-     * Sets the selected hour. Post meridian is true if the hour is after noon (12:00 PM).
+     * Sets the selected hour.
      * @param hour The hour to set.
-     * @param postMeridian True if the hour is after noon (12:00 PM).
-     * Used to convert 12 hour time to 24 hour time.
      */
-    fun setSelectedHour(hour: Int, postMeridian: Boolean) {
+    fun setSelectedHour(hour: Int) {
         // log the selected hour
         Log.d("CalendarViewModel", "Selected hour: $hour")
-        _selectedHour.value = hour
+        _selectedHour.update { hour }
     }
 
     fun setSelectedMinute(minute: Int) {
-        _selectedMinute.value = minute
+        _selectedMinute.update { minute }
     }
 
     fun setIsPressed(isPressed: Boolean) {
-        _isPressed.value = isPressed
+        _isPressed.update { isPressed }
     }
 }

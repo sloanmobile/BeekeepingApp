@@ -783,7 +783,7 @@ fun HourPicker(
     hiveViewModel: HiveViewModel
 ) {
     val timeFormat = hiveViewModel.state.userPreferences.timeFormat
-    val hours = when(timeFormat) {
+    val hours = when (timeFormat) {
         TimeFormat.TWENTY_FOUR_HOUR -> (0..23).toList()
         TimeFormat.TWELVE_HOUR -> (1..12).toList()
     }
@@ -801,25 +801,82 @@ fun HourPicker(
 
     val hourListState = rememberLazyListState(Int.MAX_VALUE / 2 + selectedHour, 0)
 
+    val minuteListState = rememberLazyListState(Int.MAX_VALUE / 2 + selectedMinute, 0)
     Text("Hour $selectedHour")
 
-    LaunchedEffect(key1 = hourListState.isScrollInProgress) {
+    LaunchedEffect(
+        key1 = hourListState.isScrollInProgress
+    ) {
         // return since we only want to run this effect when the scroll is not in progress
         if (hourListState.isScrollInProgress) return@LaunchedEffect
         // We add 2 as the offset to get the middle item in the list of 5
         val offset = 1
         // log
         val hour = ((hourListState.firstVisibleItemIndex + offset) % hours.size)
-        calendarViewModel.setSelectedHour(hour, )
+        when (timeFormat) {
+            TimeFormat.TWENTY_FOUR_HOUR -> {
+                calendarViewModel.setSelectedHour(hour)
+            }
+            TimeFormat.TWELVE_HOUR -> {
+                calendarViewModel.setSelectedHour(hour + 1)
+            }
+        }
+        onHourSelected(
+            dateTimeNow.withHour(selectedHour)
+                .withSecond(0)
+                .withNano(0)
+        )
+    }
+
+    LaunchedEffect(key1 = minuteListState.isScrollInProgress) {
+        // return since we only want to run this effect when the scroll is not in progress
+        if (minuteListState.isScrollInProgress) return@LaunchedEffect
+        // We add 2 as the offset to get the middle item in the list of 5
+        val offset = 1
+        // log
+        val minute = ((minuteListState.firstVisibleItemIndex + offset) % minutes.size)
+        calendarViewModel.setSelectedMinute(minute)
+        onHourSelected(
+            dateTimeNow
+                .withMinute(selectedMinute)
+                .withSecond(0)
+                .withNano(0)
+        )
     }
 
     InfinityScrollColumn(
         width = width,
         height = height,
         lazyListState = hourListState,
-        items = ,
+        items = hours.map { it.toString() },
         selectedItem = selectedHour.toString()
     )
+    InfinityScrollColumn(
+        width = width,
+        height = height,
+        lazyListState = minuteListState,
+        items = minutes.map { it.toString() },
+        selectedItem = selectedMinute.toString()
+    )
+    if (timeFormat == TimeFormat.TWELVE_HOUR) {
+        Column(
+            modifier = Modifier
+                .width(width)
+                .height(height),
+            verticalArrangement = Arrangement.SpaceEvenly
+        ) {
+            Text(
+                text = "AM",
+                fontSize = 20.sp,
+                color = if (!isPostMeridian) customTheme.onPrimaryColor else customTheme.onSurfaceColor
+            )
+            Text(
+                text = "PM",
+                fontSize = 20.sp,
+                color = if (isPostMeridian) customTheme.onPrimaryColor else customTheme.onSurfaceColor
+            )
+        }
+    }
 }
 
 @OptIn(ExperimentalSnapperApi::class)
