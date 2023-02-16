@@ -50,6 +50,7 @@ import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.reedsloan.beekeepingapp.data.TimeFormat
 import com.reedsloan.beekeepingapp.data.local.CheckboxSelectionValues
 import com.reedsloan.beekeepingapp.presentation.home_screen.MenuState
 import com.reedsloan.beekeepingapp.presentation.screens.Screen
@@ -781,7 +782,15 @@ fun HourPicker(
     calendarViewModel: CalendarViewModel = hiltViewModel(),
     hiveViewModel: HiveViewModel
 ) {
-    val hours = (0..23).toList()
+    val timeFormat = hiveViewModel.state.userPreferences.timeFormat
+    val hours = when(timeFormat) {
+        TimeFormat.TWENTY_FOUR_HOUR -> (0..23).toList()
+        TimeFormat.TWELVE_HOUR -> (1..12).toList()
+    }
+
+    // if false, then AM, if true, then PM
+    val isPostMeridian = false
+
     val minutes = (0..59).toList()
     val height = 240.dp
     val width = 64.dp
@@ -794,13 +803,6 @@ fun HourPicker(
 
     Text("Hour $selectedHour")
 
-//    val lifecycleOwner = LocalLifecycleOwner.current
-//
-//    LaunchedEffect(lifecycleOwner) {
-//        // scrolling half the height of the list to get the middle item in the list
-//        hourListState.scrollBy(0.dp.value)
-//    }
-
     LaunchedEffect(key1 = hourListState.isScrollInProgress) {
         // return since we only want to run this effect when the scroll is not in progress
         if (hourListState.isScrollInProgress) return@LaunchedEffect
@@ -808,14 +810,14 @@ fun HourPicker(
         val offset = 1
         // log
         val hour = ((hourListState.firstVisibleItemIndex + offset) % hours.size)
-        calendarViewModel.setSelectedHour(hour)
+        calendarViewModel.setSelectedHour(hour, )
     }
 
     InfinityScrollColumn(
         width = width,
         height = height,
         lazyListState = hourListState,
-        items = hours.map { hiveViewModel.getHourString(dateTimeNow.withHour(it)) },
+        items = ,
         selectedItem = selectedHour.toString()
     )
 }

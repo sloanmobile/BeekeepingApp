@@ -45,32 +45,3 @@ fun HiveInfoScreen(navController: NavController, hiveViewModel: HiveViewModel) {
         }
     }
 }
-
-@Composable
-fun Temp(navController: NavController, hiveViewModel: HiveViewModel) {
-    val maxWidth = with(LocalDensity.current) {
-        LocalContext.current.resources.displayMetrics.widthPixels.toDp() - 16.dp * 2
-    }
-
-
-    CustomButton(text = "Back", onClick = {
-        // navigate to the previous screen
-        navController.popBackStack()
-    })
-
-    SelectionCheckboxMenu(
-        title = "Treatment",
-        options = Treatment.values().map { it.displayValue },
-        modifier = Modifier,
-        dropdownWidth = maxWidth,
-        checkboxSelectionValues = CheckboxSelectionValues.Builder()
-            .setMaxSelectionCount(6)
-            .setShowSelectionInstructions(true)
-            .setDisabledValues(listOf(Treatment.CHECKMITE_PLUS.displayValue))
-            .setMinSelectionCount(2)
-            .setAllowCustomValues(true)
-            .build(),
-        hiveViewModel = hiveViewModel,
-        onSubmit = { /*TODO*/ },
-    )
-}

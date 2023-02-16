@@ -151,7 +151,7 @@ class HiveViewModel @Inject constructor(
                 date.format(DateTimeFormatter.ofPattern("HH"))
             }
             TimeFormat.TWELVE_HOUR -> {
-                date.format(DateTimeFormatter.ofPattern("hh"))
+                date.format(DateTimeFormatter.ofPattern("h"))
             }
         }
     }

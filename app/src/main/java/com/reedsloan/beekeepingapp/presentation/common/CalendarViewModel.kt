@@ -2,12 +2,10 @@ package com.reedsloan.beekeepingapp.presentation.common
 
 import android.app.Application
 import android.util.Log
-import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import java.time.LocalDate
 import java.time.LocalDateTime
 import javax.inject.Inject
 
@@ -31,7 +29,13 @@ class CalendarViewModel @Inject constructor(
         _selectedMinute.value = dateTime.minute
     }
 
-    fun setSelectedHour(hour: Int) {
+    /**
+     * Sets the selected hour. Post meridian is true if the hour is after noon (12:00 PM).
+     * @param hour The hour to set.
+     * @param postMeridian True if the hour is after noon (12:00 PM).
+     * Used to convert 12 hour time to 24 hour time.
+     */
+    fun setSelectedHour(hour: Int, postMeridian: Boolean) {
         // log the selected hour
         Log.d("CalendarViewModel", "Selected hour: $hour")
         _selectedHour.value = hour
