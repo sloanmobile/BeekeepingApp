@@ -246,8 +246,36 @@ class HiveViewModel @Inject constructor(
         }
     }
 
-    fun onTapOutside() {
-        closeOpenMenus()
+    fun backHandler(navController: NavController) {
+        if(state.hiveDeleteMode) {
+            toggleHiveDeleteMode()
+            return
+        }
+
+        val destination = navController.currentBackStackEntry?.destination?.route.let {
+           when(it) {
+               Screen.HomeScreen.route -> {
+                   Screen.HomeScreen
+               }
+                Screen.HiveScreen.route -> {
+                     Screen.HiveScreen
+                }
+                Screen.SplashScreen.route -> {
+                    Screen.SplashScreen
+                }
+                Screen.HiveDetailsScreen.route -> {
+                    Screen.HiveScreen
+                }
+                Screen.SettingsScreen.route -> {
+                    Screen.SettingsScreen
+                }
+                else -> {
+                    Screen.HomeScreen
+                }
+           }
+        }
+
+        navigate(navController, destination)
     }
 
     fun onTapAddHiveButton() {
@@ -257,10 +285,6 @@ class HiveViewModel @Inject constructor(
         createHive()
     }
 
-    fun onArrivalAtAddHiveScreen() {
-        closeOpenMenus()
-    }
-
     fun onTapHiveListItem(selectedHiveId: String, navController: NavController) {
         Log.d("HiveListItem", "Thread: ${Thread.currentThread().name}")
         if (state.hiveDeleteMode) {
@@ -268,7 +292,7 @@ class HiveViewModel @Inject constructor(
             return
         }
         setSelectedHive(selectedHiveId)
-        navController.navigate(Screen.HiveInfoScreen.route)
+        navigate(navController, Screen.HiveDetailsScreen)
     }
 
 
@@ -283,8 +307,11 @@ class HiveViewModel @Inject constructor(
         toggleNavigationBarMenuState()
     }
 
-    fun onTapNavigationButton() {
+    fun navigate(navController: NavController, destination: Screen) {
+        Log.d(this::class.simpleName, destination.name)
+        state = state.copy(currentScreenName = destination.name)
         closeOpenMenus()
+        navController.navigate(destination.route)
     }
 
     fun onTapDeleteHiveButton() {
@@ -581,6 +608,12 @@ class HiveViewModel @Inject constructor(
         decreaseDateSelectionScope()
     }
 
+    fun onScreenChange(currentScreenName: String) {
 
+    }
+
+    fun onTapOutside() {
+        closeOpenMenus()
+    }
 
 }

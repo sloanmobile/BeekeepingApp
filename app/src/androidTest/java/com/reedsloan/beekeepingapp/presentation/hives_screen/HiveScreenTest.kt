@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.presentation.add_page
+package com.reedsloan.beekeepingapp.presentation.hives_screen
 
 import androidx.activity.compose.setContent
 import androidx.compose.ui.test.*
@@ -22,7 +22,7 @@ import org.junit.Test
 
 @HiltAndroidTest
 @UninstallModules(AppModule::class)
-class AddScreenTest {
+class HiveScreenTest {
     @get:Rule(order = 0)
     val rule = HiltAndroidRule(this)
 
@@ -37,10 +37,10 @@ class AddScreenTest {
             val navController = rememberNavController()
             NavHost(
                 navController = navController,
-                startDestination = Screen.AddScreen.route
+                startDestination = Screen.HiveScreen.route
             ) {
                 composable(
-                    route = Screen.AddScreen.route
+                    route = Screen.HiveScreen.route
                 ) {
                     AddScreen(navController, hiveViewModel)
                 }

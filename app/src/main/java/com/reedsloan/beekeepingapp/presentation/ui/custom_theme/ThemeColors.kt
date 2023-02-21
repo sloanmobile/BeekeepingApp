@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.ui.custom_theme
+package com.reedsloan.beekeepingapp.presentation.ui.custom_theme
 
 import androidx.compose.ui.graphics.Color
 
@@ -14,5 +14,9 @@ data class ThemeColors(
     var onSurfaceColor: Color,
     var onSurfaceText: Color,
     var cancelColor: Color,
-    var onCancelColor: Color
+    var onCancelColor: Color,
+    val secondaryColor: Color,
+    val onSecondaryColor: Color,
+    val onSecondaryText: Color,
+    val primaryColorLight: Color
 )

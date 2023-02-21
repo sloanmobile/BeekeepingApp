@@ -5,6 +5,7 @@ import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.DateSelection
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
 import com.reedsloan.beekeepingapp.presentation.common.DateSelectionMode
+import com.reedsloan.beekeepingapp.presentation.screens.Screen
 import java.time.LocalDateTime
 
 data class HiveScreenState(
@@ -25,5 +26,6 @@ data class HiveScreenState(
     val hiveDeleteMode: Boolean = false,
     val selectionList: List<String> = emptyList(),
     val showAddHiveButton: Boolean = true,
-    val dateSelection: DateSelection = DateSelection()
+    val dateSelection: DateSelection = DateSelection(),
+    val currentScreenName: String = Screen.HomeScreen.name,
 )

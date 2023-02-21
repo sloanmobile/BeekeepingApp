@@ -35,8 +35,6 @@ class CalendarViewModel @Inject constructor(
      * @param hour The hour to set.
      */
     fun setSelectedHour(hour: Int) {
-        // log the selected hour
-        Log.d("CalendarViewModel", "Selected hour: $hour")
         _selectedHour.update { hour }
     }
 

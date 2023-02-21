@@ -1,9 +1,8 @@
-package com.reedsloan.beekeepingapp.presentation.add_page
+package com.reedsloan.beekeepingapp.presentation.hives_screen
 
 import android.Manifest
 import android.graphics.Bitmap
 import android.os.Build
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
@@ -36,23 +35,13 @@ import com.reedsloan.beekeepingapp.data.local.TemperatureMeasurement
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
 import com.reedsloan.beekeepingapp.presentation.common.*
 import com.reedsloan.beekeepingapp.presentation.home_screen.MenuState
-import com.reedsloan.beekeepingapp.ui.custom_theme.customTheme
+import com.reedsloan.beekeepingapp.presentation.ui.custom_theme.customTheme
 import com.reedsloan.isPermanentlyDenied
 import java.util.*
 
 @Composable
 fun AddScreen(navController: NavController, hiveViewModel: HiveViewModel) {
     val state = hiveViewModel.state
-    val context = LocalContext.current
-    // side effect when arriving at this screen to reset the open state of the various menus
-    LaunchedEffect(navController.currentBackStackEntry) {
-        hiveViewModel.onArrivalAtAddHiveScreen()
-    }
-
-    // prevent the user from leaving the screen if they are in delete mode
-    BackHandler(state.hiveDeleteMode) {
-        hiveViewModel.onTapOutside()
-    }
 
 
     Box {
@@ -66,13 +55,7 @@ fun AddScreen(navController: NavController, hiveViewModel: HiveViewModel) {
             Column(modifier = Modifier
                 .fillMaxSize()
                 // onTap event to close various menus if the user taps outside of them
-                .pointerInput(Unit) {
-                    detectTapGestures(onTap = {
-                        hiveViewModel.onTapOutside()
-                    })
-                }) {
-                NavigationBar(navController, hiveViewModel)
-
+                ) {
                 Column(
                     Modifier.fillMaxSize()
                 ) {
@@ -145,10 +128,6 @@ fun PermissionsTest(navController: NavController, hiveViewModel: HiveViewModel) 
                 Manifest.permission.CAMERA,
             )
         )
-    }
-
-    CustomButton(onClick = { navController.navigateUp() }) {
-        Text("Go back")
     }
 
     permissionsState.permissions.forEach { perm ->

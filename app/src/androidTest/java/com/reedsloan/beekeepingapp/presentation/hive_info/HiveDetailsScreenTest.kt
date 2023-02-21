@@ -9,7 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.reedsloan.beekeepingapp.MainActivity
 import com.reedsloan.beekeepingapp.di.AppModule
-import com.reedsloan.beekeepingapp.presentation.add_page.AddScreen
+import com.reedsloan.beekeepingapp.presentation.hives_screen.AddScreen
 import com.reedsloan.beekeepingapp.presentation.common.HiveViewModel
 import com.reedsloan.beekeepingapp.presentation.home_screen.HomeScreen
 import com.reedsloan.beekeepingapp.presentation.screens.Screen
@@ -24,7 +24,7 @@ import org.junit.Test
 
 @HiltAndroidTest
 @UninstallModules(AppModule::class)
-class HiveInfoScreenTest {
+class HiveDetailsScreenTest {
     @get:Rule(order = 0)
     val rule = HiltAndroidRule(this)
 
@@ -39,10 +39,10 @@ class HiveInfoScreenTest {
             val navController = rememberNavController()
             NavHost(
                 navController = navController,
-                startDestination = Screen.HiveInfoScreen.route
+                startDestination = Screen.HiveDetailsScreen.route
             ) {
                 composable(
-                    route = Screen.AddScreen.route
+                    route = Screen.HiveScreen.route
                 ) {
                     AddScreen(navController, hiveViewModel)
                 }
@@ -52,9 +52,9 @@ class HiveInfoScreenTest {
                     HomeScreen(navController, hiveViewModel)
                 }
                 composable(
-                    route = Screen.HiveInfoScreen.route
+                    route = Screen.HiveDetailsScreen.route
                 ) {
-                    HiveInfoScreen(navController, hiveViewModel)
+                    HiveDetailsScreen(navController, hiveViewModel)
                 }
             }
         }

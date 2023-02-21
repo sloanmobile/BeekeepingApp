@@ -18,7 +18,7 @@ import com.reedsloan.beekeepingapp.presentation.common.Container
 import com.reedsloan.beekeepingapp.presentation.common.HiveViewModel
 import com.reedsloan.beekeepingapp.presentation.common.NavigationBar
 import com.reedsloan.beekeepingapp.presentation.common.SelectionDropdownMenu
-import com.reedsloan.beekeepingapp.ui.custom_theme.customTheme
+import com.reedsloan.beekeepingapp.presentation.ui.custom_theme.customTheme
 
 @Composable
 fun SettingsScreen(
@@ -31,7 +31,6 @@ fun SettingsScreen(
     }
 
     Column {
-        NavigationBar(navController = navController, hiveViewModel)
         Text("This is the settings screen")
 
         Container {

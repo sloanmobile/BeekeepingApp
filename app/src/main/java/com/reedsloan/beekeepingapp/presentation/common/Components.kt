@@ -32,14 +32,17 @@ import androidx.compose.ui.composed
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
@@ -50,11 +53,13 @@ import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.reedsloan.beekeepingapp.R
 import com.reedsloan.beekeepingapp.data.TimeFormat
 import com.reedsloan.beekeepingapp.data.local.CheckboxSelectionValues
 import com.reedsloan.beekeepingapp.presentation.home_screen.MenuState
 import com.reedsloan.beekeepingapp.presentation.screens.Screen
-import com.reedsloan.beekeepingapp.ui.custom_theme.customTheme
+import com.reedsloan.beekeepingapp.presentation.ui.custom_theme.customTheme
+import com.reedsloan.beekeepingapp.presentation.ui.theme.Typography
 import dev.chrisbanes.snapper.ExperimentalSnapperApi
 import dev.chrisbanes.snapper.rememberSnapperFlingBehavior
 import kotlinx.coroutines.launch
@@ -66,70 +71,111 @@ import java.util.*
 @Composable
 fun NavigationBar(navController: NavController, hiveViewModel: HiveViewModel) {
     val state = hiveViewModel.state
+    val menuHeight = remember { Animatable(64.dp.value) }
+    var screenName = state.currentScreenName
 
-    ConstraintLayout(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(64.dp)
-            .background(customTheme.primaryColor)
-    ) {
-        val (menuButton, title, loading) = createRefs()
-        // hamburger menu button
-        Column(modifier = Modifier
-            .size(48.dp)
-            .background(customTheme.onPrimaryColor, RoundedCornerShape(8.dp))
-            // used to get the ripple effect fit to the shape
-            .clip(RoundedCornerShape(8.dp))
-            .clickable {
-                hiveViewModel.onTapNavigationExpandButton()
-            }
-            .constrainAs(menuButton) {
-                start.linkTo(parent.start)
-                end.linkTo(title.start)
-                top.linkTo(parent.top)
-                bottom.linkTo(parent.bottom)
-            },
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = when (state.navigationBarMenuState) {
-                    MenuState.CLOSED -> Icons.Default.Menu
-                    MenuState.OPEN -> Icons.Default.ExpandLess
-                }, contentDescription = "Menu", tint = customTheme.onPrimaryText
+    val menuState = hiveViewModel.state.navigationBarMenuState
+
+    // animate the menuHeight when the menuState changes
+    LaunchedEffect(key1 = menuState) {
+        if (menuState == MenuState.OPEN) {
+            // expand the menuHeight to 192.dp
+            menuHeight.animateTo(
+                targetValue = 224.dp.value,
+                animationSpec = tween(durationMillis = 300)
             )
-        }
-
-        // title
-        Text(text = "Beekeeping App",
-            fontWeight = Bold,
-            color = customTheme.onPrimaryColor,
-            fontSize = 24.sp,
-            modifier = Modifier
-                .padding(8.dp)
-                .constrainAs(title) {
-                    start.linkTo(parent.start)
-                    end.linkTo(parent.end)
-                    top.linkTo(parent.top)
-                    bottom.linkTo(parent.bottom)
-                })
-        Column(
-            Modifier
-                .padding(8.dp)
-                .alpha(if (state.isLoading) 1f else 1f)
-                .constrainAs(loading) {
-                    start.linkTo(title.end)
-                    end.linkTo(parent.end)
-                    top.linkTo(parent.top)
-                    bottom.linkTo(parent.bottom)
-                },
-        ) {
-            LoadingIndicator(hiveViewModel.state.isLoading)
+        } else if (menuState == MenuState.CLOSED) {
+            // collapse the menuHeight to 64.dp
+            menuHeight.animateTo(
+                targetValue = 64.dp.value,
+                animationSpec = tween(durationMillis = 300)
+            )
         }
     }
 
-    if (state.navigationBarMenuState == MenuState.OPEN) {
-        Menu(navController, hiveViewModel)
+    Container {
+        Column(
+            modifier = Modifier
+                .padding(top = 16.dp, bottom = 16.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .fillMaxWidth()
+                .height(menuHeight.value.dp)
+                .background(
+                    // gradient from secondary color to onPrimaryColor (top to bottom)
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            customTheme.secondaryColor,
+                            customTheme.onPrimaryColor
+                        )
+                    )
+                )
+                .clickable {
+                    hiveViewModel.onTapNavigationExpandButton()
+                },
+        ) {
+            ConstraintLayout(
+                modifier = Modifier
+                    .height(64.dp)
+                    .fillMaxWidth()
+            ) {
+                val (menuButton, title, loading) = createRefs()
+                Icon(
+                    painter = painterResource(id = R.drawable.hamburger),
+                    contentDescription = "Menu", tint = customTheme.primaryColor,
+                    modifier =
+                    Modifier
+                        .constrainAs(menuButton) {
+                            start.linkTo(parent.start)
+                            top.linkTo(parent.top)
+                            bottom.linkTo(parent.bottom)
+                        }
+                        .size(42.dp)
+                        .padding(start = 16.dp),
+                )
+                // screen title
+                Text(
+                    text = screenName,
+                    style = Typography.h1,
+                    color = customTheme.onSecondaryText,
+                    modifier = Modifier
+                        .padding(start = 32.dp, end = 16.dp)
+                        .constrainAs(title) {
+                            start.linkTo(menuButton.end)
+                            top.linkTo(parent.top)
+                            bottom.linkTo(parent.bottom)
+                        }
+                )
+
+//        Column(
+//            Modifier
+//                .padding(8.dp)
+//                .alpha(if (state.isLoading) 1f else 1f)
+//                .constrainAs(loading) {
+//                    start.linkTo(title.end)
+//                    end.linkTo(parent.end)
+//                    top.linkTo(parent.top)
+//                    bottom.linkTo(parent.bottom)
+//                },
+//        ) {
+//            LoadingIndicator(hiveViewModel.state.isLoading)
+//        }
+                // beehive icon from the drawable folder
+                Icon(
+                    painter = painterResource(id = R.drawable.beehive),
+                    contentDescription = "Beehive",
+                    tint = customTheme.onSecondaryColor,
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .size(42.dp)
+                        .constrainAs(loading) {
+                            end.linkTo(parent.end)
+                            top.linkTo(parent.top)
+                            bottom.linkTo(parent.bottom)
+                        }
+                )
+            }
+            Menu(navController, hiveViewModel)
+        }
     }
 }
 
@@ -245,128 +291,142 @@ fun TextInput(
 }
 
 @Composable
-fun Menu(navController: NavController, hiveViewModel: HiveViewModel) {
-    val state = hiveViewModel.state
+fun NavbarEntry(
+    title: String,
+    icon: ImageVector? = null,
+    painterResource: Painter? = null,
+    navController: NavController,
+    hiveViewModel: HiveViewModel,
+    destination: Screen,
+    isSelected: Boolean,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(42.dp)
+            .background(
+                if (isSelected) customTheme.primaryColor
+                else customTheme.primaryColorLight, RoundedCornerShape(16.dp)
+            )
+            .clip(RoundedCornerShape(16.dp))
+            .clickable {
+                if (hiveViewModel.state.navigationBarMenuState == MenuState.CLOSED) {
+                    hiveViewModel.onTapNavigationExpandButton()
+                    return@clickable
+                }
+                hiveViewModel.navigate(navController, destination)
+            }
+    ) {
+        if(painterResource != null) {
+            Icon(
+                painter = painterResource,
+                contentDescription = null,
+                tint = customTheme.onPrimaryColor,
+                modifier = Modifier
+                    .padding(8.dp)
+                    .size(32.dp)
+            )
+        } else if(icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = customTheme.onPrimaryColor,
+                modifier = Modifier
+                    .padding(8.dp)
+                    .size(32.dp)
+            )
+        }
+        Text(
+            text = title,
+            style = Typography.h3,
+            color = customTheme.onPrimaryColor,
+            modifier = Modifier.padding(start = 8.dp)
+        )
+    }
+}
 
+@Composable
+fun Menu(navController: NavController, hiveViewModel: HiveViewModel) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(customTheme.primaryColor)
-            .padding(16.dp),
+            .padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // home screen
-        Row(verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(2.dp, customTheme.onPrimaryColor, RoundedCornerShape(8.dp))
-                .height(48.dp)
-                .padding(horizontal = 16.dp)
-                .clickable {
-                    hiveViewModel.onTapNavigationButton()
-                    navController.navigate(Screen.HomeScreen.route)
-                }) {
-            Icon(
-                imageVector = Icons.Default.Home,
-                contentDescription = null,
-                tint = customTheme.onPrimaryColor
-            )
-            Text(
-                text = "Home",
-                color = customTheme.onPrimaryColor,
-                fontSize = 20.sp,
-                modifier = Modifier.padding(start = 4.dp)
-            )
-        }
-        // add screen
-        Row(verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(2.dp, customTheme.onPrimaryColor, RoundedCornerShape(8.dp))
-                .height(48.dp)
-                .padding(horizontal = 16.dp)
-                .clickable {
-                    hiveViewModel.onTapNavigationButton()
-                    navController.navigate(Screen.AddScreen.route)
-                }) {
-            Icon(
-                imageVector = Icons.Default.Hive,
-                contentDescription = null,
-                tint = customTheme.onPrimaryColor
-            )
-            Text(
-                text = "Hives",
-                color = customTheme.onPrimaryColor,
-                fontSize = 20.sp,
-                modifier = Modifier.padding(start = 4.dp)
-            )
-        }
-        // settings screen
-        Row(verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(2.dp, customTheme.onPrimaryColor, RoundedCornerShape(8.dp))
-                .height(48.dp)
-                .padding(horizontal = 16.dp)
-                .clickable {
-                    hiveViewModel.onTapNavigationButton()
-                    navController.navigate(Screen.SettingsScreen.route)
-                }) {
-            Icon(
-                imageVector = Icons.Default.Settings,
-                contentDescription = null,
-                tint = customTheme.onPrimaryColor
-            )
-            Text(
-                text = "Settings",
-                color = customTheme.onPrimaryColor,
-                fontSize = 20.sp,
-                modifier = Modifier.padding(start = 4.dp)
-            )
-        }
-        // spacer with line
-        Spacer(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(customTheme.onPrimaryColor)
+        // home
+        NavbarEntry(
+            title = "Home",
+            icon = Icons.Filled.Home,
+            navController = navController,
+            hiveViewModel = hiveViewModel,
+            destination = Screen.HomeScreen,
+            isSelected = navController.currentDestination?.route == Screen.HomeScreen.route
         )
-        ConstraintLayout(Modifier.fillMaxWidth()) {
-            val fontSize by remember {
-                mutableStateOf(14.sp)
-            }
-            val (versionName, versionDot, versionNumber) = createRefs()
-            // version name
-            Text(text = "Version ${state.appVersionNumber}",
-                color = customTheme.onPrimaryColor,
-                fontSize = fontSize,
-                modifier = Modifier
-                    .constrainAs(versionName) {
-                        top.linkTo(parent.top)
-                        end.linkTo(versionDot.start)
-                    }
-                    .padding(horizontal = 4.dp))
-            // version dot (centered)
-            Text(text = "•",
-                color = customTheme.onPrimaryColor,
-                fontSize = fontSize,
-                modifier = Modifier.constrainAs(versionDot) {
-                    top.linkTo(parent.top)
-                    start.linkTo(parent.start)
-                    end.linkTo(parent.end)
-                })
-            // version number
-            Text(text = "Build ${state.appVersionCode}",
-                color = customTheme.onPrimaryColor,
-                fontSize = fontSize,
-                modifier = Modifier
-                    .constrainAs(versionNumber) {
-                        top.linkTo(parent.top)
-                        start.linkTo(versionDot.end)
-                    }
-                    .padding(horizontal = 4.dp))
-        }
+
+        // hives
+        NavbarEntry(
+            title = "Hives",
+            painterResource = painterResource(id = R.drawable.hive),
+            navController = navController,
+            hiveViewModel = hiveViewModel,
+            destination = Screen.HiveScreen,
+            isSelected = navController.currentDestination?.route == Screen.HiveScreen.route
+        )
+
+        // settings
+        NavbarEntry(
+            title = "Settings",
+            icon = Icons.Filled.Settings,
+            navController = navController,
+            hiveViewModel = hiveViewModel,
+            destination = Screen.SettingsScreen,
+            isSelected = navController.currentDestination?.route == Screen.SettingsScreen.route
+        )
+
+        // spacer with line
+//        Spacer(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .height(1.dp)
+//                .background(customTheme.onPrimaryColor)
+//        )
+//        ConstraintLayout(Modifier.fillMaxWidth()) {
+//            val fontSize by remember {
+//                mutableStateOf(14.sp)
+//            }
+//            val (versionName, versionDot, versionNumber) = createRefs()
+//            // version name
+//            Text(text = "Version ${state.appVersionNumber}",
+//                color = customTheme.onPrimaryColor,
+//                fontSize = fontSize,
+//                modifier = Modifier
+//                    .constrainAs(versionName) {
+//                        top.linkTo(parent.top)
+//                        end.linkTo(versionDot.start)
+//                    }
+//                    .padding(horizontal = 4.dp))
+//            // version dot (centered)
+//            Text(text = "•",
+//                color = customTheme.onPrimaryColor,
+//                fontSize = fontSize,
+//                modifier = Modifier.constrainAs(versionDot) {
+//                    top.linkTo(parent.top)
+//                    start.linkTo(parent.start)
+//                    end.linkTo(parent.end)
+//                })
+//            // version number
+//            Text(text = "Build ${state.appVersionCode}",
+//                color = customTheme.onPrimaryColor,
+//                fontSize = fontSize,
+//                modifier = Modifier
+//                    .constrainAs(versionNumber) {
+//                        top.linkTo(parent.top)
+//                        start.linkTo(versionDot.end)
+//                    }
+//                    .padding(horizontal = 4.dp))
+//        }
 
     }
 }
@@ -407,7 +467,7 @@ fun Container(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 24.dp)
     ) {
         content()
     }
@@ -789,7 +849,7 @@ fun HourPicker(
     }
 
     // if false, then AM, if true, then PM
-    val isPostMeridian = false
+    var isPostMeridian = dateTimeNow.hour >= 12
 
     val minutes = (0..59).toList()
     val height = 240.dp
@@ -802,7 +862,11 @@ fun HourPicker(
     val hourListState = rememberLazyListState(Int.MAX_VALUE / 2 + selectedHour, 0)
 
     val minuteListState = rememberLazyListState(Int.MAX_VALUE / 2 + selectedMinute, 0)
-    Text("Hour $selectedHour")
+
+    // debug text to show the time
+    Text(
+        text = "${dateTimeNow.hour}:${dateTimeNow.minute}", modifier = Modifier.padding(16.dp)
+    )
 
     LaunchedEffect(
         key1 = hourListState.isScrollInProgress
@@ -810,7 +874,7 @@ fun HourPicker(
         // return since we only want to run this effect when the scroll is not in progress
         if (hourListState.isScrollInProgress) return@LaunchedEffect
         // We add 2 as the offset to get the middle item in the list of 5
-        val offset = 1
+        val offset = 2
         // log
         val hour = ((hourListState.firstVisibleItemIndex + offset) % hours.size)
         when (timeFormat) {
@@ -822,9 +886,7 @@ fun HourPicker(
             }
         }
         onHourSelected(
-            dateTimeNow.withHour(selectedHour)
-                .withSecond(0)
-                .withNano(0)
+            dateTimeNow.withHour(selectedHour).withSecond(0).withNano(0)
         )
     }
 
@@ -832,61 +894,89 @@ fun HourPicker(
         // return since we only want to run this effect when the scroll is not in progress
         if (minuteListState.isScrollInProgress) return@LaunchedEffect
         // We add 2 as the offset to get the middle item in the list of 5
-        val offset = 1
+        val offset = 2
         // log
         val minute = ((minuteListState.firstVisibleItemIndex + offset) % minutes.size)
         calendarViewModel.setSelectedMinute(minute)
         onHourSelected(
-            dateTimeNow
-                .withMinute(selectedMinute)
-                .withSecond(0)
-                .withNano(0)
+            dateTimeNow.withMinute(selectedMinute).withSecond(0).withNano(0)
         )
     }
 
-    InfinityScrollColumn(
-        width = width,
-        height = height,
-        lazyListState = hourListState,
-        items = hours.map { it.toString() },
-        selectedItem = selectedHour.toString()
+    val textStyle = TextStyle(
+        color = customTheme.onSurfaceColor,
+        fontSize = 36.sp,
     )
-    InfinityScrollColumn(
-        width = width,
-        height = height,
-        lazyListState = minuteListState,
-        items = minutes.map { it.toString() },
-        selectedItem = selectedMinute.toString()
-    )
-    if (timeFormat == TimeFormat.TWELVE_HOUR) {
+
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+        ScrollColumn(
+            width = width,
+            height = height,
+            lazyListState = hourListState,
+            items = hours.map { it.toString() },
+            selectedItem = selectedHour.toString(),
+            textStyle = textStyle,
+            horizontalAlignment = Alignment.End,
+            itemCount = Int.MAX_VALUE
+        )
         Column(
             modifier = Modifier
-                .width(width)
-                .height(height),
-            verticalArrangement = Arrangement.SpaceEvenly
+                .height(height)
+                .padding(horizontal = 8.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "AM",
-                fontSize = 20.sp,
-                color = if (!isPostMeridian) customTheme.onPrimaryColor else customTheme.onSurfaceColor
+                text = ":",
+                style = textStyle,
             )
-            Text(
-                text = "PM",
-                fontSize = 20.sp,
-                color = if (isPostMeridian) customTheme.onPrimaryColor else customTheme.onSurfaceColor
-            )
+        }
+        ScrollColumn(
+            width = width,
+            height = height,
+            lazyListState = minuteListState,
+            items = minutes.map {
+                // pad with 0 if less than 10
+                if (it < 10) "0$it" else it.toString()
+            },
+            selectedItem = if (selectedMinute < 10) "0$selectedMinute"
+            else selectedMinute.toString(),
+            textStyle = textStyle,
+            horizontalAlignment = Alignment.Start,
+            itemCount = Int.MAX_VALUE
+        )
+
+        if (timeFormat == TimeFormat.TWELVE_HOUR) {
+            Column(
+                modifier = Modifier
+                    .height(height)
+                    .padding(horizontal = 8.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CustomButton(onClick = { isPostMeridian = !isPostMeridian }) {
+                    Text(
+                        text = if (isPostMeridian) "PM" else "AM",
+                        style = textStyle.copy(color = customTheme.onPrimaryColor),
+                    )
+                }
+            }
         }
     }
 }
 
 @OptIn(ExperimentalSnapperApi::class)
 @Composable
-fun InfinityScrollColumn(
+fun ScrollColumn(
     width: Dp,
     height: Dp,
     lazyListState: LazyListState,
     items: List<String>,
-    selectedItem: String
+    itemCount: Int,
+    selectedItem: String,
+    textStyle: TextStyle = TextStyle.Default,
+    horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
+    verticalArrangement: Arrangement.Vertical = Arrangement.SpaceEvenly,
 ) {
     LazyColumn(
         modifier = Modifier
@@ -894,22 +984,16 @@ fun InfinityScrollColumn(
             .height(height),
         flingBehavior = rememberSnapperFlingBehavior(lazyListState = lazyListState),
         state = lazyListState,
-        verticalArrangement = Arrangement.SpaceEvenly
+        verticalArrangement = verticalArrangement,
+        horizontalAlignment = horizontalAlignment
     ) {
-        items(Int.MAX_VALUE) {
+        items(itemCount) {
             val item = items[it % items.size]
             val fontColor = when (item) {
                 selectedItem -> customTheme.onBackgroundText
                 else -> customTheme.onBackgroundText.copy(alpha = 0.5f)
             }
-            Box(
-                modifier = Modifier
-                    .height(80.dp)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(item, fontSize = 36.sp, color = fontColor, fontWeight = FontWeight.Bold)
-            }
+            Text(item, style = textStyle.copy(color = fontColor))
         }
     }
 }

@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.ui.theme
+package com.reedsloan.beekeepingapp.presentation.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

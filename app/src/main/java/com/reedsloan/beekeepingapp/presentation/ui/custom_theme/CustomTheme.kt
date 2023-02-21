@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.ui.custom_theme
+package com.reedsloan.beekeepingapp.presentation.ui.custom_theme
 
 /**
  * This class is used to store the colors for the custom theme.
@@ -11,7 +11,7 @@ val defaultTheme
     get() = ThemeColors(
         primaryColor = Color(0xFFEBA937),
         onBackgroundText = Color(0xFF000000),
-        backgroundColor = Color(0xFFFEFFEA),
+        backgroundColor = Color(0xFFF1F1F1),
         onBackgroundColor = Color(0xFF000000),
         onPrimaryText = Color(0xFF1C1C1C),
         onPrimaryColor = Color(0xFFFFFFFF),
@@ -19,7 +19,11 @@ val defaultTheme
         onSurfaceColor = Color(0xFF000000),
         onSurfaceText = Color(0xFF1C1C1C),
         cancelColor = Color(0xFFFF4747),
-        onCancelColor = Color(0xFFFFFFFF)
+        onCancelColor = Color(0xFFFFFFFF),
+        secondaryColor = Color(0xFFFFF9E9),
+        onSecondaryColor = Color(0xFF000000),
+        onSecondaryText = Color(0xFF000000),
+        primaryColorLight = Color(0xFFFACC57)
     )
 
 val customTheme
