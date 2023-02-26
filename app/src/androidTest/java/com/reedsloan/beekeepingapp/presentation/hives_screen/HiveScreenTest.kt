@@ -63,7 +63,7 @@ class HiveScreenTest {
 
     @Test
     fun navigateToHomeScreen() {
-        pressMenuButton()
+        pressNavbarButton()
         pressHomeButton()
         // verify we are on the home screen
         composeRule.waitForIdle()
@@ -100,9 +100,9 @@ class HiveScreenTest {
         composeRule.onNodeWithTag("HiveListItem").assertDoesNotExist()
     }
 
-    private fun pressMenuButton() {
-        // click on the menu icon with content description "Menu"
-        composeRule.onNodeWithContentDescription("Menu").performClick()
+    private fun pressNavbarButton() {
+        // click on the menu icon with content description "navbar"
+        composeRule.onNodeWithTag("Navbar").performClick()
     }
 
     private fun pressHomeButton() {

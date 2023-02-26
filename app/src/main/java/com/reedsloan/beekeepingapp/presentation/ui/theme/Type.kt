@@ -15,6 +15,16 @@ val Typography = Typography(
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp
     ),
+    body2 = TextStyle(
+        fontFamily = FontFamily(Font(R.font.satoshi_regular)),
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp
+    ),
+    caption = TextStyle(
+        fontFamily = FontFamily(Font(R.font.satoshi_regular)),
+        fontWeight = FontWeight.Normal,
+        fontSize = 12.sp,
+    ),
     h1 = TextStyle(
         fontFamily = FontFamily(Font(R.font.satoshi_bold)),
         fontWeight = FontWeight.Normal,
@@ -29,6 +39,11 @@ val Typography = Typography(
         fontFamily = FontFamily(Font(R.font.satoshi_medium)),
         fontWeight = FontWeight.Normal,
         fontSize = 20.sp
+    ),
+    h4 = TextStyle(
+        fontFamily = FontFamily(Font(R.font.satoshi_medium)),
+        fontWeight = FontWeight.Normal,
+        fontSize = 18.sp
     ),
     /* Other default text styles to override
     button = TextStyle(

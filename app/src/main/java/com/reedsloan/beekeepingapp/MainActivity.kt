@@ -7,7 +7,6 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.Surface
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,7 +21,7 @@ import com.reedsloan.beekeepingapp.presentation.hives_screen.AddScreen
 import com.reedsloan.beekeepingapp.presentation.common.HiveViewModel
 import com.reedsloan.beekeepingapp.presentation.common.NavigationBar
 import com.reedsloan.beekeepingapp.presentation.common.WorkInProgressOverlayText
-import com.reedsloan.beekeepingapp.presentation.hive_info.HiveDetailsScreen
+import com.reedsloan.beekeepingapp.presentation.hive_info.HiveInfoScreen
 import com.reedsloan.beekeepingapp.presentation.home_screen.HomeScreen
 import com.reedsloan.beekeepingapp.presentation.screens.Screen
 import com.reedsloan.beekeepingapp.presentation.settings.SettingsScreen
@@ -83,7 +82,7 @@ class MainActivity : ComponentActivity() {
                         composable(
                             route = Screen.HiveDetailsScreen.route,
                         ) {
-                            HiveDetailsScreen(navController, hiveViewModel)
+                            HiveInfoScreen(navController, hiveViewModel)
                         }
                         // settings screen
                         composable(

@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -18,25 +19,35 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.rememberAsyncImagePainter
 import com.google.accompanist.permissions.*
+import com.reedsloan.beekeepingapp.R
 import com.reedsloan.beekeepingapp.data.local.TemperatureMeasurement
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
 import com.reedsloan.beekeepingapp.presentation.common.*
 import com.reedsloan.beekeepingapp.presentation.home_screen.MenuState
 import com.reedsloan.beekeepingapp.presentation.ui.custom_theme.customTheme
+import com.reedsloan.beekeepingapp.presentation.ui.theme.Typography
 import com.reedsloan.isPermanentlyDenied
+import kotlinx.coroutines.launch
 import java.util.*
 
 @Composable
@@ -52,10 +63,10 @@ fun AddScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                     HiveDetailsMenu(hiveViewModel = hiveViewModel)
                 }
             }
-            Column(modifier = Modifier
-                .fillMaxSize()
+            Column(
+                modifier = Modifier.fillMaxSize()
                 // onTap event to close various menus if the user taps outside of them
-                ) {
+            ) {
                 Column(
                     Modifier.fillMaxSize()
                 ) {
@@ -77,7 +88,7 @@ fun AddScreen(navController: NavController, hiveViewModel: HiveViewModel) {
             if (state.hiveInfoMenuState == MenuState.CLOSED && state.navigationBarMenuState == MenuState.CLOSED) {
                 if (state.hiveDeleteMode) {
                     CircleButton(
-                        onTap = { hiveViewModel.onTapDeleteHiveButton() },
+                        onTap = { hiveViewModel.onTapDeleteSelectedHiveButton() },
                         backgroundColor = customTheme.cancelColor
                     ) {
                         Icon(
@@ -88,9 +99,7 @@ fun AddScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                         )
                     }
                 } else {
-                    CircleButton(
-                        onTap = { hiveViewModel.onTapAddHiveButton() }
-                    ) {
+                    CircleButton(onTap = { hiveViewModel.onTapAddHiveButton() }) {
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = "Add Hive",
@@ -316,13 +325,11 @@ fun HiveListSection(
         modifier = Modifier
             .fillMaxWidth()
             .height(screenHeight)
-            .testTag("HiveListSection")
-        ,
-        contentPadding = PaddingValues(8.dp),
+            .testTag("HiveListSection"),
     ) {
         // without the key, the list will not update when the list changes
         // this is because the list is not aware of the changes
-        items(items = hiveList, key = { it.id }) {hive ->
+        items(items = hiveList, key = { it.id }) { hive ->
             HiveListItem(hive, hiveViewModel, navController)
         }
     }
@@ -333,54 +340,220 @@ fun HiveListSection(
 fun HiveListItem(hive: Hive, hiveViewModel: HiveViewModel, navController: NavController) {
     val state = hiveViewModel.state
     val haptic = LocalHapticFeedback.current
+    val menuInitialSize by remember { mutableStateOf(108.dp) }
+    val menuExpandedSize by remember { mutableStateOf(menuInitialSize + 116.dp) }
 
-    Row(Modifier.padding(vertical = 8.dp).testTag("HiveListItem")) {
-        Box(modifier = Modifier
+    val menuHeight = remember { Animatable(menuInitialSize.value) }
+    var menuExpanded by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    Column(
+        modifier = Modifier
+            .padding(vertical = 8.dp)
+            .testTag("HiveListItem")
             .fillMaxWidth()
-            .height(96.dp)
-            .background(customTheme.surfaceColor, RoundedCornerShape(8.dp))
-            .border(2.dp, customTheme.primaryColor, RoundedCornerShape(8.dp))
+            .height(menuHeight.value.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+                // gradient from secondary color to onPrimaryColor (top to bottom)
+                Brush.verticalGradient(
+                    colors = listOf(
+                        customTheme.secondaryColor, customTheme.onPrimaryColor
+                    )
+                )
+            )
             .pointerInput(Unit) {
                 detectTapGestures(onTap = {
-                    hiveViewModel.onTapHiveListItem(hive.id, navController)
-                }, onLongPress = {
-                    // play haptic feedback
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    hiveViewModel.onLongPressHiveListItem(hive.id)
-                })
-            }) {
-            if (state.hiveDeleteMode) {
-                CustomAnimatedCheckbox(
-                    checked = hiveViewModel.state.selectionList.contains(hive.id),
-                    onCheckedChange = {
-                        hiveViewModel.onTapHiveListItem(hive.id, navController)
-                    },
-                    modifier = Modifier.padding(8.dp)
+                    menuExpanded = if (menuExpanded) {
+                        scope.launch {
+                            menuHeight.animateTo(menuInitialSize.value)
+                        }
+                        false
+                    } else {
+                        scope.launch {
+                            menuHeight.animateTo(menuExpandedSize.value)
+                        }
+                        true
+                    }
+                },
+                    onLongPress = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        hiveViewModel.onLongPressHiveListItem(hive.id)
+                    }
                 )
+            },
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(menuInitialSize)
+                .padding(16.dp),
+        ) {
+            Row(
+                modifier = Modifier.height(menuInitialSize),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // image else default image
+                if (hive.hiveInfo.image != null) {
+                    Image(
+                        painter = rememberAsyncImagePainter(model = hive.hiveInfo.image),
+                        contentDescription = "Hive Image",
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(id = R.drawable.app),
+                        contentDescription = "Hive Image",
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                    )
+                }
             }
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.Center
+                Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+                    .padding(start = 8.dp),
+                horizontalAlignment = Alignment.Start,
             ) {
+                // hive name
                 Text(
                     text = hive.hiveInfo.name,
-                    color = customTheme.onSurfaceText,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
+                    style = Typography.h2,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
+                // hive description
                 Text(
-                    text = hive.id,
-                    color = customTheme.onSurfaceText,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Normal
+                    text = hive.hiveInfo.notes,
+                    style = Typography.body2,
+                    color = customTheme.hintColor,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
 
+                val date = hiveViewModel.dateMillisToDateString(hive.hiveInfo.dateModified)
+
+                // align row to bottom end
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            // ignore the parent's bottom padding
+                            translationY = 8.dp.toPx()
+                        }
+                        .padding(0.dp),
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    // hive date modified
+                    Text(
+                        text = "Last Updated: $date",
+                        style = Typography.caption,
+                        color = customTheme.hintColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+        if (menuExpanded) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                Column {
+                    Row {
+                        Column(
+                            modifier = Modifier.weight(0.65F).fillMaxSize(),
+                            verticalArrangement = Arrangement.Bottom,
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            // Log data button (clear button)
+                            CustomButton(
+                                onClick = {
+                                    hiveViewModel.onTapViewHiveLog(hive.id, navController)
+                                },
+                                buttonColors = ButtonDefaults.buttonColors(backgroundColor = Color.Transparent),
+                                buttonBorder = null,
+                            ) {
+                                // notebook icon
+                                Icon(
+                                    painter = painterResource(id = R.drawable.notebook_edit_outline),
+                                    contentDescription = "Log Data",
+                                    tint = customTheme.onSurfaceColor,
+                                    modifier = Modifier.padding(0.dp, 8.dp, 8.dp, 8.dp)
+                                )
+                                Text(
+                                    text = "Log Data",
+                                    color = customTheme.onSurfaceColor,
+                                    modifier = Modifier.padding(0.dp, 8.dp, 8.dp, 8.dp),
+                                    style = Typography.h4
+                                )
+                            }
+                            CustomButton(
+                                onClick = {
+                                    TODO("Implement Log History")
+                                },
+                                buttonColors = ButtonDefaults.buttonColors(backgroundColor = Color.Transparent),
+                                buttonBorder = null,
+                            ) {
+                                // history icon
+                                Icon(
+                                    painter = painterResource(id = R.drawable.history),
+                                    contentDescription = "View Log History",
+                                    tint = customTheme.onSurfaceColor,
+                                    modifier = Modifier.padding(0.dp, 8.dp, 8.dp, 8.dp)
+                                )
+                                Text(
+                                    text = "View Log History",
+                                    color = customTheme.onSurfaceColor,
+                                    modifier = Modifier.padding(0.dp, 8.dp, 8.dp, 8.dp),
+                                    style = Typography.h4
+                                )
+                            }
+                        }
+
+                        // delete button aligned to bottom right
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .weight(0.35F),
+                            verticalAlignment = Alignment.Bottom,
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            CustomButton(
+                                onClick = {
+                                    hiveViewModel.onTapDeleteHiveButton(hive.id)
+                                },
+                                buttonColors = ButtonDefaults.buttonColors(backgroundColor = Color.Transparent),
+                                buttonBorder = null,
+                            ) {
+                                // history icon
+                                Icon(
+                                    painter = painterResource(id = R.drawable.delete),
+                                    contentDescription = "Delete",
+                                    tint = customTheme.cancelColor,
+                                    modifier = Modifier.padding(0.dp, 8.dp, 0.dp, 8.dp)
+                                )
+                                Text(
+                                    text = "Delete",
+                                    color = customTheme.cancelColor,
+                                    modifier = Modifier.padding(0.dp, 8.dp, 0.dp, 8.dp),
+                                    style = Typography.h4
+                                )
+                            }}
+
+                    }
+                }
             }
         }
     }
 }
+
 
 @Composable
 fun HiveDetailsMenu(hiveViewModel: HiveViewModel) {

@@ -23,7 +23,8 @@ val defaultTheme
         secondaryColor = Color(0xFFFFF9E9),
         onSecondaryColor = Color(0xFF000000),
         onSecondaryText = Color(0xFF000000),
-        primaryColorLight = Color(0xFFFACC57)
+        primaryColorLight = Color(0xFFFACC57),
+        hintColor = Color(0xFF616161)
     )
 
 val customTheme

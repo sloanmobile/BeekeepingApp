@@ -40,6 +40,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -72,7 +73,7 @@ import java.util.*
 fun NavigationBar(navController: NavController, hiveViewModel: HiveViewModel) {
     val state = hiveViewModel.state
     val menuHeight = remember { Animatable(64.dp.value) }
-    var screenName = state.currentScreenName
+    val screenName = state.currentScreenName
 
     val menuState = hiveViewModel.state.navigationBarMenuState
 
@@ -81,14 +82,12 @@ fun NavigationBar(navController: NavController, hiveViewModel: HiveViewModel) {
         if (menuState == MenuState.OPEN) {
             // expand the menuHeight to 192.dp
             menuHeight.animateTo(
-                targetValue = 224.dp.value,
-                animationSpec = tween(durationMillis = 300)
+                targetValue = 224.dp.value, animationSpec = tween(durationMillis = 300)
             )
         } else if (menuState == MenuState.CLOSED) {
             // collapse the menuHeight to 64.dp
             menuHeight.animateTo(
-                targetValue = 64.dp.value,
-                animationSpec = tween(durationMillis = 300)
+                targetValue = 64.dp.value, animationSpec = tween(durationMillis = 300)
             )
         }
     }
@@ -96,6 +95,7 @@ fun NavigationBar(navController: NavController, hiveViewModel: HiveViewModel) {
     Container {
         Column(
             modifier = Modifier
+                .testTag("Navbar")
                 .padding(top = 16.dp, bottom = 16.dp)
                 .clip(RoundedCornerShape(16.dp))
                 .fillMaxWidth()
@@ -104,8 +104,7 @@ fun NavigationBar(navController: NavController, hiveViewModel: HiveViewModel) {
                     // gradient from secondary color to onPrimaryColor (top to bottom)
                     Brush.verticalGradient(
                         colors = listOf(
-                            customTheme.secondaryColor,
-                            customTheme.onPrimaryColor
+                            customTheme.secondaryColor, customTheme.onPrimaryColor
                         )
                     )
                 )
@@ -119,22 +118,36 @@ fun NavigationBar(navController: NavController, hiveViewModel: HiveViewModel) {
                     .fillMaxWidth()
             ) {
                 val (menuButton, title, loading) = createRefs()
-                Icon(
-                    painter = painterResource(id = R.drawable.hamburger),
-                    contentDescription = "Menu", tint = customTheme.primaryColor,
-                    modifier =
-                    Modifier
-                        .constrainAs(menuButton) {
-                            start.linkTo(parent.start)
-                            top.linkTo(parent.top)
-                            bottom.linkTo(parent.bottom)
-                        }
-                        .size(42.dp)
-                        .padding(start = 16.dp),
-                )
+                if(menuState == MenuState.CLOSED) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.hamburger),
+                        contentDescription = "Menu", tint = customTheme.primaryColor,
+                        modifier = Modifier
+                            .constrainAs(menuButton) {
+                                start.linkTo(parent.start)
+                                top.linkTo(parent.top)
+                                bottom.linkTo(parent.bottom)
+                            }
+                            .size(42.dp)
+                            .padding(start = 16.dp),
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.ExpandLess,
+                        contentDescription = "Menu", tint = customTheme.primaryColor,
+                        modifier = Modifier
+                            .constrainAs(menuButton) {
+                                start.linkTo(parent.start)
+                                top.linkTo(parent.top)
+                                bottom.linkTo(parent.bottom)
+                            }
+                            .size(42.dp)
+                            .padding(start = 16.dp),
+                    )
+                }
+
                 // screen title
-                Text(
-                    text = screenName,
+                Text(text = screenName,
                     style = Typography.h1,
                     color = customTheme.onSecondaryText,
                     modifier = Modifier
@@ -143,8 +156,7 @@ fun NavigationBar(navController: NavController, hiveViewModel: HiveViewModel) {
                             start.linkTo(menuButton.end)
                             top.linkTo(parent.top)
                             bottom.linkTo(parent.bottom)
-                        }
-                )
+                        })
 
 //        Column(
 //            Modifier
@@ -160,8 +172,7 @@ fun NavigationBar(navController: NavController, hiveViewModel: HiveViewModel) {
 //            LoadingIndicator(hiveViewModel.state.isLoading)
 //        }
                 // beehive icon from the drawable folder
-                Icon(
-                    painter = painterResource(id = R.drawable.beehive),
+                Icon(painter = painterResource(id = R.drawable.beehive),
                     contentDescription = "Beehive",
                     tint = customTheme.onSecondaryColor,
                     modifier = Modifier
@@ -171,8 +182,7 @@ fun NavigationBar(navController: NavController, hiveViewModel: HiveViewModel) {
                             end.linkTo(parent.end)
                             top.linkTo(parent.top)
                             bottom.linkTo(parent.bottom)
-                        }
-                )
+                        })
             }
             Menu(navController, hiveViewModel)
         }
@@ -300,8 +310,7 @@ fun NavbarEntry(
     destination: Screen,
     isSelected: Boolean,
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+    Row(verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
             .height(42.dp)
@@ -316,9 +325,8 @@ fun NavbarEntry(
                     return@clickable
                 }
                 hiveViewModel.navigate(navController, destination)
-            }
-    ) {
-        if(painterResource != null) {
+            }) {
+        if (painterResource != null) {
             Icon(
                 painter = painterResource,
                 contentDescription = null,
@@ -327,7 +335,7 @@ fun NavbarEntry(
                     .padding(8.dp)
                     .size(32.dp)
             )
-        } else if(icon != null) {
+        } else if (icon != null) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
@@ -439,12 +447,15 @@ fun CustomButton(
     enabled: Boolean = true,
     text: String? = null,
     textColor: Color = customTheme.onPrimaryColor,
+    buttonColors: ButtonColors = ButtonDefaults.buttonColors(
+        backgroundColor = customTheme.primaryColor, contentColor = customTheme.onPrimaryColor
+    ),
+    buttonBorder: BorderStroke? = null,
+    elevation: ButtonElevation? = null,
     content: @Composable () -> Unit? = {},
 ) {
     Button(
-        onClick = onClick, modifier = modifier, colors = ButtonDefaults.buttonColors(
-            backgroundColor = customTheme.primaryColor, contentColor = customTheme.onPrimaryColor
-        ), enabled = enabled
+        onClick = onClick, modifier = modifier, colors = buttonColors, enabled = enabled, border = buttonBorder, elevation = elevation
     ) {
         content()
         // text if provided
@@ -834,7 +845,6 @@ fun MonthPicker(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalSnapperApi::class)
 @Composable
 fun HourPicker(
     dateTimeNow: LocalDateTime,

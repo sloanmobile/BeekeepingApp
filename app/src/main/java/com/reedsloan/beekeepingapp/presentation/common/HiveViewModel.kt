@@ -285,7 +285,7 @@ class HiveViewModel @Inject constructor(
         createHive()
     }
 
-    fun onTapHiveListItem(selectedHiveId: String, navController: NavController) {
+    fun onTapViewHiveLog(selectedHiveId: String, navController: NavController) {
         Log.d("HiveListItem", "Thread: ${Thread.currentThread().name}")
         if (state.hiveDeleteMode) {
             toggleSelected(selectedHiveId)
@@ -314,10 +314,16 @@ class HiveViewModel @Inject constructor(
         navController.navigate(destination.route)
     }
 
-    fun onTapDeleteHiveButton() {
+    fun onTapDeleteSelectedHiveButton() {
         viewModelScope.launch {
             deleteSelectedHives()
             toggleHiveDeleteMode()
+        }
+    }
+
+    fun onTapDeleteHiveButton(selectedHiveId: String) {
+        viewModelScope.launch {
+            deleteHive(selectedHiveId)
         }
     }
 

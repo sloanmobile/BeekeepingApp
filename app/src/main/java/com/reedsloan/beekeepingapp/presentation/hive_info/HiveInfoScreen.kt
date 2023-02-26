@@ -14,7 +14,7 @@ import androidx.navigation.NavController
 import com.reedsloan.beekeepingapp.presentation.common.*
 
 @Composable
-fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel) {
+fun HiveInfoScreen(navController: NavController, hiveViewModel: HiveViewModel) {
     Column(
         Modifier
             .fillMaxSize()

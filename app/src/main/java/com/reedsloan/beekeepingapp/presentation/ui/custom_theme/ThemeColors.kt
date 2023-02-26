@@ -18,5 +18,6 @@ data class ThemeColors(
     val secondaryColor: Color,
     val onSecondaryColor: Color,
     val onSecondaryText: Color,
-    val primaryColorLight: Color
+    val primaryColorLight: Color,
+    val hintColor: Color
 )
