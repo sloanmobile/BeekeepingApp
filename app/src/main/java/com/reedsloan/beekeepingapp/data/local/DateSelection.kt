@@ -1,6 +1,6 @@
 package com.reedsloan.beekeepingapp.data.local
 
-import com.reedsloan.beekeepingapp.presentation.common.DateSelectionMode
+import com.reedsloan.beekeepingapp.presentation.common.date_selection.DateSelectionMode
 import java.time.LocalDateTime
 
 data class DateSelection(

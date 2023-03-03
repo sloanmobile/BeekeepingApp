@@ -9,7 +9,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.reedsloan.beekeepingapp.MainActivity
 import com.reedsloan.beekeepingapp.di.AppModule
-import com.reedsloan.beekeepingapp.presentation.common.HiveViewModel
 import com.reedsloan.beekeepingapp.presentation.home_screen.HomeScreen
 import com.reedsloan.beekeepingapp.presentation.screens.Screen
 import dagger.hilt.android.testing.HiltAndroidRule

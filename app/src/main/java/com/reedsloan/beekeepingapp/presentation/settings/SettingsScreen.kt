@@ -16,8 +16,7 @@ import com.reedsloan.beekeepingapp.data.TimeFormat
 import com.reedsloan.beekeepingapp.data.local.TemperatureMeasurement
 import com.reedsloan.beekeepingapp.presentation.common.Container
 import com.reedsloan.beekeepingapp.presentation.common.HiveViewModel
-import com.reedsloan.beekeepingapp.presentation.common.NavigationBar
-import com.reedsloan.beekeepingapp.presentation.common.SelectionDropdownMenu
+import com.reedsloan.beekeepingapp.presentation.common.input_types.SelectionDropdownMenu
 import com.reedsloan.beekeepingapp.presentation.ui.custom_theme.customTheme
 
 @Composable

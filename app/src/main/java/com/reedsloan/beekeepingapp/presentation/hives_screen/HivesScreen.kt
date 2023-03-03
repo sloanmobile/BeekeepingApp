@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
@@ -37,12 +38,17 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
+import coil.compose.rememberImagePainter
+import coil.request.ImageRequest
+import coil.transform.CircleCropTransformation
 import com.google.accompanist.permissions.*
 import com.reedsloan.beekeepingapp.R
 import com.reedsloan.beekeepingapp.data.local.TemperatureMeasurement
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
 import com.reedsloan.beekeepingapp.presentation.common.*
+import com.reedsloan.beekeepingapp.presentation.common.input_types.TextInput
 import com.reedsloan.beekeepingapp.presentation.home_screen.MenuState
 import com.reedsloan.beekeepingapp.presentation.ui.custom_theme.customTheme
 import com.reedsloan.beekeepingapp.presentation.ui.theme.Typography
@@ -72,6 +78,7 @@ fun AddScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                 ) {
 
                     Container {
+                        PermissionsTest(navController, hiveViewModel)
                         // show list of hives
                         HiveListSection(hiveViewModel, navController)
                     }
@@ -122,6 +129,14 @@ fun PermissionsTest(navController: NavController, hiveViewModel: HiveViewModel) 
         rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
             // update the state with the bitmap
             bitmapOrNull = bitmap
+            // write the bitmap to a file
+            hiveViewModel.writeBitmapToFile(bitmap)
+        }
+
+    val imagePickerIntent =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            // update the state with the uri
+            hiveViewModel.setHiveImageUri(uri)
         }
 
     val permissionsState = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -138,6 +153,8 @@ fun PermissionsTest(navController: NavController, hiveViewModel: HiveViewModel) 
             )
         )
     }
+
+    LoadingIndicator(isLoading = state.isLoading)
 
     permissionsState.permissions.forEach { perm ->
         when (perm.permission) {
@@ -175,13 +192,10 @@ fun PermissionsTest(navController: NavController, hiveViewModel: HiveViewModel) 
             }
         }
     }
-
+    // show selected hive id
+    Text("Selected Hive ID: ${hiveViewModel.state.selectedHiveToBeEdited?.id}")
     CustomButton(onClick = { permissionsState.launchMultiplePermissionRequest() }) {
         Text("Request permissions")
-    }
-
-    bitmapOrNull?.let { bitmap ->
-        Image(bitmap.asImageBitmap(), "Image", Modifier.fillMaxWidth())
     }
 
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -200,7 +214,10 @@ fun PermissionsTest(navController: NavController, hiveViewModel: HiveViewModel) 
         if (!state.isStoragePermissionAllowed) {
             Text(" (Storage permission needed)")
         }
-        CustomButton(onClick = { }, enabled = state.isStoragePermissionAllowed) {
+        CustomButton(onClick = {
+            // open image picker
+            imagePickerIntent.launch("image/*")
+        }, enabled = state.isStoragePermissionAllowed) {
             Text("Choose Photo")
         }
     }
@@ -338,7 +355,6 @@ fun HiveListSection(
 
 @Composable
 fun HiveListItem(hive: Hive, hiveViewModel: HiveViewModel, navController: NavController) {
-    val state = hiveViewModel.state
     val haptic = LocalHapticFeedback.current
     val menuInitialSize by remember { mutableStateOf(108.dp) }
     val menuExpandedSize by remember { mutableStateOf(menuInitialSize + 116.dp) }
@@ -395,12 +411,21 @@ fun HiveListItem(hive: Hive, hiveViewModel: HiveViewModel, navController: NavCon
             ) {
                 // image else default image
                 if (hive.hiveInfo.image != null) {
-                    Image(
-                        painter = rememberAsyncImagePainter(model = hive.hiveInfo.image),
+//                    AsyncImage(
+//                        model = hive.hiveInfo.image,
+//                        contentDescription = "Hive Image",
+//                        modifier = Modifier
+//                            .size(72.dp)
+//                            .clip(RoundedCornerShape(16.dp)),
+//                    )
+                    // scale asyncimage to fill the entire imageview
+                    AsyncImage(
+                        model = hive.hiveInfo.image,
                         contentDescription = "Hive Image",
                         modifier = Modifier
                             .size(72.dp)
-                            .clip(RoundedCornerShape(16.dp))
+                            .clip(RoundedCornerShape(16.dp)),
+                        contentScale = ContentScale.Crop,
                     )
                 } else {
                     Image(
@@ -468,7 +493,9 @@ fun HiveListItem(hive: Hive, hiveViewModel: HiveViewModel, navController: NavCon
                 Column {
                     Row {
                         Column(
-                            modifier = Modifier.weight(0.65F).fillMaxSize(),
+                            modifier = Modifier
+                                .weight(0.65F)
+                                .fillMaxSize(),
                             verticalArrangement = Arrangement.Bottom,
                             horizontalAlignment = Alignment.Start
                         ) {

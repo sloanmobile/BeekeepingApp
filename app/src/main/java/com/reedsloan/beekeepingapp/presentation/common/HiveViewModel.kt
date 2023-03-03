@@ -3,7 +3,10 @@ package com.reedsloan.beekeepingapp.presentation.common
 import android.app.Activity
 import android.app.Application
 import android.content.Context
+import android.graphics.Bitmap
 import android.icu.text.DateFormat
+import android.net.Uri
+import android.os.Environment
 import android.util.Log
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
@@ -18,11 +21,14 @@ import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.TemperatureMeasurement
 import com.reedsloan.beekeepingapp.data.local.hive.*
 import com.reedsloan.beekeepingapp.domain.repo.HiveRepository
+import com.reedsloan.beekeepingapp.presentation.common.date_selection.DateSelectionMode
 import com.reedsloan.beekeepingapp.presentation.home_screen.HiveScreenState
 import com.reedsloan.beekeepingapp.presentation.home_screen.MenuState
 import com.reedsloan.beekeepingapp.presentation.screens.Screen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
 import java.time.*
 import java.time.format.DateTimeFormatter
 import java.util.UUID
@@ -622,4 +628,55 @@ class HiveViewModel @Inject constructor(
         closeOpenMenus()
     }
 
+    fun writeBitmapToFile(bitmap: Bitmap?) {
+        viewModelScope.launch {
+            runCatching {
+                bitmap?.let {
+                    val file = File(
+                        app.getExternalFilesDir(Environment.DIRECTORY_PICTURES),
+                        "hive_${state.selectedHiveToBeEdited!!.id}.jpg"
+                    )
+                    val out = FileOutputStream(file)
+                    it.compress(Bitmap.CompressFormat.JPEG, 100, out)
+                    out.flush()
+                    out.close()
+                    // update the hive with the new image
+                    state.selectedHiveToBeEdited?.let { hive ->
+                        updateHive(
+                            hive.copy(
+                                hiveInfo = hive.hiveInfo.copy(
+                                    image = file.absolutePath
+                                )
+                            )
+                        )
+                    }
+                }
+            }.onSuccess {
+                state = state.copy(isSuccess = true, hives = state.selectedHiveToBeEdited?.let {
+                    state.hives.map { hive ->
+                        if (hive.id == it.id) {
+                            hive.copy(hiveInfo = hive.hiveInfo.copy(image = it.hiveInfo.image))
+                        } else {
+                            hive
+                        }
+                    }
+                } ?: state.hives)
+            }.onFailure {
+                state = state.copy(isError = true, errorMessage = it.message ?: "")
+            }
+        }
+    }
+
+    fun setHiveImageUri(uri: Uri?) {
+        // update selected hive to be edited with the new image uri
+        state.selectedHiveToBeEdited?.let { hive ->
+            updateHive(
+                hive.copy(
+                    hiveInfo = hive.hiveInfo.copy(
+                        image = uri.toString()
+                    )
+                )
+            )
+        }
+    }
 }

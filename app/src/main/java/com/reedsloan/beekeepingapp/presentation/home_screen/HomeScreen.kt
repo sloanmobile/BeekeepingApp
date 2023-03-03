@@ -3,20 +3,15 @@ package com.reedsloan.beekeepingapp.presentation.home_screen
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.PointerIconDefaults.Text
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.reedsloan.beekeepingapp.presentation.common.Container
-import com.reedsloan.beekeepingapp.presentation.common.CustomButton
 import com.reedsloan.beekeepingapp.presentation.common.HiveViewModel
-import com.reedsloan.beekeepingapp.presentation.common.NavigationBar
 import com.reedsloan.beekeepingapp.presentation.ui.theme.Typography
 
 @Composable
