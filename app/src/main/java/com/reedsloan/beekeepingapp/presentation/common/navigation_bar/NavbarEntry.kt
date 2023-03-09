@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.presentation.common
+package com.reedsloan.beekeepingapp.presentation.common.navigation_bar
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.reedsloan.beekeepingapp.presentation.common.HiveViewModel
 import com.reedsloan.beekeepingapp.presentation.home_screen.MenuState
 import com.reedsloan.beekeepingapp.presentation.screens.Screen
 import com.reedsloan.beekeepingapp.presentation.ui.custom_theme.customTheme

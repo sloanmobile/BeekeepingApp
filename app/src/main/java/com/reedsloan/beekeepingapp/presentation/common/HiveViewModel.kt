@@ -468,8 +468,14 @@ class HiveViewModel @Inject constructor(
         state = state.copy(navigationBarMenuState = state.navigationBarMenuState.toggle())
     }
 
-    fun toggleHiveEditMenu() {
-        state = state.copy(hiveInfoMenuState = state.hiveInfoMenuState.toggle())
+    fun onClickEditHiveButton(hiveId: String) {
+        setSelectedHive(hiveId)
+        closeOpenMenus()
+        setHiveInfoMenuState(MenuState.OPEN)
+    }
+
+    private fun setHiveInfoMenuState(state: MenuState) {
+        this.state = this.state.copy(hiveInfoMenuState = state)
     }
 
     fun setCameraPermissionAllowed(isAllowed: Boolean) {

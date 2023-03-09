@@ -22,11 +22,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
@@ -39,10 +41,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import coil.compose.rememberAsyncImagePainter
-import coil.compose.rememberImagePainter
-import coil.request.ImageRequest
-import coil.transform.CircleCropTransformation
 import com.google.accompanist.permissions.*
 import com.reedsloan.beekeepingapp.R
 import com.reedsloan.beekeepingapp.data.local.TemperatureMeasurement
@@ -50,6 +48,7 @@ import com.reedsloan.beekeepingapp.data.local.hive.Hive
 import com.reedsloan.beekeepingapp.presentation.common.*
 import com.reedsloan.beekeepingapp.presentation.common.input_types.TextInput
 import com.reedsloan.beekeepingapp.presentation.home_screen.MenuState
+import com.reedsloan.beekeepingapp.presentation.screens.Screen
 import com.reedsloan.beekeepingapp.presentation.ui.custom_theme.customTheme
 import com.reedsloan.beekeepingapp.presentation.ui.theme.Typography
 import com.reedsloan.isPermanentlyDenied
@@ -357,7 +356,6 @@ fun HiveListSection(
 fun HiveListItem(hive: Hive, hiveViewModel: HiveViewModel, navController: NavController) {
     val haptic = LocalHapticFeedback.current
     val menuInitialSize by remember { mutableStateOf(108.dp) }
-    val menuExpandedSize by remember { mutableStateOf(menuInitialSize + 116.dp) }
 
     val menuHeight = remember { Animatable(menuInitialSize.value) }
     var menuExpanded by remember { mutableStateOf(false) }
@@ -387,7 +385,7 @@ fun HiveListItem(hive: Hive, hiveViewModel: HiveViewModel, navController: NavCon
                         false
                     } else {
                         scope.launch {
-                            menuHeight.animateTo(menuExpandedSize.value)
+                            menuHeight.animateTo(menuInitialSize.value + 176.dp.value)
                         }
                         true
                     }
@@ -411,20 +409,13 @@ fun HiveListItem(hive: Hive, hiveViewModel: HiveViewModel, navController: NavCon
             ) {
                 // image else default image
                 if (hive.hiveInfo.image != null) {
-//                    AsyncImage(
-//                        model = hive.hiveInfo.image,
-//                        contentDescription = "Hive Image",
-//                        modifier = Modifier
-//                            .size(72.dp)
-//                            .clip(RoundedCornerShape(16.dp)),
-//                    )
-                    // scale asyncimage to fill the entire imageview
                     AsyncImage(
                         model = hive.hiveInfo.image,
                         contentDescription = "Hive Image",
                         modifier = Modifier
                             .size(72.dp)
                             .clip(RoundedCornerShape(16.dp)),
+                        // scale asyncimage to fill the entire imageview
                         contentScale = ContentScale.Crop,
                     )
                 } else {
@@ -486,94 +477,42 @@ fun HiveListItem(hive: Hive, hiveViewModel: HiveViewModel, navController: NavCon
             }
         }
         if (menuExpanded) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-            ) {
-                Column {
-                    Row {
-                        Column(
-                            modifier = Modifier
-                                .weight(0.65F)
-                                .fillMaxSize(),
-                            verticalArrangement = Arrangement.Bottom,
-                            horizontalAlignment = Alignment.Start
-                        ) {
-                            // Log data button (clear button)
-                            CustomButton(
-                                onClick = {
-                                    hiveViewModel.onTapViewHiveLog(hive.id, navController)
-                                },
-                                buttonColors = ButtonDefaults.buttonColors(backgroundColor = Color.Transparent),
-                                buttonBorder = null,
-                            ) {
-                                // notebook icon
-                                Icon(
-                                    painter = painterResource(id = R.drawable.notebook_edit_outline),
-                                    contentDescription = "Log Data",
-                                    tint = customTheme.onSurfaceColor,
-                                    modifier = Modifier.padding(0.dp, 8.dp, 8.dp, 8.dp)
-                                )
-                                Text(
-                                    text = "Log Data",
-                                    color = customTheme.onSurfaceColor,
-                                    modifier = Modifier.padding(0.dp, 8.dp, 8.dp, 8.dp),
-                                    style = Typography.h4
-                                )
-                            }
-                            CustomButton(
-                                onClick = {
-                                    TODO("Implement Log History")
-                                },
-                                buttonColors = ButtonDefaults.buttonColors(backgroundColor = Color.Transparent),
-                                buttonBorder = null,
-                            ) {
-                                // history icon
-                                Icon(
-                                    painter = painterResource(id = R.drawable.history),
-                                    contentDescription = "View Log History",
-                                    tint = customTheme.onSurfaceColor,
-                                    modifier = Modifier.padding(0.dp, 8.dp, 8.dp, 8.dp)
-                                )
-                                Text(
-                                    text = "View Log History",
-                                    color = customTheme.onSurfaceColor,
-                                    modifier = Modifier.padding(0.dp, 8.dp, 8.dp, 8.dp),
-                                    style = Typography.h4
-                                )
-                            }
-                        }
-
-                        // delete button aligned to bottom right
-                        Row(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .weight(0.35F),
-                            verticalAlignment = Alignment.Bottom,
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            CustomButton(
-                                onClick = {
-                                    hiveViewModel.onTapDeleteHiveButton(hive.id)
-                                },
-                                buttonColors = ButtonDefaults.buttonColors(backgroundColor = Color.Transparent),
-                                buttonBorder = null,
-                            ) {
-                                // history icon
-                                Icon(
-                                    painter = painterResource(id = R.drawable.delete),
-                                    contentDescription = "Delete",
-                                    tint = customTheme.cancelColor,
-                                    modifier = Modifier.padding(0.dp, 8.dp, 0.dp, 8.dp)
-                                )
-                                Text(
-                                    text = "Delete",
-                                    color = customTheme.cancelColor,
-                                    modifier = Modifier.padding(0.dp, 8.dp, 0.dp, 8.dp),
-                                    style = Typography.h4
-                                )
-                            }}
-
+            Column(Modifier.padding(16.dp)) {
+                HiveOption(
+                    title = "Log Data",
+                    painterResource = painterResource(id = R.drawable.notebook_edit_outline)
+                ) {
+                    navController.navigate(Screen.HiveDetailsScreen.route)
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                HiveOption(
+                    title = "View Log History",
+                    painterResource = painterResource(id = R.drawable.history)
+                ) {
+                    navController.navigate(Screen.HiveDetailsScreen.route)
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row {
+                    HiveOption(
+                        title = "Edit",
+                        icon = Icons.Default.Edit,
+                        backgroundColor = customTheme.primaryColorLight,
+                        textColor = customTheme.onPrimaryColor,
+                        modifier = Modifier.weight(0.5f),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        hiveViewModel.onClickEditHiveButton(hive.id)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    HiveOption(
+                        title = "Delete",
+                        icon = Icons.Default.Delete,
+                        backgroundColor = customTheme.cancelColor,
+                        textColor = customTheme.onCancelColor,
+                        modifier = Modifier.weight(0.5f),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        hiveViewModel.onTapDeleteHiveButton(hive.id)
                     }
                 }
             }
@@ -581,6 +520,58 @@ fun HiveListItem(hive: Hive, hiveViewModel: HiveViewModel, navController: NavCon
     }
 }
 
+@Composable
+fun HiveOption(
+    title: String,
+    modifier: Modifier = Modifier,
+    painterResource: Painter? = null,
+    icon: ImageVector? = null,
+    backgroundColor: Color = customTheme.secondarySurfaceColor,
+    textColor: Color = customTheme.onSecondarySurfaceText,
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
+    onClick: () -> Unit = {},
+) {
+    Row(verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = horizontalArrangement,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(42.dp)
+            .background(
+                backgroundColor, RoundedCornerShape(16.dp)
+            )
+            .clip(RoundedCornerShape(16.dp))
+            .clickable {
+                onClick()
+            }
+            .padding(horizontal = 8.dp)
+    )
+    {
+        if (painterResource != null) {
+            Icon(
+                painter = painterResource,
+                contentDescription = null,
+                tint = textColor,
+                modifier = Modifier
+                    .padding(end = 8.dp)
+                    .size(32.dp)
+            )
+        } else if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = textColor,
+                modifier = Modifier
+                    .padding(end = 8.dp)
+                    .size(32.dp)
+            )
+        }
+        Text(
+            text = title,
+            style = Typography.h3,
+            color = textColor,
+        )
+    }
+}
 
 @Composable
 fun HiveDetailsMenu(hiveViewModel: HiveViewModel) {
