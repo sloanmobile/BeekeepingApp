@@ -43,7 +43,6 @@ fun HourPicker(
 
     val selectedHour by calendarViewModel.selectedHour.collectAsState()
     val selectedMinute by calendarViewModel.selectedMinute.collectAsState()
-    val isPressed by calendarViewModel.isPressed.collectAsState()
 
     val hourListState = rememberLazyListState(Int.MAX_VALUE / 2 + selectedHour, 0)
 

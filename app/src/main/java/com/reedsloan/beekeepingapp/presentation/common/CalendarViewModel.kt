@@ -20,9 +20,6 @@ class CalendarViewModel @Inject constructor(
     private val _selectedMinute = MutableStateFlow(0)
     val selectedMinute: StateFlow<Int> = _selectedMinute
 
-    private val _isPressed = MutableStateFlow(false)
-    val isPressed: StateFlow<Boolean> = _isPressed
-
     init {
         // update values with current time
         val dateTime: LocalDateTime = LocalDateTime.now()
@@ -40,9 +37,5 @@ class CalendarViewModel @Inject constructor(
 
     fun setSelectedMinute(minute: Int) {
         _selectedMinute.update { minute }
-    }
-
-    fun setIsPressed(isPressed: Boolean) {
-        _isPressed.update { isPressed }
     }
 }
