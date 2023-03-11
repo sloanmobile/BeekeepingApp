@@ -11,7 +11,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.reedsloan.beekeepingapp.presentation.common.*
 import com.reedsloan.beekeepingapp.presentation.common.HiveViewModel
 import com.reedsloan.beekeepingapp.presentation.common.date_selection.DatePicker
 
@@ -20,25 +19,24 @@ fun HiveInfoScreen(navController: NavController, hiveViewModel: HiveViewModel) {
     Column(
         Modifier
             .fillMaxSize()
-            .testTag("HiveInfoScreen")) {
+            .testTag("HiveInfoScreen")
+    ) {
 
         val state = hiveViewModel.state
 
-        Container {
-            // Hive Name
-            state.selectedHiveToBeEdited?.hiveInfo?.let { hiveInfo ->
-                Text(
-                    text = hiveInfo.name,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(16.dp)
-                )
+        // Hive Name
+        state.selectedHive?.hiveInfo?.let { hiveInfo ->
+            Text(
+                text = hiveInfo.name,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(16.dp)
+            )
 
-                DatePicker(
-                    hiveViewModel = hiveViewModel
-                )
+            DatePicker(
+                hiveViewModel = hiveViewModel
+            )
 
-            }
         }
     }
 }

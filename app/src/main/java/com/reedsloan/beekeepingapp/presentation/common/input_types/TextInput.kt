@@ -34,7 +34,7 @@ fun TextInput(
     var editableValue by remember { mutableStateOf(value) }
     val context = LocalContext.current
     // side effect to reset the value when the selected hive id is changed
-    LaunchedEffect(key1 = hiveViewModel.state.selectedHiveToBeEdited?.id) {
+    LaunchedEffect(key1 = hiveViewModel.state.selectedHive?.id) {
         hiveViewModel.hideKeyboard(context)
         editableValue = value
     }

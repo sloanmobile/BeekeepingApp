@@ -17,7 +17,7 @@ import com.reedsloan.beekeepingapp.data.TimeFormat
 import com.reedsloan.beekeepingapp.presentation.common.CalendarViewModel
 import com.reedsloan.beekeepingapp.presentation.common.CustomButton
 import com.reedsloan.beekeepingapp.presentation.common.HiveViewModel
-import com.reedsloan.beekeepingapp.presentation.common.ScrollColumn
+import com.reedsloan.beekeepingapp.presentation.common.layout.ScrollColumn
 import com.reedsloan.beekeepingapp.presentation.ui.custom_theme.customTheme
 import java.time.LocalDateTime
 

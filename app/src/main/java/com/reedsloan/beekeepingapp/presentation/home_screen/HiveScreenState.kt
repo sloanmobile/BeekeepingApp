@@ -16,7 +16,7 @@ data class HiveScreenState(
     val isCameraPermissionAllowed: Boolean = false,
     val isStoragePermissionAllowed: Boolean = false,
     val hives: List<Hive> = emptyList(),
-    val selectedHiveToBeEdited: Hive? = null,
+    val selectedHive: Hive? = null,
     val userPreferences: UserPreferences = UserPreferences(),
     val appVersionNumber: String = BuildConfig.VERSION_NAME,
     val appVersionCode: Int = BuildConfig.VERSION_CODE,

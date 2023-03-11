@@ -28,7 +28,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
@@ -46,9 +45,10 @@ import com.reedsloan.beekeepingapp.R
 import com.reedsloan.beekeepingapp.data.local.TemperatureMeasurement
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
 import com.reedsloan.beekeepingapp.presentation.common.*
+import com.reedsloan.beekeepingapp.presentation.common.extensions.surfaceStyle
 import com.reedsloan.beekeepingapp.presentation.common.input_types.TextInput
+import com.reedsloan.beekeepingapp.presentation.common.layout.OverlayBoxMenu
 import com.reedsloan.beekeepingapp.presentation.home_screen.MenuState
-import com.reedsloan.beekeepingapp.presentation.screens.Screen
 import com.reedsloan.beekeepingapp.presentation.ui.custom_theme.customTheme
 import com.reedsloan.beekeepingapp.presentation.ui.theme.Typography
 import com.reedsloan.isPermanentlyDenied
@@ -192,7 +192,7 @@ fun PermissionsTest(navController: NavController, hiveViewModel: HiveViewModel) 
         }
     }
     // show selected hive id
-    Text("Selected Hive ID: ${hiveViewModel.state.selectedHiveToBeEdited?.id}")
+    Text("Selected Hive ID: ${hiveViewModel.state.selectedHive?.id}")
     CustomButton(onClick = { permissionsState.launchMultiplePermissionRequest() }) {
         Text("Request permissions")
     }
@@ -367,15 +367,7 @@ fun HiveListItem(hive: Hive, hiveViewModel: HiveViewModel, navController: NavCon
             .testTag("HiveListItem")
             .fillMaxWidth()
             .height(menuHeight.value.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(
-                // gradient from secondary color to onPrimaryColor (top to bottom)
-                Brush.verticalGradient(
-                    colors = listOf(
-                        customTheme.secondaryColor, customTheme.onPrimaryColor
-                    )
-                )
-            )
+            .surfaceStyle()
             .pointerInput(Unit) {
                 detectTapGestures(onTap = {
                     menuExpanded = if (menuExpanded) {
@@ -482,14 +474,14 @@ fun HiveListItem(hive: Hive, hiveViewModel: HiveViewModel, navController: NavCon
                     title = "Log Data",
                     painterResource = painterResource(id = R.drawable.notebook_edit_outline)
                 ) {
-                    navController.navigate(Screen.HiveDetailsScreen.route)
+                    hiveViewModel.onClickLogDataButton(hive.id, navController)
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 HiveOption(
                     title = "View Log History",
                     painterResource = painterResource(id = R.drawable.history)
                 ) {
-                    navController.navigate(Screen.HiveDetailsScreen.route)
+                    hiveViewModel.onClickViewLogHistoryButton(hive.id, navController)
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Row {
@@ -597,7 +589,7 @@ fun HiveDetailsMenu(hiveViewModel: HiveViewModel) {
                 fontWeight = FontWeight.Bold
             )
             // ID selector
-            state.selectedHiveToBeEdited?.let { hive ->
+            state.selectedHive?.let { hive ->
                 Text(
                     text = "Name: ${hive.hiveInfo.name}",
                     color = customTheme.onSurfaceColor,

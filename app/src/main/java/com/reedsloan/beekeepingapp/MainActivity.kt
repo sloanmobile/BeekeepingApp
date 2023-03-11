@@ -78,9 +78,9 @@ class MainActivity : ComponentActivity() {
                         ) {
                             AddScreen(navController, hiveViewModel)
                         }
-                        // hive details screen
+                        // hive info screen
                         composable(
-                            route = Screen.HiveDetailsScreen.route,
+                            route = Screen.HiveInfoScreen.route,
                         ) {
                             HiveInfoScreen(navController, hiveViewModel)
                         }

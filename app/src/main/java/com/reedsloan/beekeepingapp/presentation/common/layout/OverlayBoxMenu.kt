@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.presentation.common
+package com.reedsloan.beekeepingapp.presentation.common.layout
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures

@@ -12,7 +12,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.reedsloan.beekeepingapp.presentation.common.*
+import com.reedsloan.beekeepingapp.presentation.common.extensions.surfaceStyle
 import com.reedsloan.beekeepingapp.presentation.ui.custom_theme.customTheme
+import com.reedsloan.beekeepingapp.presentation.ui.custom_theme.gradient
 
 /**
  * Calendar using kotlin datetime
@@ -25,85 +27,92 @@ fun DatePicker(hiveViewModel: HiveViewModel) {
     val dateSelectionMode = hiveViewModel.state.dateSelection.dateSelectionMode
     val dayOfMonth = selectedDate.dayOfMonth
 
-    // Year and month
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .padding(16.dp)
+            .surfaceStyle()
     ) {
-        CustomButton(onClick = { hiveViewModel.increaseDateSelectionScope() }) {
-            Text(
-                text = when (dateSelectionMode) {
-                    DateSelectionMode.DAY_OF_MONTH -> {
-                        "${month.name} $year"
-                    }
-                    DateSelectionMode.MONTH -> {
-                        "$year"
-                    }
-                    DateSelectionMode.YEAR -> {
-                        "${year - 10} - ${year + 10}"
-                    }
-                    DateSelectionMode.HOUR_AND_MINUTE -> {
-                        "${month.name} $dayOfMonth, $year"
-                    }
-                    else -> {
-                        ""
-                    }
-                }, fontWeight = FontWeight.Bold, fontSize = 20.sp
-            )
+        // Year and month
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CustomButton(onClick = { hiveViewModel.increaseDateSelectionScope() }) {
+                Text(
+                    text = when (dateSelectionMode) {
+                        DateSelectionMode.DAY_OF_MONTH -> {
+                            "${month.name} $year"
+                        }
+                        DateSelectionMode.MONTH -> {
+                            "$year"
+                        }
+                        DateSelectionMode.YEAR -> {
+                            "${year - 10} - ${year + 10}"
+                        }
+                        DateSelectionMode.HOUR_AND_MINUTE -> {
+                            "${month.name} $dayOfMonth, $year"
+                        }
+                        else -> {
+                            ""
+                        }
+                    }, fontWeight = FontWeight.Bold, fontSize = 20.sp
+                )
+            }
+            Row {
+                // previous month
+                CircleButton(
+                    onTap = { hiveViewModel.decrementDatePicker() },
+                    icon = Icons.Default.ChevronLeft,
+                    iconColor = customTheme.primaryColor,
+                    backgroundColor = customTheme.surfaceColor,
+                    size = 40.dp,
+                    padding = 8.dp
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                // next month
+                CircleButton(
+                    onTap = { hiveViewModel.incrementDatePicker() },
+                    icon = Icons.Default.ChevronRight,
+                    iconColor = customTheme.primaryColor,
+                    backgroundColor = customTheme.surfaceColor,
+                    size = 40.dp,
+                    padding = 8.dp
+                )
+            }
         }
-        Row {
-            // previous month
-            CircleButton(
-                onTap = { hiveViewModel.decrementDatePicker() },
-                icon = Icons.Default.ChevronLeft,
-                iconColor = customTheme.primaryColor,
-                backgroundColor = customTheme.surfaceColor,
-                size = 40.dp,
-                padding = 8.dp
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            // next month
-            CircleButton(
-                onTap = { hiveViewModel.incrementDatePicker() },
-                icon = Icons.Default.ChevronRight,
-                iconColor = customTheme.primaryColor,
-                backgroundColor = customTheme.surfaceColor,
-                size = 40.dp,
-                padding = 8.dp
-            )
-        }
-    }
 
-    when (dateSelectionMode) {
-        DateSelectionMode.HOUR_AND_MINUTE -> {
-            HourPicker(
-                dateTimeNow = selectedDate,
-                onHourSelected = { hiveViewModel.onHourSelected(it) },
-                hiveViewModel = hiveViewModel,
-            )
+        when (dateSelectionMode) {
+            DateSelectionMode.HOUR_AND_MINUTE -> {
+                HourPicker(
+                    dateTimeNow = selectedDate,
+                    onHourSelected = { hiveViewModel.onHourSelected(it) },
+                    hiveViewModel = hiveViewModel,
+                )
+            }
+            DateSelectionMode.DAY_OF_MONTH -> {
+                DayPicker(
+                    dateTimeNow = selectedDate,
+                    hiveViewModel = hiveViewModel,
+                    disabledDays = hiveViewModel.state.dateSelection.disabledDays,
+                    onDaySelected = { hiveViewModel.onDaySelected(it) },
+                    highlightedDays = hiveViewModel.state.dateSelection.highlightedDays
+                )
+            }
+            DateSelectionMode.MONTH -> {
+                MonthPicker(dateTimeNow = selectedDate,
+                    hiveViewModel = hiveViewModel,
+                    onMonthSelected = { hiveViewModel.onMonthSelected(it) })
+            }
+            DateSelectionMode.YEAR -> {
+                YearPicker(dateTimeNow = selectedDate,
+                    hiveViewModel = hiveViewModel,
+                    onYearSelected = { hiveViewModel.onYearSelected(it) })
+            }
+            else -> {}
         }
-        DateSelectionMode.DAY_OF_MONTH -> {
-            DayPicker(
-                dateTimeNow = selectedDate,
-                hiveViewModel = hiveViewModel,
-                disabledDays = hiveViewModel.state.dateSelection.disabledDays,
-                onDaySelected = { hiveViewModel.onDaySelected(it) },
-                highlightedDays = hiveViewModel.state.dateSelection.highlightedDays
-            )
-        }
-        DateSelectionMode.MONTH -> {
-            MonthPicker(dateTimeNow = selectedDate,
-                hiveViewModel = hiveViewModel,
-                onMonthSelected = { hiveViewModel.onMonthSelected(it) })
-        }
-        DateSelectionMode.YEAR -> {
-            YearPicker(dateTimeNow = selectedDate,
-                hiveViewModel = hiveViewModel,
-                onYearSelected = { hiveViewModel.onYearSelected(it) })
-        }
-        else -> {}
     }
 }

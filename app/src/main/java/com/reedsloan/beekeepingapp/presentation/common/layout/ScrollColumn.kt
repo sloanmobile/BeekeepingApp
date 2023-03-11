@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.presentation.common
+package com.reedsloan.beekeepingapp.presentation.common.layout
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.height

@@ -24,7 +24,7 @@ import org.junit.Test
 
 @HiltAndroidTest
 @UninstallModules(AppModule::class)
-class HiveDetailsScreenTest {
+class HiveInfoScreenTest {
     @get:Rule(order = 0)
     val rule = HiltAndroidRule(this)
 
@@ -39,7 +39,7 @@ class HiveDetailsScreenTest {
             val navController = rememberNavController()
             NavHost(
                 navController = navController,
-                startDestination = Screen.HiveDetailsScreen.route
+                startDestination = Screen.HiveInfoScreen.route
             ) {
                 composable(
                     route = Screen.HiveScreen.route
@@ -52,7 +52,7 @@ class HiveDetailsScreenTest {
                     HomeScreen(navController, hiveViewModel)
                 }
                 composable(
-                    route = Screen.HiveDetailsScreen.route
+                    route = Screen.HiveInfoScreen.route
                 ) {
                     HiveInfoScreen(navController, hiveViewModel)
                 }

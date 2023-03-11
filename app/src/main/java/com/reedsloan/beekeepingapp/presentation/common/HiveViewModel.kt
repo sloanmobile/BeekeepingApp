@@ -269,7 +269,7 @@ class HiveViewModel @Inject constructor(
                 Screen.SplashScreen.route -> {
                     Screen.SplashScreen
                 }
-                Screen.HiveDetailsScreen.route -> {
+                Screen.HiveInfoScreen.route -> {
                     Screen.HiveScreen
                 }
                 Screen.SettingsScreen.route -> {
@@ -298,7 +298,7 @@ class HiveViewModel @Inject constructor(
             return
         }
         setSelectedHive(selectedHiveId)
-        navigate(navController, Screen.HiveDetailsScreen)
+        navigate(navController, Screen.HiveInfoScreen)
     }
 
 
@@ -436,22 +436,22 @@ class HiveViewModel @Inject constructor(
 
     private fun setSelectedHive(hiveId: String) {
         // Set the selected hive in the state by finding the hive with the matching id
-        state = state.copy(selectedHiveToBeEdited = state.hives.find { it.id == hiveId })
+        state = state.copy(selectedHive = state.hives.find { it.id == hiveId })
 
     }
 
     fun setHiveNotes(notes: String) {
         state = state.copy(
-            selectedHiveToBeEdited = state.selectedHiveToBeEdited?.copy(
-                hiveInfo = state.selectedHiveToBeEdited!!.hiveInfo.copy(notes = notes)
+            selectedHive = state.selectedHive?.copy(
+                hiveInfo = state.selectedHive!!.hiveInfo.copy(notes = notes)
             )
         )
     }
 
     fun setHiveName(name: String) {
-        runCatching { state.selectedHiveToBeEdited!! }.onSuccess {
+        runCatching { state.selectedHive!! }.onSuccess {
             state = state.copy(
-                selectedHiveToBeEdited = it.copy(
+                selectedHive = it.copy(
                     hiveInfo = it.hiveInfo.copy(
                         name = name, dateModified = System.currentTimeMillis().toString()
                     )
@@ -640,14 +640,14 @@ class HiveViewModel @Inject constructor(
                 bitmap?.let {
                     val file = File(
                         app.getExternalFilesDir(Environment.DIRECTORY_PICTURES),
-                        "hive_${state.selectedHiveToBeEdited!!.id}.jpg"
+                        "hive_${state.selectedHive!!.id}.jpg"
                     )
                     val out = FileOutputStream(file)
                     it.compress(Bitmap.CompressFormat.JPEG, 100, out)
                     out.flush()
                     out.close()
                     // update the hive with the new image
-                    state.selectedHiveToBeEdited?.let { hive ->
+                    state.selectedHive?.let { hive ->
                         updateHive(
                             hive.copy(
                                 hiveInfo = hive.hiveInfo.copy(
@@ -658,7 +658,7 @@ class HiveViewModel @Inject constructor(
                     }
                 }
             }.onSuccess {
-                state = state.copy(isSuccess = true, hives = state.selectedHiveToBeEdited?.let {
+                state = state.copy(isSuccess = true, hives = state.selectedHive?.let {
                     state.hives.map { hive ->
                         if (hive.id == it.id) {
                             hive.copy(hiveInfo = hive.hiveInfo.copy(image = it.hiveInfo.image))
@@ -675,7 +675,7 @@ class HiveViewModel @Inject constructor(
 
     fun setHiveImageUri(uri: Uri?) {
         // update selected hive to be edited with the new image uri
-        state.selectedHiveToBeEdited?.let { hive ->
+        state.selectedHive?.let { hive ->
             updateHive(
                 hive.copy(
                     hiveInfo = hive.hiveInfo.copy(
@@ -684,5 +684,27 @@ class HiveViewModel @Inject constructor(
                 )
             )
         }
+    }
+
+    fun onClickLogDataButton(id: String, navController: NavController) {
+        // set the selected hive
+        state.hives.find { hive -> hive.id == id }?.let { hive ->
+            state = state.copy(selectedHive = hive)
+        }
+        // close open menus
+        closeOpenMenus()
+        // navigate to the log data screen
+        navController.navigate(Screen.HiveInfoScreen.route)
+
+    }
+
+    fun onClickViewLogHistoryButton(id: String, navController: NavController) {
+        // set the selected hive
+        state.hives.find { hive -> hive.id == id }?.let { hive ->
+            state = state.copy(selectedHive = hive)
+        }
+        // close open menus
+        closeOpenMenus()
+        TODO("Navigate to the log history screen")
     }
 }
