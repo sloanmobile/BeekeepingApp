@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.presentation.common.viewmodel.hives
+package com.reedsloan.beekeepingapp.presentation.viewmodel.hives
 
 import com.reedsloan.beekeepingapp.BuildConfig
 import com.reedsloan.beekeepingapp.data.UserPreferences

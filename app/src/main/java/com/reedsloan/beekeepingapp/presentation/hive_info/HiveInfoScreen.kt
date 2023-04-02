@@ -1,18 +1,26 @@
 package com.reedsloan.beekeepingapp.presentation.hive_info
 
+import android.app.DatePickerDialog
+import android.icu.util.Calendar
+import android.widget.DatePicker
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.reedsloan.beekeepingapp.presentation.common.HiveViewModel
-import com.reedsloan.beekeepingapp.presentation.common.date_selection.DatePicker
+import com.reedsloan.beekeepingapp.presentation.viewmodel.hives.HiveViewModel
+import java.util.*
 
 @Composable
 fun HiveInfoScreen(navController: NavController, hiveViewModel: HiveViewModel) {
@@ -24,6 +32,30 @@ fun HiveInfoScreen(navController: NavController, hiveViewModel: HiveViewModel) {
 
         val state = hiveViewModel.state
 
+        // Initializing a Calendar
+        val calendar = Calendar.getInstance()
+
+        // Fetching current year, month and day
+        val year = calendar.get(Calendar.YEAR)
+        val month = calendar.get(Calendar.MONTH)
+        val day = calendar.get(Calendar.DAY_OF_MONTH)
+
+        calendar.time = Date()
+
+        // Declaring a string value to
+        // store date in string format
+        val date = remember { mutableStateOf("") }
+        val context = LocalContext.current
+        // Declaring DatePickerDialog and setting
+        // initial values as current values (present year, month and day)
+        val datePickerDialog = DatePickerDialog(
+            context,
+            { _: DatePicker, mYear: Int, mMonth: Int, mDayOfMonth: Int ->
+                date.value = "$mDayOfMonth/${mMonth+1}/$mYear"
+            }, year, month, day
+        )
+
+
         // Hive Name
         state.selectedHive?.hiveInfo?.let { hiveInfo ->
             Text(
@@ -33,10 +65,13 @@ fun HiveInfoScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                 modifier = Modifier.padding(16.dp)
             )
 
-            DatePicker(
-                hiveViewModel = hiveViewModel
-            )
-
+            Row {
+                Button(onClick = {
+                    datePickerDialog.show()
+                }) {
+                    Text(text = "Select Date")
+                }
+            }
         }
     }
 }

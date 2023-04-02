@@ -1,8 +1,9 @@
-package com.reedsloan.beekeepingapp.presentation.common.viewmodel.hives
+package com.reedsloan.beekeepingapp.presentation.viewmodel.hives
 
 import android.app.Activity
 import android.app.Application
 import android.content.Context
+import android.content.res.Resources.NotFoundException
 import android.graphics.Bitmap
 import android.icu.text.DateFormat
 import android.net.Uri
@@ -13,6 +14,7 @@ import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.content.FileProvider.getUriForFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
@@ -21,21 +23,29 @@ import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.TemperatureMeasurement
 import com.reedsloan.beekeepingapp.data.local.hive.*
 import com.reedsloan.beekeepingapp.domain.repo.HiveRepository
+import com.reedsloan.beekeepingapp.presentation.home_screen.HiveScreenState
 import com.reedsloan.beekeepingapp.presentation.home_screen.MenuState
 import com.reedsloan.beekeepingapp.presentation.screens.Screen
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.time.*
+import java.time.format.DateTimeFormatter
 import java.util.UUID
+import java.util.concurrent.Flow
 import javax.inject.Inject
 
 @HiltViewModel
 class HiveViewModel @Inject constructor(
     private val app: Application, private val hiveRepository: HiveRepository
 ) : ViewModel() {
-    var state by mutableStateOf(HiveState())
+    var state by mutableStateOf(HiveScreenState())
+    private val _hives = MutableStateFlow<List<Hive>>(emptyList())
+    val hives = _hives.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -44,6 +54,86 @@ class HiveViewModel @Inject constructor(
         }
     }
 
+    fun getHourMinuteString(date: LocalDateTime): String {
+        // adjust to user preferences of 24 hour or 12 hour
+        return when (state.userPreferences.timeFormat) {
+            TimeFormat.TWENTY_FOUR_HOUR -> {
+                date.format(DateTimeFormatter.ofPattern("HH:mm"))
+            }
+            TimeFormat.TWELVE_HOUR -> {
+                date.format(DateTimeFormatter.ofPattern("hh:mm a"))
+            }
+        }
+    }
+
+    fun getHourString(date: LocalDateTime): String {
+        return when (state.userPreferences.timeFormat) {
+            TimeFormat.TWENTY_FOUR_HOUR -> {
+                date.format(DateTimeFormatter.ofPattern("HH"))
+            }
+            TimeFormat.TWELVE_HOUR -> {
+                date.format(DateTimeFormatter.ofPattern("h"))
+            }
+        }
+    }
+
+    fun getDaysOfCalendar(dateTimeNow: LocalDateTime): List<LocalDateTime> {
+        val year = dateTimeNow.year
+
+        val month = dateTimeNow.month
+        val isLeapYear = Year.isLeap(year.toLong())
+
+        val daysInMonth =
+            when (month) {
+                Month.FEBRUARY -> if (isLeapYear) 29 else 28
+                Month.APRIL, Month.JUNE, Month.SEPTEMBER, Month.NOVEMBER -> 30
+                else -> 31
+            }
+        val firstDayOfMonth = dateTimeNow.withDayOfMonth(1)
+
+        val days: MutableList<LocalDateTime> = mutableListOf()
+
+        val daysFromSunday = when (firstDayOfMonth.dayOfWeek) {
+            DayOfWeek.SUNDAY -> 0
+            DayOfWeek.MONDAY -> 1
+            DayOfWeek.TUESDAY -> 2
+            DayOfWeek.WEDNESDAY -> 3
+            DayOfWeek.THURSDAY -> 4
+            DayOfWeek.FRIDAY -> 5
+            DayOfWeek.SATURDAY -> 6
+            else -> 0
+        }
+
+        val firstDayInNextMonth = firstDayOfMonth.plusMonths(1).withDayOfMonth(1)
+
+        val daysInPreviousMonth = when (dateTimeNow.minusMonths(1).withDayOfMonth(1).month) {
+            Month.FEBRUARY -> if (isLeapYear) 29 else 28
+            Month.APRIL, Month.JUNE, Month.SEPTEMBER, Month.NOVEMBER -> 30
+            else -> 31
+        }
+        val finalDayInPreviousMonth = dateTimeNow.minusMonths(1).withDayOfMonth(daysInPreviousMonth)
+
+
+        // add days from previous month (or skip if first day of month is Sunday)
+        for (i in daysFromSunday downTo 1) {
+            days.add(finalDayInPreviousMonth.minusDays(i - 1.toLong()))
+        }
+
+        // add days from current month
+        for (i in 0 until daysInMonth) {
+            days.add(firstDayOfMonth.plusDays(i.toLong()))
+        }
+
+        // add days from next month (or skip if last day of month is Saturday)
+        for (i in 0 until 42 - days.size) {
+            days.add(firstDayInNextMonth.plusDays((i).toLong()))
+        }
+
+
+        return days.toList()
+    }
+
+
     private suspend fun getUserPreferences() {
         runCatching { hiveRepository.getUserPreferences() }.onSuccess {
             state = state.copy(userPreferences = it)
@@ -51,18 +141,21 @@ class HiveViewModel @Inject constructor(
     }
 
     fun backHandler(navController: NavController) {
-        if(state.hiveDeleteMode) {
+        if (state.hiveDeleteMode) {
             toggleHiveDeleteMode()
+            return
+        } else if (state.editingTextField) {
+            toggleEditingTextField()
             return
         }
 
         val destination = navController.currentBackStackEntry?.destination?.route.let {
-           when(it) {
-               Screen.HomeScreen.route -> {
-                   Screen.HomeScreen
-               }
+            when (it) {
+                Screen.HomeScreen.route -> {
+                    Screen.HomeScreen
+                }
                 Screen.HiveScreen.route -> {
-                     Screen.HiveScreen
+                    Screen.HiveScreen
                 }
                 Screen.SplashScreen.route -> {
                     Screen.SplashScreen
@@ -76,10 +169,14 @@ class HiveViewModel @Inject constructor(
                 else -> {
                     Screen.HomeScreen
                 }
-           }
+            }
         }
 
         navigate(navController, destination)
+    }
+
+    private fun toggleEditingTextField() {
+        state = state.copy(editingTextField = !state.editingTextField)
     }
 
     fun onTapAddHiveButton() {
@@ -98,6 +195,7 @@ class HiveViewModel @Inject constructor(
         setSelectedHive(selectedHiveId)
         navigate(navController, Screen.HiveInfoScreen)
     }
+
 
     fun onLongPressHiveListItem(selectedHiveId: String) {
         // enable delete mode
@@ -161,7 +259,7 @@ class HiveViewModel @Inject constructor(
         state = state.copy(
             navigationBarMenuState = MenuState.CLOSED,
             hiveDeleteMode = false,
-            hiveInfoMenuState = MenuState.CLOSED,
+            editHiveMenuState = MenuState.CLOSED,
             showExtraButtons = false
         )
         clearSelectionList()
@@ -192,7 +290,8 @@ class HiveViewModel @Inject constructor(
      * @param [TemperatureMeasurement.displayValue] The display value of the temperature unit.
      */
     fun setTemperatureMeasurement(string: String) {
-        val temperatureMeasurement = TemperatureMeasurement.values().find { it.displayValue == string }
+        val temperatureMeasurement =
+            TemperatureMeasurement.values().find { it.displayValue == string }
         runCatching { temperatureMeasurement!! }.onSuccess {
             updateUserPreferences(state.userPreferences.copy(temperatureMeasurement = it))
         }.onFailure {
@@ -200,7 +299,10 @@ class HiveViewModel @Inject constructor(
                 app, "Error updating temperature unit measurement", Toast.LENGTH_SHORT
             ).show()
             // log error
-            Log.e("HiveViewModel", "Error updating temperature unit measurement ${it.stackTraceToString()}")
+            Log.e(
+                "HiveViewModel",
+                "Error updating temperature unit measurement ${it.stackTraceToString()}"
+            )
         }
     }
 
@@ -233,8 +335,7 @@ class HiveViewModel @Inject constructor(
 
     private fun setSelectedHive(hiveId: String) {
         // Set the selected hive in the state by finding the hive with the matching id
-        state = state.copy(selectedHive = state.hives.find { it.id == hiveId })
-
+        state = state.copy(selectedHive = hives.value.find { it.id == hiveId })
     }
 
     fun setHiveNotes(notes: String) {
@@ -272,7 +373,7 @@ class HiveViewModel @Inject constructor(
     }
 
     private fun setHiveInfoMenuState(state: MenuState) {
-        this.state = this.state.copy(hiveInfoMenuState = state)
+        this.state = this.state.copy(editHiveMenuState = state)
     }
 
     fun setCameraPermissionAllowed(isAllowed: Boolean) {
@@ -289,8 +390,9 @@ class HiveViewModel @Inject constructor(
             hiveRepository.getAllHives()
         }.onSuccess { hives ->
             state = state.copy(
-                isLoading = false, isSuccess = true, hives = hives
+                isLoading = false, isSuccess = true
             )
+            _hives.value = hives
         }.onFailure { error ->
             state = state.copy(
                 isLoading = false,
@@ -326,7 +428,8 @@ class HiveViewModel @Inject constructor(
                     id = UUID.randomUUID().toString(),
                     HiveInfo(
                         name = "Hive ${hives.size + 1}",
-                    )
+                    ),
+                    displayOrder = hives.size + 1
                 )
                 hiveRepository.createHive(hive)
             }.onSuccess {
@@ -340,23 +443,22 @@ class HiveViewModel @Inject constructor(
     }
 
 
-    fun updateHive(hive: Hive) {
-        viewModelScope.launch {
-            runCatching {
-                hiveRepository.updateHive(
-                    hive.copy(
-                        hiveInfo = hive.hiveInfo.copy(
-                            dateModified = System.currentTimeMillis().toString()
-                        )
+    private suspend fun updateHive(hive: Hive) {
+        runCatching {
+            state = state.copy(isLoading = true)
+            hiveRepository.updateHive(
+                hive.copy(
+                    hiveInfo = hive.hiveInfo.copy(
+                        dateModified = System.currentTimeMillis().toString()
                     )
                 )
-            }.onSuccess {
-                getAllHives()
-            }.onFailure {
-                state = state.copy(isError = true, errorMessage = it.message ?: "")
-                // Show error message
-                Toast.makeText(app, it.message, Toast.LENGTH_SHORT).show()
-            }
+            )
+        }.onSuccess {
+            getAllHives()
+        }.onFailure {
+            state = state.copy(isError = true, errorMessage = it.message ?: "")
+            // Show error message
+            Toast.makeText(app, it.message, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -418,9 +520,9 @@ class HiveViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching {
                 bitmap?.let {
+                    val uri = getImageUri("${state.selectedHive?.id}")
                     val file = File(
-                        app.getExternalFilesDir(Environment.DIRECTORY_PICTURES),
-                        "hive_${state.selectedHive!!.id}.jpg"
+                        uri.path ?: throw NotFoundException("Error getting file path")
                     )
                     val out = FileOutputStream(file)
                     it.compress(Bitmap.CompressFormat.JPEG, 100, out)
@@ -438,37 +540,63 @@ class HiveViewModel @Inject constructor(
                     }
                 }
             }.onSuccess {
-                state = state.copy(isSuccess = true, hives = state.selectedHive?.let {
-                    state.hives.map { hive ->
-                        if (hive.id == it.id) {
-                            hive.copy(hiveInfo = hive.hiveInfo.copy(image = it.hiveInfo.image))
-                        } else {
-                            hive
-                        }
-                    }
-                } ?: state.hives)
+                state = state.copy(isLoading = false, isSuccess = true)
+                _hives.value = hiveRepository.getAllHives()
             }.onFailure {
                 state = state.copy(isError = true, errorMessage = it.message ?: "")
             }
         }
     }
 
-    fun setHiveImageUri(uri: Uri?) {
-        // update selected hive to be edited with the new image uri
-        state.selectedHive?.let { hive ->
-            updateHive(
-                hive.copy(
-                    hiveInfo = hive.hiveInfo.copy(
-                        image = uri.toString()
+    fun getImageUri(name: String): Uri {
+        val directory = File(app.cacheDir, "images")
+        directory.mkdirs()
+        val file = File.createTempFile(
+            "image_${name}",
+            ".jpg",
+            directory,
+        )
+        val authority = app.packageName + ".fileprovider"
+        return getUriForFile(
+            app,
+            authority,
+            file,
+        )
+    }
+
+    fun copyImageToInternalStorage(uriFromExternalStorage: Uri?) {
+        viewModelScope.launch {
+            // save the image uri to the disk
+            uriFromExternalStorage?.let {
+                // copy
+                val uri = getImageUri(state.selectedHive!!.id)
+                val inputStream = app.contentResolver.openInputStream(it)
+                val outputStream = app.contentResolver.openOutputStream(uri)
+                inputStream?.copyTo(outputStream!!)
+                inputStream?.close()
+                outputStream?.close()
+                // update the hive with the new image
+                state.selectedHive?.let { hive ->
+                    updateHive(
+                        hive.copy(
+                            hiveInfo = hive.hiveInfo.copy(
+                                image = uri.toString()
+                            )
+                        )
                     )
-                )
-            )
+                    deselectHive()
+                }
+            }
         }
+    }
+
+    private fun deselectHive() {
+        state = state.copy(selectedHive = null)
     }
 
     fun onClickLogDataButton(id: String, navController: NavController) {
         // set the selected hive
-        state.hives.find { hive -> hive.id == id }?.let { hive ->
+        hives.value.find { hive -> hive.id == id }?.let { hive ->
             state = state.copy(selectedHive = hive)
         }
         // close open menus
@@ -480,11 +608,63 @@ class HiveViewModel @Inject constructor(
 
     fun onClickViewLogHistoryButton(id: String, navController: NavController) {
         // set the selected hive
-        state.hives.find { hive -> hive.id == id }?.let { hive ->
+        hives.value.find { hive -> hive.id == id }?.let { hive ->
             state = state.copy(selectedHive = hive)
         }
         // close open menus
         closeOpenMenus()
         TODO("Navigate to the log history screen")
+    }
+
+    fun onTapChoosePhotoButton(selectedHiveId: String) {
+        setSelectedHive(selectedHiveId)
+    }
+
+    fun onTapEditHiveNameButton(id: String) {
+        setSelectedHive(id)
+        // set editingTextField to true
+        state = state.copy(editingTextField = true)
+    }
+
+    fun onTapSaveHiveNameButton(id: String, editableString: String) {
+        // set editingTextField to false
+        state = state.copy(editingTextField = false)
+        // update the hive name
+        hives.value.find { hive -> hive.id == id }?.let { hive ->
+            viewModelScope.launch {
+                updateHive(
+                    hive.copy(
+                        hiveInfo = hive.hiveInfo.copy(
+                            name = editableString
+                        )
+                    )
+                )
+                deselectHive()
+            }
+        }
+    }
+
+    fun onTapEditHiveButton(id: String) {
+        setSelectedHive(id)
+        closeOpenMenus()
+        toggleEditHiveMenu()
+    }
+
+    fun toggleEditHiveMenu() {
+        state = state.copy(editHiveMenuState = MenuState.OPEN)
+    }
+
+    fun onTapLogDataButton(id: String, navController: NavController) {
+        setSelectedHive(id)
+        closeOpenMenus()
+        navController.navigate(Screen.HiveInfoScreen.route)
+    }
+
+    fun onTapViewLogsButton(id: String) {
+        TODO("Navigate to the log history screen")
+    }
+
+    fun onDismissEditHiveMenu() {
+        state = state.copy(editHiveMenuState = MenuState.CLOSED)
     }
 }

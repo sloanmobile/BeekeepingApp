@@ -10,4 +10,8 @@ enum class MenuState {
             OPEN -> CLOSED
         }
     }
+
+    fun isOpen(): Boolean {
+        return this == OPEN
+    }
 }

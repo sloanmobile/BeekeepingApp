@@ -1,8 +1,8 @@
-package com.reedsloan.beekeepingapp.presentation.common
+package com.reedsloan.beekeepingapp.presentation.home_screen
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,7 +17,7 @@ fun WorkInProgressOverlayText() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .zIndex(1f)
+            .zIndex(1000f)
     ) {
 
         Text(

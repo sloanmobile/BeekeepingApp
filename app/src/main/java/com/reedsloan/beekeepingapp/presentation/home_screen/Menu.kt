@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.reedsloan.beekeepingapp.R
 import com.reedsloan.beekeepingapp.presentation.common.navigation_bar.NavbarEntry
+import com.reedsloan.beekeepingapp.presentation.viewmodel.hives.HiveViewModel
 import com.reedsloan.beekeepingapp.presentation.screens.Screen
 
 @Composable

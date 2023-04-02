@@ -5,7 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -15,53 +15,12 @@ import androidx.navigation.NavController
 import com.reedsloan.beekeepingapp.data.TimeFormat
 import com.reedsloan.beekeepingapp.data.local.TemperatureMeasurement
 import com.reedsloan.beekeepingapp.presentation.common.Container
-import com.reedsloan.beekeepingapp.presentation.common.HiveViewModel
-import com.reedsloan.beekeepingapp.presentation.common.input_types.SelectionDropdownMenu
-import com.reedsloan.beekeepingapp.presentation.ui.custom_theme.customTheme
+import com.reedsloan.beekeepingapp.presentation.viewmodel.hives.HiveViewModel
 
 @Composable
 fun SettingsScreen(
     navController: NavController,
     hiveViewModel: HiveViewModel
 ) {
-    val state = hiveViewModel.state
-    val maxWidth = with(LocalDensity.current) {
-        LocalContext.current.resources.displayMetrics.widthPixels.toDp() - 16.dp * 2
-    }
 
-    Column {
-        Text("This is the settings screen")
-
-        Container {
-            SelectionDropdownMenu(
-                title = "Temperature",
-                options = TemperatureMeasurement.values().map { it.displayValue },
-                selectedOption = state.userPreferences.temperatureMeasurement.displayValue,
-                onOptionSelected = { hiveViewModel.setTemperatureMeasurement(it.first()) },
-                modifier = Modifier
-                    .background(customTheme.surfaceColor, RoundedCornerShape(8.dp))
-                    .border(
-                        2.dp, customTheme.onSurfaceColor, RoundedCornerShape(8.dp)
-                    )
-                    .padding(8.dp),
-                dropdownWidth = maxWidth,
-                hiveViewModel = hiveViewModel
-            )
-            // Time format setting
-            SelectionDropdownMenu(
-                title = "Time Format",
-                options = TimeFormat.values().map { it.displayValue },
-                selectedOption = state.userPreferences.timeFormat.displayValue,
-                onOptionSelected = { hiveViewModel.setTimeFormat(it.first()) },
-                modifier = Modifier
-                    .background(customTheme.surfaceColor, RoundedCornerShape(8.dp))
-                    .border(
-                        2.dp, customTheme.onSurfaceColor, RoundedCornerShape(8.dp)
-                    )
-                    .padding(8.dp),
-                dropdownWidth = maxWidth,
-                hiveViewModel = hiveViewModel
-            )
-        }
-    }
 }

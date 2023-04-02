@@ -1,12 +1,12 @@
 package com.reedsloan.beekeepingapp.data.mapper
 
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
-import com.reedsloan.beekeepingapp.data.local.hive.HiveEntity
+import com.reedsloan.beekeepingapp.data.repo.local.HiveEntity
 
 fun HiveEntity.toHive(): Hive {
     return this.hive
 }
 
 fun Hive.toHiveEntity(): HiveEntity {
-    return HiveEntity(this.id, this)
+    return HiveEntity(this.id, this.displayOrder,this)
 }

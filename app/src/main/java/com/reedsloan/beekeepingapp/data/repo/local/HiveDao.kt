@@ -5,7 +5,6 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.reedsloan.beekeepingapp.data.local.UserPreferencesEntity
-import com.reedsloan.beekeepingapp.data.local.hive.HiveEntity
 
 @Dao
 interface HiveDao {
@@ -18,7 +17,7 @@ interface HiveDao {
     @Query("SELECT * FROM hive WHERE id = :hiveId")
     suspend fun getHive(hiveId: Int): HiveEntity
 
-    @Query("SELECT * FROM hive")
+    @Query("SELECT * FROM hive ORDER BY displayOrder ASC")
     suspend fun getAllHives(): List<HiveEntity>
 
     @Query("DELETE FROM hive WHERE id = :hiveId")
