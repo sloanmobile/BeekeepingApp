@@ -24,4 +24,5 @@ data class HiveScreenState(
     val showAddHiveButton: Boolean = true,
     val currentScreenName: String = Screen.HomeScreen.name,
     val editingTextField: Boolean = false,
+    val showDeleteHiveDialog: Boolean = false,
 )
