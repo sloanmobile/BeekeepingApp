@@ -1,12 +1,15 @@
+package com.reedsloan.beekeepingapp.presentation.hives_screen
+
 import android.Manifest
+import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
-import android.os.Environment
+import android.provider.Settings
 import android.util.Log
-import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,36 +25,91 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
+import androidx.compose.ui.window.DialogProperties
+import androidx.core.app.ActivityCompat.checkSelfPermission
+import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
-import com.google.accompanist.permissions.shouldShowRationale
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
-import com.reedsloan.beekeepingapp.presentation.common.containers.SideSheetContainer
+import com.reedsloan.beekeepingapp.presentation.common.data.PermissionRequest
 import com.reedsloan.beekeepingapp.presentation.viewmodel.hives.HiveViewModel
-import com.reedsloan.isPermanentlyDenied
-import java.io.File
+
+fun Activity.openAppSettings() {
+    Intent(
+        Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null)
+    ).also(::startActivity)
+}
 
 @Composable
 fun HivesScreen(navController: NavController, hiveViewModel: HiveViewModel) {
     val state = hiveViewModel.state
     val hives by hiveViewModel.hives.collectAsState()
     var bitmapOrNull: Bitmap? by remember { mutableStateOf(null) }
+    val permissionDialogQueue = hiveViewModel.visiblePermissionDialogQueue.firstOrNull()
+    val context = LocalContext.current
+
+    val multiplePermissionsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        permissions.forEach { (permission, granted) ->
+            hiveViewModel.onPermissionResult(
+                permission = permission, granted = granted
+            )
+        }
+    }
+    Box(Modifier.fillMaxSize()) {
+        if (state.showDeleteHiveDialog && state.selectedHive != null) DeleteConfirmationDialog(
+            onDismiss = { hiveViewModel.dismissDeleteHiveDialog() },
+            onClick = {
+                hiveViewModel.onTapDeleteHiveConfirmationButton(state.selectedHive.id)
+                hiveViewModel.dismissDeleteHiveDialog()
+            })
+    }
+
+    Box(Modifier.fillMaxSize()) {
+        permissionDialogQueue?.let {
+            PermissionDialog(
+                permissionRequest = it,
+                isPermanentlyDeclined = !shouldShowRequestPermissionRationale(
+                    context as Activity, it.permission
+                ),
+                onDismiss = { hiveViewModel.dismissDialog() },
+                onConfirm = {
+                    if (it.permission == Manifest.permission.CAMERA) {
+                        multiplePermissionsLauncher.launch(
+                            arrayOf(
+                                Manifest.permission.CAMERA,
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE
+                            )
+                        )
+                    } else {
+                        multiplePermissionsLauncher.launch(
+                            arrayOf(
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_COARSE_LOCATION
+                            )
+                        )
+                    }
+                },
+                onGoToAppSettingsClick = {
+                    context.openAppSettings()
+                    hiveViewModel.dismissDialog()
+                },
+            )
+        }
+    }
 
     Column(Modifier.fillMaxSize()) {
-//        PermissionsTest(navController = navController, hiveViewModel = hiveViewModel)
+//        com.reedsloan.beekeepingapp.presentation.hives_screen.PermissionsTest(navController = navController, hiveViewModel = hiveViewModel)
 
         LazyColumn(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxSize()
+            horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxSize()
         ) {
             items(items = hives, key = { it.id }) { hive ->
                 HiveCard(
@@ -87,6 +145,84 @@ fun Modifier.ignoreVerticalParentPadding(vertical: Dp): Modifier {
 }
 
 @Composable
+fun DeleteConfirmationDialog(onClick: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        icon = {
+            Icon(
+                imageVector = Icons.Filled.Warning,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp)
+            )
+        },
+        onDismissRequest = { onDismiss() }, title = {
+        Text(text = "Delete hive?")
+    }, text = {
+        Text(text = "Are you sure you want to delete this hive?")
+    }, confirmButton = {
+        Button(onClick = { onClick() }) {
+            Text(text = "Delete")
+        }
+    }, dismissButton = {
+        Button(onClick = { onDismiss() }) {
+            Text(text = "Cancel")
+        }
+    })
+}
+
+@Composable
+fun PermissionDialog(
+    permissionRequest: PermissionRequest,
+    isPermanentlyDeclined: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+    onGoToAppSettingsClick: () -> Unit
+) {
+    AlertDialog(onDismissRequest = {
+        onDismiss()
+    }, title = {
+        Text(text = "Permission required")
+    }, text = {
+        Text(
+            text = if (isPermanentlyDeclined) {
+                permissionRequest.isPermanentlyDeniedMessage
+            } else {
+                permissionRequest.message
+            }
+        )
+    },
+        icon = {
+            Icon(
+                imageVector = Icons.Filled.Security,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp)
+            )
+        },
+        confirmButton = {
+        Button(onClick = {
+            if (isPermanentlyDeclined) {
+                onGoToAppSettingsClick()
+            } else {
+                onConfirm()
+            }
+        }) {
+            Text(
+                text = if (isPermanentlyDeclined) {
+                    "Go to app settings"
+                } else {
+                    "Confirm"
+                }
+            )
+        }
+    }, dismissButton = {
+        Button(onClick = {
+            onDismiss()
+        }) {
+            Text(text = "Cancel")
+        }
+    })
+}
+
+@Composable
 fun EditHiveMenu(
     hiveViewModel: HiveViewModel,
     hive: Hive,
@@ -105,8 +241,7 @@ fun EditHiveMenu(
     val cameraOpenIntent =
         rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) {
             if (it) {
-                // update the state with the uri
-                hiveViewModel.copyImageToInternalStorage(uri)
+                hiveViewModel.updateHiveImage(hive.id, uri)
             }
         }
 
@@ -115,21 +250,25 @@ fun EditHiveMenu(
             // Hive Name
             Text(
                 text = "Hive name",
-                modifier = Modifier
-                    .padding(16.dp),
+                modifier = Modifier.padding(16.dp),
                 style = MaterialTheme.typography.bodyLarge
             )
         }
         // set image button
         ElevatedButton(
             onClick = {
-                cameraOpenIntent.launch(uri)
-            },
-            modifier = Modifier
-                .padding(16.dp)
+                if (checkSelfPermission(
+                        context, Manifest.permission.CAMERA
+                    ) == PackageManager.PERMISSION_GRANTED
+                ) {
+                    cameraOpenIntent.launch(uri)
+                } else {
+                    hiveViewModel.onPermissionRequested(Manifest.permission.CAMERA)
+                }
+            }, modifier = Modifier.padding(16.dp)
         ) {
             Icon(Icons.Filled.CameraAlt, contentDescription = null)
-            Text(text = "Take photo")
+            Text(text = "Take photo", modifier = Modifier.padding(start = 4.dp))
         }
     }
 }
@@ -162,8 +301,7 @@ fun HiveCard(
         Modifier
             .fillMaxWidth()
             .padding(8.dp)
-    )
-    {
+    ) {
         // Card content
         Column(Modifier.fillMaxSize()) {
             hive.hiveInfo.image?.let { image ->
@@ -176,7 +314,10 @@ fun HiveCard(
                         .height(200.dp),
                     contentScale = ContentScale.Crop,
                     onError = {
-                        Log.e("HiveCard", "Error loading image: ${it.result.throwable}")
+                        Log.e(
+                            this::class.java.simpleName,
+                            "Error loading image: ${it.result.throwable}"
+                        )
                     },
                     filterQuality = FilterQuality.High,
                 )
@@ -198,8 +339,7 @@ fun HiveCard(
                         onClick = {
                             editingHiveName = false
                             hiveViewModel.onTapSaveHiveNameButton(hive.id, editableString)
-                        },
-                        modifier = Modifier
+                        }, modifier = Modifier
                             .weight(1f)
                             .padding(16.dp)
                     ) {
@@ -208,40 +348,33 @@ fun HiveCard(
                 } else {
                     Text(
                         text = hive.hiveInfo.name,
-                        modifier = Modifier
-                            .padding(16.dp),
+                        modifier = Modifier.padding(16.dp),
                         style = MaterialTheme.typography.headlineLarge,
                     )
                 }
             }
             Row(
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                modifier = Modifier
-                    .fillMaxWidth()
+                horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()
             ) {
                 HiveCardAction(
-                    icon = Icons.Filled.Book,
-                    text = "Log Data"
+                    icon = Icons.Filled.Book, text = "Log Data"
                 ) {
                     hiveViewModel.onTapLogDataButton(hive.id, navController)
                 }
                 HiveCardAction(
-                    icon = Icons.Filled.History,
-                    text = "View Logs"
+                    icon = Icons.Filled.History, text = "View Logs"
                 ) {
                     hiveViewModel.onTapViewLogsButton(hive.id)
                 }
                 HiveCardAction(
-                    icon = Icons.Filled.Edit,
-                    text = "Edit"
+                    icon = Icons.Filled.Edit, text = "Edit"
                 ) {
                     hiveViewModel.onTapEditHiveButton(hive.id)
                 }
                 HiveCardAction(
-                    icon = Icons.Filled.Delete,
-                    text = "Delete"
+                    icon = Icons.Filled.Delete, text = "Delete"
                 ) {
-                    hiveViewModel.onTapDeleteHiveButton(hive.id)
+                    hiveViewModel.showDeleteHiveDialog(hive.id)
                 }
             }
             Spacer(modifier = Modifier.height(4.dp))
@@ -251,13 +384,10 @@ fun HiveCard(
 
 @Composable
 fun HiveCardAction(
-    icon: ImageVector,
-    text: String,
-    onClick: () -> Unit
+    icon: ImageVector, text: String, onClick: () -> Unit
 ) {
     ElevatedButton(
-        modifier = Modifier
-            .size(80.dp),
+        modifier = Modifier.size(80.dp),
         onClick = { onClick() },
         shape = RoundedCornerShape(8.dp),
         contentPadding = PaddingValues(4.dp)
@@ -265,8 +395,7 @@ fun HiveCardAction(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            modifier = Modifier
-                .fillMaxSize()
+            modifier = Modifier.fillMaxSize()
         ) {
             Icon(icon, contentDescription = null)
             Spacer(modifier = Modifier.height(8.dp))
@@ -313,69 +442,4 @@ fun PermissionsTest(navController: NavController, hiveViewModel: HiveViewModel) 
         )
     }
 
-    permissionsState.permissions.forEach { perm ->
-        when (perm.permission) {
-            Manifest.permission.CAMERA -> {
-                when {
-                    perm.status.isGranted -> {
-                        Text("Camera permission granted")
-                        hiveViewModel.setCameraPermissionAllowed(true)
-                    }
-                    perm.status.shouldShowRationale -> {
-                        Text("Camera permission is needed.")
-                        hiveViewModel.setStoragePermissionAllowed(false)
-                    }
-                    perm.isPermanentlyDenied() -> {
-                        Text("Camera permission is permanently denied.")
-                        hiveViewModel.setStoragePermissionAllowed(false)
-                    }
-                }
-            }
-            Manifest.permission.READ_MEDIA_IMAGES -> {
-                when {
-                    perm.status.isGranted -> {
-                        Text("Read Media Images permission granted")
-                        hiveViewModel.setStoragePermissionAllowed(true)
-                    }
-                    perm.status.shouldShowRationale -> {
-                        Text("Read Media Images permission is needed.")
-                        hiveViewModel.setStoragePermissionAllowed(false)
-                    }
-                    perm.isPermanentlyDenied() -> {
-                        Text("Read Media Images permission is permanently denied.")
-                        hiveViewModel.setStoragePermissionAllowed(false)
-                    }
-                }
-            }
-        }
-    }
-    // show selected hive id
-    Text("Selected Hive ID: ${hiveViewModel.state.selectedHive?.id}")
-    Button(onClick = { permissionsState.launchMultiplePermissionRequest() }) {
-        Text("Request permissions")
-    }
-
-    Column(modifier = Modifier.fillMaxWidth()) {
-        if (!state.isCameraPermissionAllowed) {
-            Text(" (Camera permission needed)")
-        }
-        Button(
-            onClick = {
-                // open camera
-                cameraOpenIntent.launch(null)
-            }, enabled = state.isCameraPermissionAllowed
-        ) {
-            Text("Take Photo")
-        }
-
-        if (!state.isStoragePermissionAllowed) {
-            Text(" (Storage permission needed)")
-        }
-        Button(onClick = {
-            // open image picker
-            imagePickerIntent.launch("image/*")
-        }, enabled = state.isStoragePermissionAllowed) {
-            Text("Choose Photo")
-        }
-    }
 }

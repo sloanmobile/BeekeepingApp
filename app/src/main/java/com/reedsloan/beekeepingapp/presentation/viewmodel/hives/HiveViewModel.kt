@@ -7,11 +7,11 @@ import android.content.res.Resources.NotFoundException
 import android.graphics.Bitmap
 import android.icu.text.DateFormat
 import android.net.Uri
-import android.os.Environment
 import android.util.Log
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.FileProvider.getUriForFile
@@ -23,20 +23,19 @@ import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.TemperatureMeasurement
 import com.reedsloan.beekeepingapp.data.local.hive.*
 import com.reedsloan.beekeepingapp.domain.repo.HiveRepository
+import com.reedsloan.beekeepingapp.presentation.common.data.PermissionRequest
 import com.reedsloan.beekeepingapp.presentation.home_screen.HiveScreenState
 import com.reedsloan.beekeepingapp.presentation.home_screen.MenuState
 import com.reedsloan.beekeepingapp.presentation.screens.Screen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.time.*
 import java.time.format.DateTimeFormatter
-import java.util.UUID
-import java.util.concurrent.Flow
+import java.util.*
 import javax.inject.Inject
 
 @HiltViewModel
@@ -47,11 +46,49 @@ class HiveViewModel @Inject constructor(
     private val _hives = MutableStateFlow<List<Hive>>(emptyList())
     val hives = _hives.asStateFlow()
 
+    val visiblePermissionDialogQueue = mutableStateListOf<PermissionRequest>()
+
+
     init {
         viewModelScope.launch {
             getUserPreferences()
             getAllHives()
         }
+    }
+
+    fun dismissDialog() {
+        visiblePermissionDialogQueue.removeFirst()
+    }
+
+    /**
+     * On permission result, remove the permission from the queue if it was granted.
+     * If it was denied, the open app settings dialog will be shown.
+     */
+    fun onPermissionResult(permission: String, granted: Boolean) {
+        if (granted) {
+            visiblePermissionDialogQueue.removeIf { it.permission == permission }
+        } else {
+            dismissDialog()
+        }
+    }
+
+    fun onPermissionRequested(permission: String) {
+        visiblePermissionDialogQueue.add(getPermissionRequest(permission))
+    }
+
+    private fun getPermissionRequest(permission: String): PermissionRequest {
+        return when(permission) {
+            android.Manifest.permission.CAMERA -> {
+                PermissionRequest.CameraPermissionRequest
+            }
+            android.Manifest.permission.READ_EXTERNAL_STORAGE -> {
+                PermissionRequest.StoragePermissionRequest
+            }
+            else -> {
+                throw IllegalArgumentException("Unknown permission: $permission, please add it to the getPermissionRequest function.")
+            }
+        }
+
     }
 
     fun getHourMinuteString(date: LocalDateTime): String {
@@ -222,9 +259,20 @@ class HiveViewModel @Inject constructor(
         }
     }
 
-    fun onTapDeleteHiveButton(selectedHiveId: String) {
+    fun showDeleteHiveDialog(selectedHive: String) {
+        setSelectedHive(selectedHive)
+        // show confirmation dialog
+        state = state.copy(showDeleteHiveDialog = true)
+    }
+
+    fun dismissDeleteHiveDialog() {
+        state = state.copy(showDeleteHiveDialog = false)
+    }
+
+    fun onTapDeleteHiveConfirmationButton(selectedHiveId: String) {
         viewModelScope.launch {
             deleteHive(selectedHiveId)
+            closeOpenMenus()
         }
     }
 
@@ -374,14 +422,6 @@ class HiveViewModel @Inject constructor(
 
     private fun setHiveInfoMenuState(state: MenuState) {
         this.state = this.state.copy(editHiveMenuState = state)
-    }
-
-    fun setCameraPermissionAllowed(isAllowed: Boolean) {
-        state = state.copy(isCameraPermissionAllowed = isAllowed)
-    }
-
-    fun setStoragePermissionAllowed(isAllowed: Boolean) {
-        state = state.copy(isStoragePermissionAllowed = isAllowed)
     }
 
     private suspend fun getAllHives() {
@@ -666,5 +706,19 @@ class HiveViewModel @Inject constructor(
 
     fun onDismissEditHiveMenu() {
         state = state.copy(editHiveMenuState = MenuState.CLOSED)
+    }
+
+    fun updateHiveImage(id: String, uri: Uri) {
+        hives.value.find { hive -> hive.id == id }?.let { hive ->
+            viewModelScope.launch {
+                updateHive(
+                    hive.copy(
+                        hiveInfo = hive.hiveInfo.copy(
+                            image = uri.toString()
+                        )
+                    )
+                )
+            }
+        }
     }
 }
