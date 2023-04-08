@@ -66,9 +66,10 @@ class HiveViewModel @Inject constructor(
      */
     fun onPermissionResult(permission: String, granted: Boolean) {
         if (granted) {
-            visiblePermissionDialogQueue.removeIf { it.permission == permission }
+            dismissDialog()
         } else {
             dismissDialog()
+            visiblePermissionDialogQueue.add(getPermissionRequest(permission = permission))
         }
     }
 
@@ -77,12 +78,12 @@ class HiveViewModel @Inject constructor(
     }
 
     private fun getPermissionRequest(permission: String): PermissionRequest {
-        return when(permission) {
+        return when (permission) {
             android.Manifest.permission.CAMERA -> {
                 PermissionRequest.CameraPermissionRequest
             }
-            android.Manifest.permission.READ_EXTERNAL_STORAGE -> {
-                PermissionRequest.StoragePermissionRequest
+            android.Manifest.permission.READ_MEDIA_IMAGES -> {
+                PermissionRequest.StoragePermissionRequestAPI33
             }
             else -> {
                 throw IllegalArgumentException("Unknown permission: $permission, please add it to the getPermissionRequest function.")

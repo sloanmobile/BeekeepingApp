@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.FilterQuality
@@ -81,21 +82,7 @@ fun HivesScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                 ),
                 onDismiss = { hiveViewModel.dismissDialog() },
                 onConfirm = {
-                    if (it.permission == Manifest.permission.CAMERA) {
-                        multiplePermissionsLauncher.launch(
-                            arrayOf(
-                                Manifest.permission.CAMERA,
-                                Manifest.permission.WRITE_EXTERNAL_STORAGE
-                            )
-                        )
-                    } else {
-                        multiplePermissionsLauncher.launch(
-                            arrayOf(
-                                Manifest.permission.ACCESS_FINE_LOCATION,
-                                Manifest.permission.ACCESS_COARSE_LOCATION
-                            )
-                        )
-                    }
+                    multiplePermissionsLauncher.launch(arrayOf(it.permission))
                 },
                 onGoToAppSettingsClick = {
                     context.openAppSettings()
@@ -155,18 +142,18 @@ fun DeleteConfirmationDialog(onClick: () -> Unit, onDismiss: () -> Unit) {
             )
         },
         onDismissRequest = { onDismiss() }, title = {
-        Text(text = "Delete hive?")
-    }, text = {
-        Text(text = "Are you sure you want to delete this hive?")
-    }, confirmButton = {
-        Button(onClick = { onClick() }) {
-            Text(text = "Delete")
-        }
-    }, dismissButton = {
-        Button(onClick = { onDismiss() }) {
-            Text(text = "Cancel")
-        }
-    })
+            Text(text = "Delete hive?")
+        }, text = {
+            Text(text = "Are you sure you want to delete this hive?")
+        }, confirmButton = {
+            Button(onClick = { onClick() }) {
+                Text(text = "Delete")
+            }
+        }, dismissButton = {
+            Button(onClick = { onDismiss() }) {
+                Text(text = "Cancel")
+            }
+        })
 }
 
 @Composable
@@ -198,28 +185,28 @@ fun PermissionDialog(
             )
         },
         confirmButton = {
-        Button(onClick = {
-            if (isPermanentlyDeclined) {
-                onGoToAppSettingsClick()
-            } else {
-                onConfirm()
-            }
-        }) {
-            Text(
-                text = if (isPermanentlyDeclined) {
-                    "Go to app settings"
+            Button(onClick = {
+                if (isPermanentlyDeclined) {
+                    onGoToAppSettingsClick()
                 } else {
-                    "Confirm"
+                    onConfirm()
                 }
-            )
-        }
-    }, dismissButton = {
-        Button(onClick = {
-            onDismiss()
-        }) {
-            Text(text = "Cancel")
-        }
-    })
+            }) {
+                Text(
+                    text = if (isPermanentlyDeclined) {
+                        "Go to app settings"
+                    } else {
+                        "Confirm"
+                    }
+                )
+            }
+        }, dismissButton = {
+            Button(onClick = {
+                onDismiss()
+            }) {
+                Text(text = "Cancel")
+            }
+        })
 }
 
 @Composable
@@ -236,7 +223,7 @@ fun EditHiveMenu(
 
     val state = hiveViewModel.state
     val context = LocalContext.current
-    val uri by remember { mutableStateOf(hiveViewModel.getImageUri(hive.id)) }
+    val uri by rememberSaveable { mutableStateOf(hiveViewModel.getImageUri(hive.id)) }
 
     val cameraOpenIntent =
         rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) {
