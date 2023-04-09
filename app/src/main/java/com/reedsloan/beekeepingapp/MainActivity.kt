@@ -59,8 +59,9 @@ class MainActivity : ComponentActivity() {
 
                     state.selectedHive?.let { hive ->
                         SideSheetContainer(
+                            // using a raw string with """ instead of " to get quotes in the string
                             display = state.editHiveMenuState.isOpen(),
-                            title = "Editing ${hive.hiveInfo.name}",
+                            title = """Editing "${hive.hiveInfo.name}"""",
                             onDismiss = { hiveViewModel.onDismissEditHiveMenu() }) {
                             EditHiveMenu(
                                 hiveViewModel = hiveViewModel,

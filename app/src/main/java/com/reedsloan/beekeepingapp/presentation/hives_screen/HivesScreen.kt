@@ -11,6 +11,7 @@ import android.provider.Settings
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -22,11 +23,14 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.paint
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -215,47 +219,160 @@ fun EditHiveMenu(
     hive: Hive,
     navController: NavController,
 ) {
-    val imagePickerIntent =
-        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-            // update the state with the uri
-            hiveViewModel.copyImageToInternalStorage(uri)
-        }
+
+    var uri: Uri? by rememberSaveable {
+        mutableStateOf(
+            null
+        )
+    }
+    var isLoading by remember {
+        mutableStateOf(
+            false
+        )
+    }
+
 
     val state = hiveViewModel.state
     val context = LocalContext.current
-    val uri by rememberSaveable { mutableStateOf(hiveViewModel.getImageUri(hive.id)) }
+
+    var display by remember {
+        mutableStateOf(
+            true
+        )
+    }
+
+    val imagePickerIntent =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { imageUri ->
+            isLoading = false
+            uri = imageUri
+        }
 
     val cameraOpenIntent =
         rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) {
             if (it) {
-                hiveViewModel.updateHiveImage(hive.id, uri)
+                isLoading = false
             }
         }
 
-    Column(Modifier.fillMaxSize()) {
-        Row {
+    val hiveName = remember { mutableStateOf(TextFieldValue(hive.hiveInfo.name)) }
+
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
+        Column {
             // Hive Name
-            Text(
-                text = "Hive name",
-                modifier = Modifier.padding(16.dp),
-                style = MaterialTheme.typography.bodyLarge
+            TextField(
+                value = hiveName.value,
+                onValueChange = { hiveName.value = it },
+                label = { Text(text = "Hive Name") },
+                modifier = Modifier
+                    .fillMaxWidth()
             )
+            Spacer(modifier = Modifier.height(16.dp))
+            if (!isLoading) {
+                // Hive image
+                AsyncImage(
+                    model = uri ?: hive.hiveInfo.image,
+                    contentDescription = "Hive image",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .clip(MaterialTheme.shapes.large),
+                    contentScale = ContentScale.Crop,
+                    onError = {
+                        Log.e(
+                            this::class.java.simpleName,
+                            "Error loading image: ${it.result.throwable}"
+                        )
+                    },
+                    filterQuality = FilterQuality.High,
+                )
+            } else {
+                // Hive image loading (just a placeholder)
+                AsyncImage(
+                    model = null,
+                    contentDescription = "Hive image",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .clip(MaterialTheme.shapes.large),
+                    contentScale = ContentScale.Crop,
+                    onError = {
+                        Log.e(
+                            this::class.java.simpleName,
+                            "Error loading image: ${it.result.throwable}"
+                        )
+                    },
+                    filterQuality = FilterQuality.High,
+                )
+            }
+            // set image button
+            ElevatedButton(
+                onClick = {
+                    if (checkSelfPermission(
+                            context, Manifest.permission.CAMERA
+                        ) == PackageManager.PERMISSION_GRANTED
+                    ) {
+                        isLoading = true
+                        uri?.let { hiveViewModel.deleteImage(it) }
+                        uri = hiveViewModel.getImageUri(hive.id)
+                        cameraOpenIntent.launch(uri)
+                    } else {
+                        hiveViewModel.onPermissionRequested(Manifest.permission.CAMERA)
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                Icon(Icons.Filled.CameraAlt, contentDescription = null)
+                Text(text = "Take photo", modifier = Modifier.padding(start = 4.dp))
+            }
+            // choose image button
+            ElevatedButton(
+                onClick = {
+                    isLoading = true
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        if (checkSelfPermission(
+                                context, Manifest.permission.READ_MEDIA_IMAGES
+                            ) == PackageManager.PERMISSION_GRANTED
+                        ) {
+                            imagePickerIntent.launch("image/*")
+                        } else {
+                            hiveViewModel.onPermissionRequested(Manifest.permission.READ_MEDIA_IMAGES)
+                        }
+                    } else {
+                        if (checkSelfPermission(
+                                context, Manifest.permission.READ_EXTERNAL_STORAGE
+                            ) == PackageManager.PERMISSION_GRANTED
+                        ) {
+                            imagePickerIntent.launch("image/*")
+                        } else {
+                            hiveViewModel.onPermissionRequested(Manifest.permission.READ_EXTERNAL_STORAGE)
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                Icon(Icons.Filled.Image, contentDescription = null)
+                Text(text = "Choose photo", modifier = Modifier.padding(start = 4.dp))
+            }
         }
-        // set image button
-        ElevatedButton(
+
+        // save button
+        Button(
             onClick = {
-                if (checkSelfPermission(
-                        context, Manifest.permission.CAMERA
-                    ) == PackageManager.PERMISSION_GRANTED
-                ) {
-                    cameraOpenIntent.launch(uri)
-                } else {
-                    hiveViewModel.onPermissionRequested(Manifest.permission.CAMERA)
-                }
-            }, modifier = Modifier.padding(16.dp)
+                hiveViewModel.onTapSaveButton(uri = uri, name = hiveName.value.text)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
         ) {
-            Icon(Icons.Filled.CameraAlt, contentDescription = null)
-            Text(text = "Take photo", modifier = Modifier.padding(start = 4.dp))
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Filled.Save, contentDescription = null)
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(text = "Save")
+            }
         }
     }
 }
@@ -341,42 +458,51 @@ fun HiveCard(
                 }
             }
             Row(
-                horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()
+                horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(4.dp)
             ) {
                 HiveCardAction(
-                    icon = Icons.Filled.Book, text = "Log Data"
+                    icon = Icons.Filled.Book, text = "Log Data", modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 4.dp)
                 ) {
                     hiveViewModel.onTapLogDataButton(hive.id, navController)
                 }
                 HiveCardAction(
-                    icon = Icons.Filled.History, text = "View Logs"
+                    icon = Icons.Filled.History, text = "View Logs", modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 4.dp)
                 ) {
                     hiveViewModel.onTapViewLogsButton(hive.id)
                 }
                 HiveCardAction(
-                    icon = Icons.Filled.Edit, text = "Edit"
+                    icon = Icons.Filled.Edit, text = "Edit", modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 4.dp)
                 ) {
                     hiveViewModel.onTapEditHiveButton(hive.id)
                 }
                 HiveCardAction(
-                    icon = Icons.Filled.Delete, text = "Delete"
+                    icon = Icons.Filled.Delete, text = "Delete", modifier = Modifier.weight(1f)
                 ) {
                     hiveViewModel.showDeleteHiveDialog(hive.id)
                 }
             }
-            Spacer(modifier = Modifier.height(4.dp))
         }
     }
 }
 
 @Composable
 fun HiveCardAction(
-    icon: ImageVector, text: String, onClick: () -> Unit
+    icon: ImageVector, text: String, modifier: Modifier = Modifier, onClick: () -> Unit
 ) {
     ElevatedButton(
-        modifier = Modifier.size(80.dp),
+        modifier = modifier
+            .height(80.dp)
+            .fillMaxWidth(),
         onClick = { onClick() },
-        shape = RoundedCornerShape(8.dp),
+        shape = MaterialTheme.shapes.medium,
         contentPadding = PaddingValues(4.dp)
     ) {
         Column(

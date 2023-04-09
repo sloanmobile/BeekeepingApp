@@ -589,6 +589,27 @@ class HiveViewModel @Inject constructor(
         }
     }
 
+    fun deleteImage() {
+        viewModelScope.launch {
+            runCatching {
+                state.selectedHive?.let { hive ->
+                    updateHive(
+                        hive.copy(
+                            hiveInfo = hive.hiveInfo.copy(
+                                image = ""
+                            )
+                        )
+                    )
+                }
+            }.onSuccess {
+                state = state.copy(isLoading = false, isSuccess = true)
+                _hives.value = hiveRepository.getAllHives()
+            }.onFailure {
+                state = state.copy(isError = true, errorMessage = it.message ?: "")
+            }
+        }
+    }
+
     fun getImageUri(name: String): Uri {
         val directory = File(app.cacheDir, "images")
         directory.mkdirs()
@@ -657,6 +678,19 @@ class HiveViewModel @Inject constructor(
         TODO("Navigate to the log history screen")
     }
 
+    fun deleteImage(uri: Uri) {
+        viewModelScope.launch {
+            runCatching {
+                app.contentResolver.delete(uri, null, null)
+            }.onSuccess {
+                state = state.copy(isLoading = false, isSuccess = true)
+                _hives.value = hiveRepository.getAllHives()
+            }.onFailure {
+                state = state.copy(isError = true, errorMessage = it.message ?: "")
+            }
+        }
+    }
+
     fun onTapChoosePhotoButton(selectedHiveId: String) {
         setSelectedHive(selectedHiveId)
     }
@@ -709,16 +743,27 @@ class HiveViewModel @Inject constructor(
         state = state.copy(editHiveMenuState = MenuState.CLOSED)
     }
 
-    fun updateHiveImage(id: String, uri: Uri) {
-        hives.value.find { hive -> hive.id == id }?.let { hive ->
-            viewModelScope.launch {
-                updateHive(
-                    hive.copy(
-                        hiveInfo = hive.hiveInfo.copy(
-                            image = uri.toString()
+    fun onTapSaveButton(uri: Uri?, name: String) {
+        closeOpenMenus()
+        viewModelScope.launch {
+            runCatching {
+                state.selectedHive?.let { hive ->
+                    copyImageToInternalStorage(uri)
+                    updateHive(
+                        hive.copy(
+                            hiveInfo = hive.hiveInfo.copy(
+                                name = name,
+                                image = uri?.toString() ?: hive.hiveInfo.image
+                            )
                         )
                     )
-                )
+                    deselectHive()
+                }
+            }.onSuccess {
+                state = state.copy(isLoading = false, isSuccess = true)
+                _hives.value = hiveRepository.getAllHives()
+            }.onFailure {
+                state = state.copy(isError = true, errorMessage = it.message ?: "")
             }
         }
     }
