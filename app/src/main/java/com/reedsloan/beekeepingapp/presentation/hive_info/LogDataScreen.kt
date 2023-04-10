@@ -3,15 +3,13 @@ package com.reedsloan.beekeepingapp.presentation.hive_info
 import android.app.DatePickerDialog
 import android.icu.util.Calendar
 import android.widget.DatePicker
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -19,7 +17,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.kizitonwose.calendar.compose.HorizontalCalendar
+import com.kizitonwose.calendar.compose.rememberCalendarState
+import com.kizitonwose.calendar.core.CalendarDay
+import com.kizitonwose.calendar.core.firstDayOfWeekFromLocale
 import com.reedsloan.beekeepingapp.presentation.viewmodel.hives.HiveViewModel
+import java.time.YearMonth
 import java.util.*
 
 @Composable
@@ -73,5 +76,33 @@ fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                 }
             }
         }
+
+        val currentMonth = remember { YearMonth.now() }
+        val startMonth = remember { currentMonth.minusMonths(100) } // Adjust as needed
+        val endMonth = remember { currentMonth.plusMonths(100) } // Adjust as needed
+        val firstDayOfWeek = remember { firstDayOfWeekFromLocale() } // Available from the library
+
+        val calendarState = rememberCalendarState(
+            startMonth = startMonth,
+            endMonth = endMonth,
+            firstVisibleMonth = currentMonth,
+            firstDayOfWeek = firstDayOfWeek
+        )
+
+        HorizontalCalendar(
+            state = calendarState,
+            dayContent = { Day(it) }
+        )
+    }
+}
+
+@Composable
+fun Day(day: CalendarDay) {
+    Box(
+        modifier = Modifier
+            .aspectRatio(1f), // This is important for square sizing!
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text = day.date.dayOfMonth.toString())
     }
 }

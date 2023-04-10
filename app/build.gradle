@@ -167,4 +167,9 @@ dependencies {
 
     // vanpra compose-material-dialogs
     implementation 'io.github.vanpra.compose-material-dialogs:datetime:0.9.0'
+
+    // https://github.com/kizitonwose/Calendar
+
+    // The compose calendar library
+    implementation "com.kizitonwose.calendar:compose:2.3.0"
 }
