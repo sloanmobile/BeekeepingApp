@@ -125,16 +125,6 @@ fun HivesScreen(navController: NavController, hiveViewModel: HiveViewModel) {
     }
 }
 
-fun Modifier.ignoreVerticalParentPadding(vertical: Dp): Modifier {
-    return this.layout { measurable, constraints ->
-        val overridenHeight = constraints.maxHeight + 2 * vertical.roundToPx()
-        val placeable = measurable.measure(constraints.copy(maxHeight = overridenHeight))
-        layout(placeable.width, placeable.height) {
-            placeable.place(0, 0)
-        }
-    }
-}
-
 @Composable
 fun DeleteConfirmationDialog(onClick: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
@@ -267,6 +257,7 @@ fun EditHiveMenu(
                     .fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             if (!isLoading) {
                 // Hive image
                 AsyncImage(
@@ -383,23 +374,6 @@ fun HiveCard(
     navController: NavController,
     hiveViewModel: HiveViewModel,
 ) {
-
-    var editingHiveName by remember {
-        mutableStateOf(false)
-    }
-
-    var editableString by remember {
-        mutableStateOf(hive.hiveInfo.name)
-    }
-
-    // cancel editing the hive name
-    LaunchedEffect(key1 = editingHiveName) {
-        if (!editingHiveName) {
-            // reset the editable string
-            editableString = hive.hiveInfo.name
-        }
-    }
-
     // launchedeffect to update the hive name when it
     ElevatedCard(
         Modifier
@@ -426,36 +400,15 @@ fun HiveCard(
                     filterQuality = FilterQuality.High,
                 )
             }
-            Row {
-                // Hive name
-                if (editingHiveName) {
-                    TextField(
-                        value = editableString,
-                        onValueChange = { editableString = it },
-                        label = { Text(text = "Hive name") },
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(16.dp),
-                        textStyle = MaterialTheme.typography.titleLarge,
-                    )
-                    // save button
-                    IconButton(
-                        onClick = {
-                            editingHiveName = false
-                            hiveViewModel.onTapSaveHiveNameButton(hive.id, editableString)
-                        }, modifier = Modifier
-                            .weight(1f)
-                            .padding(16.dp)
-                    ) {
-                        Text(text = "Save")
-                    }
-                } else {
+            Column(Modifier.padding(16.dp)) {
+                Row {
+                    // Hive name
                     Text(
                         text = hive.hiveInfo.name,
-                        modifier = Modifier.padding(16.dp),
                         style = MaterialTheme.typography.headlineLarge,
                     )
                 }
+                Spacer(modifier = Modifier.height(4.dp))
             }
             Row(
                 horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier

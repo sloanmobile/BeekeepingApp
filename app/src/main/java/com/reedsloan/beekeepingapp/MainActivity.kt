@@ -28,7 +28,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.reedsloan.beekeepingapp.presentation.common.containers.SideSheetContainer
-import com.reedsloan.beekeepingapp.presentation.hive_info.HiveInfoScreen
+import com.reedsloan.beekeepingapp.presentation.hive_info.LogDataScreen
 import com.reedsloan.beekeepingapp.presentation.home_screen.HomeScreen
 import com.reedsloan.beekeepingapp.presentation.home_screen.WorkInProgressOverlayText
 import com.reedsloan.beekeepingapp.presentation.screens.Screen
@@ -118,9 +118,9 @@ class MainActivity : ComponentActivity() {
                                 }
                                 // hive info screen
                                 composable(
-                                    route = Screen.HiveInfoScreen.route,
+                                    route = Screen.LogDataScreen.route,
                                 ) {
-                                    HiveInfoScreen(navController, hiveViewModel)
+                                    LogDataScreen(navController, hiveViewModel)
                                 }
                                 // settings screen
                                 composable(
@@ -139,14 +139,12 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun BottomBar(navController: NavController) {
-    var selectedItem by remember { mutableStateOf(0) }
-    val items = listOf("Home", "Hives", "Settings")
+    val items = Screen.values().toList().filter { it.isBottomNav }
 
-    val icons = listOf(
-        Icons.Rounded.Home,
-        Icons.Rounded.Hive,
-        Icons.Rounded.Settings
-    )
+    val currentDestination =
+        navController.currentBackStackEntryFlow.collectAsState(initial = navController.currentBackStackEntry)
+
+    val selectedItem = items.firstOrNull { it.route == currentDestination.value?.destination?.route }
 
     Row(
         modifier = Modifier
@@ -155,7 +153,7 @@ fun BottomBar(navController: NavController) {
             .background(MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        items.forEachIndexed { index, item ->
+        items.forEach { item ->
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
@@ -165,27 +163,17 @@ fun BottomBar(navController: NavController) {
                         interactionSource = MutableInteractionSource(),
                         indication = null
                     ) {
-                        selectedItem = index
                         // navigate
-                        when (index) {
-                            0 -> navController.navigate(Screen.HomeScreen.route)
-                            1 -> navController.navigate(Screen.HiveScreen.route)
-                            2 -> navController.navigate(Screen.SettingsScreen.route)
-                        }
+                        navController.navigate(item.route)
                     },
             ) {
                 Button(
                     onClick = {
-                        selectedItem = index
                         // navigate
-                        when (index) {
-                            0 -> navController.navigate(Screen.HomeScreen.route)
-                            1 -> navController.navigate(Screen.HiveScreen.route)
-                            2 -> navController.navigate(Screen.SettingsScreen.route)
-                        }
+                        navController.navigate(item.route)
                     },
                     colors = ButtonDefaults.elevatedButtonColors(
-                        containerColor = if (selectedItem == index) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceColorAtElevation(
+                        containerColor = if (selectedItem == item) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceColorAtElevation(
                             2.dp
                         ),
                         contentColor = MaterialTheme.colorScheme.onSurface
@@ -193,15 +181,15 @@ fun BottomBar(navController: NavController) {
                     modifier = Modifier.padding(horizontal = 8.dp)
                 ) {
                     Icon(
-                        imageVector = icons[index],
-                        contentDescription = item,
+                        imageVector = item.icon,
+                        contentDescription = item.displayText,
                         modifier = Modifier
                             .size(24.dp)
                             .padding(0.dp),
-                        tint = if (selectedItem == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        tint = if (selectedItem == item) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                     )
                 }
-                Text(text = item, style = MaterialTheme.typography.labelMedium)
+                Text(text = item.displayText, style = MaterialTheme.typography.labelMedium)
             }
         }
     }

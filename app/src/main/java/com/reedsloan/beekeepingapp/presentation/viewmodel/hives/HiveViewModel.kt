@@ -185,32 +185,18 @@ class HiveViewModel @Inject constructor(
         } else if (state.editingTextField) {
             toggleEditingTextField()
             return
+        } else if (state.showDeleteHiveDialog) {
+            closeOpenMenus()
+            return
+        } else if (state.editHiveMenuState == MenuState.OPEN) {
+            closeOpenMenus()
+            return
         }
 
-        val destination = navController.currentBackStackEntry?.destination?.route.let {
-            when (it) {
-                Screen.HomeScreen.route -> {
-                    Screen.HomeScreen
-                }
-                Screen.HiveScreen.route -> {
-                    Screen.HiveScreen
-                }
-                Screen.SplashScreen.route -> {
-                    Screen.SplashScreen
-                }
-                Screen.HiveInfoScreen.route -> {
-                    Screen.HiveScreen
-                }
-                Screen.SettingsScreen.route -> {
-                    Screen.SettingsScreen
-                }
-                else -> {
-                    Screen.HomeScreen
-                }
-            }
+        // pop backstack if there is a previous screen
+        if (navController.previousBackStackEntry != null) {
+            navController.popBackStack()
         }
-
-        navigate(navController, destination)
     }
 
     private fun toggleEditingTextField() {
@@ -231,7 +217,7 @@ class HiveViewModel @Inject constructor(
             return
         }
         setSelectedHive(selectedHiveId)
-        navigate(navController, Screen.HiveInfoScreen)
+        navController.navigate(Screen.HiveScreen.route)
     }
 
 
@@ -656,18 +642,6 @@ class HiveViewModel @Inject constructor(
         state = state.copy(selectedHive = null)
     }
 
-    fun onClickLogDataButton(id: String, navController: NavController) {
-        // set the selected hive
-        hives.value.find { hive -> hive.id == id }?.let { hive ->
-            state = state.copy(selectedHive = hive)
-        }
-        // close open menus
-        closeOpenMenus()
-        // navigate to the log data screen
-        navController.navigate(Screen.HiveInfoScreen.route)
-
-    }
-
     fun onClickViewLogHistoryButton(id: String, navController: NavController) {
         // set the selected hive
         hives.value.find { hive -> hive.id == id }?.let { hive ->
@@ -732,7 +706,7 @@ class HiveViewModel @Inject constructor(
     fun onTapLogDataButton(id: String, navController: NavController) {
         setSelectedHive(id)
         closeOpenMenus()
-        navController.navigate(Screen.HiveInfoScreen.route)
+        navController.navigate(Screen.LogDataScreen.route)
     }
 
     fun onTapViewLogsButton(id: String) {

@@ -54,7 +54,7 @@ class HiveInfoScreenTest {
                 composable(
                     route = Screen.HiveInfoScreen.route
                 ) {
-                    HiveInfoScreen(navController, hiveViewModel)
+                    LogDataScreen(navController, hiveViewModel)
                 }
             }
         }

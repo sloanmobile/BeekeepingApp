@@ -23,7 +23,7 @@ import com.reedsloan.beekeepingapp.presentation.viewmodel.hives.HiveViewModel
 import java.util.*
 
 @Composable
-fun HiveInfoScreen(navController: NavController, hiveViewModel: HiveViewModel) {
+fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
     Column(
         Modifier
             .fillMaxSize()

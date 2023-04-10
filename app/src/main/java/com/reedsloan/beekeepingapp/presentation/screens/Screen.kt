@@ -1,10 +1,15 @@
 package com.reedsloan.beekeepingapp.presentation.screens
 
-sealed class Screen(val route: String, val name: String) {
-    object HomeScreen: Screen("home_screen", "Home")
-    object HiveScreen: Screen("hive_screen", "Hives")
-    object SplashScreen: Screen("splash_screen", "Splash")
-    object HiveInfoScreen: Screen("hive_details_screen", "Hive Info")
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Hive
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.ui.graphics.vector.ImageVector
 
-    object SettingsScreen: Screen("settings_screen", "Settings")
+enum class Screen(val route: String, val displayText: String, val icon: ImageVector, val isBottomNav: Boolean = true) {
+    HomeScreen("home_screen", "Home", Icons.Rounded.Home),
+    HiveScreen("hive_screen", "Hives", Icons.Rounded.Hive),
+    SettingsScreen("settings_screen", "Settings", Icons.Rounded.Settings),
+    SplashScreen("splash_screen", "Splash", Icons.Rounded.Home, false),
+    LogDataScreen("log_data_screen", "Log Data", Icons.Rounded.Hive, false),
 }
