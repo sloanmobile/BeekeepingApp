@@ -3,25 +3,34 @@ package com.reedsloan.beekeepingapp.presentation.hive_info
 import android.app.DatePickerDialog
 import android.icu.util.Calendar
 import android.widget.DatePicker
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
 import com.kizitonwose.calendar.core.CalendarDay
+import com.kizitonwose.calendar.core.CalendarMonth
 import com.kizitonwose.calendar.core.firstDayOfWeekFromLocale
 import com.reedsloan.beekeepingapp.presentation.viewmodel.hives.HiveViewModel
+import kotlinx.coroutines.launch
 import java.time.YearMonth
 import java.util.*
 
@@ -54,7 +63,7 @@ fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
         val datePickerDialog = DatePickerDialog(
             context,
             { _: DatePicker, mYear: Int, mMonth: Int, mDayOfMonth: Int ->
-                date.value = "$mDayOfMonth/${mMonth+1}/$mYear"
+                date.value = "$mDayOfMonth/${mMonth + 1}/$mYear"
             }, year, month, day
         )
 
@@ -68,16 +77,16 @@ fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                 modifier = Modifier.padding(16.dp)
             )
 
-            Row {
-                Button(onClick = {
-                    datePickerDialog.show()
-                }) {
-                    Text(text = "Select Date")
-                }
-            }
+//            Row {
+//                Button(onClick = {
+//                    datePickerDialog.show()
+//                }) {
+//                    Text(text = "Select Date")
+//                }
+//            }
         }
 
-        val currentMonth = remember { YearMonth.now() }
+        var currentMonth = remember { YearMonth.now() }
         val startMonth = remember { currentMonth.minusMonths(100) } // Adjust as needed
         val endMonth = remember { currentMonth.plusMonths(100) } // Adjust as needed
         val firstDayOfWeek = remember { firstDayOfWeekFromLocale() } // Available from the library
@@ -88,10 +97,31 @@ fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
             firstVisibleMonth = currentMonth,
             firstDayOfWeek = firstDayOfWeek
         )
-
+        Text(
+            text = "Swipe to change months",
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+        val scope = rememberCoroutineScope()
+        Icon(
+            imageVector = Icons.Rounded.ArrowBack,
+            contentDescription = "Previous month",
+            modifier = Modifier
+                .size(24.dp)
+                .align(Alignment.CenterHorizontally)
+                .clickable {
+                    // scroll to previous month
+                    scope.launch {
+                       currentMonth = currentMonth.minusMonths(1)
+                        calendarState.animateScrollToMonth(currentMonth)
+                    }
+                }
+        )
         HorizontalCalendar(
             state = calendarState,
-            dayContent = { Day(it) }
+            dayContent = { Day(it) },
+            monthHeader = { Month(it) },
         )
     }
 }
@@ -105,4 +135,14 @@ fun Day(day: CalendarDay) {
     ) {
         Text(text = day.date.dayOfMonth.toString())
     }
+}
+
+@Composable
+fun Month(month: CalendarMonth) {
+    Text(
+        text = "${month.yearMonth.month.name} ${month.yearMonth.year}",
+        style = MaterialTheme.typography.titleLarge,
+        modifier = Modifier.fillMaxWidth(),
+        textAlign = TextAlign.Center
+    )
 }
