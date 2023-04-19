@@ -10,10 +10,7 @@ import android.net.Uri
 import android.util.Log
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.core.content.FileProvider.getUriForFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -28,8 +25,7 @@ import com.reedsloan.beekeepingapp.presentation.home_screen.HiveScreenState
 import com.reedsloan.beekeepingapp.presentation.home_screen.MenuState
 import com.reedsloan.beekeepingapp.presentation.screens.Screen
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
@@ -42,7 +38,9 @@ import javax.inject.Inject
 class HiveViewModel @Inject constructor(
     private val app: Application, private val hiveRepository: HiveRepository
 ) : ViewModel() {
-    var state by mutableStateOf(HiveScreenState())
+    private val _state = MutableStateFlow(HiveScreenState())
+    val state = _state.asStateFlow()
+
     private val _hives = MutableStateFlow<List<Hive>>(emptyList())
     val hives = _hives.asStateFlow()
 
@@ -82,9 +80,11 @@ class HiveViewModel @Inject constructor(
             android.Manifest.permission.CAMERA -> {
                 PermissionRequest.CameraPermissionRequest
             }
+
             android.Manifest.permission.READ_MEDIA_IMAGES -> {
                 PermissionRequest.StoragePermissionRequestAPI33
             }
+
             else -> {
                 throw IllegalArgumentException("Unknown permission: $permission, please add it to the getPermissionRequest function.")
             }
@@ -94,10 +94,11 @@ class HiveViewModel @Inject constructor(
 
     fun getHourMinuteString(date: LocalDateTime): String {
         // adjust to user preferences of 24 hour or 12 hour
-        return when (state.userPreferences.timeFormat) {
+        return when (state.value.userPreferences.timeFormat) {
             TimeFormat.TWENTY_FOUR_HOUR -> {
                 date.format(DateTimeFormatter.ofPattern("HH:mm"))
             }
+
             TimeFormat.TWELVE_HOUR -> {
                 date.format(DateTimeFormatter.ofPattern("hh:mm a"))
             }
@@ -105,10 +106,11 @@ class HiveViewModel @Inject constructor(
     }
 
     fun getHourString(date: LocalDateTime): String {
-        return when (state.userPreferences.timeFormat) {
+        return when (state.value.userPreferences.timeFormat) {
             TimeFormat.TWENTY_FOUR_HOUR -> {
                 date.format(DateTimeFormatter.ofPattern("HH"))
             }
+
             TimeFormat.TWELVE_HOUR -> {
                 date.format(DateTimeFormatter.ofPattern("h"))
             }
@@ -121,12 +123,11 @@ class HiveViewModel @Inject constructor(
         val month = dateTimeNow.month
         val isLeapYear = Year.isLeap(year.toLong())
 
-        val daysInMonth =
-            when (month) {
-                Month.FEBRUARY -> if (isLeapYear) 29 else 28
-                Month.APRIL, Month.JUNE, Month.SEPTEMBER, Month.NOVEMBER -> 30
-                else -> 31
-            }
+        val daysInMonth = when (month) {
+            Month.FEBRUARY -> if (isLeapYear) 29 else 28
+            Month.APRIL, Month.JUNE, Month.SEPTEMBER, Month.NOVEMBER -> 30
+            else -> 31
+        }
         val firstDayOfMonth = dateTimeNow.withDayOfMonth(1)
 
         val days: MutableList<LocalDateTime> = mutableListOf()
@@ -173,22 +174,22 @@ class HiveViewModel @Inject constructor(
 
 
     private suspend fun getUserPreferences() {
-        runCatching { hiveRepository.getUserPreferences() }.onSuccess {
-            state = state.copy(userPreferences = it)
+        runCatching { hiveRepository.getUserPreferences() }.onSuccess { userPreferences ->
+            _state.update { it.copy(userPreferences = userPreferences) }
         }
     }
 
     fun backHandler(navController: NavController) {
-        if (state.hiveDeleteMode) {
+        if (state.value.hiveDeleteMode) {
             toggleHiveDeleteMode()
             return
-        } else if (state.editingTextField) {
+        } else if (state.value.editingTextField) {
             toggleEditingTextField()
             return
-        } else if (state.showDeleteHiveDialog) {
+        } else if (state.value.showDeleteHiveDialog) {
             closeOpenMenus()
             return
-        } else if (state.editHiveMenuState == MenuState.OPEN) {
+        } else if (state.value.editHiveMenuState == MenuState.OPEN) {
             closeOpenMenus()
             return
         }
@@ -200,7 +201,7 @@ class HiveViewModel @Inject constructor(
     }
 
     private fun toggleEditingTextField() {
-        state = state.copy(editingTextField = !state.editingTextField)
+        _state.update { it.copy(editingTextField = !it.editingTextField) }
     }
 
     fun onTapAddHiveButton() {
@@ -212,7 +213,7 @@ class HiveViewModel @Inject constructor(
 
     fun onTapViewHiveLog(selectedHiveId: String, navController: NavController) {
         Log.d("HiveListItem", "Thread: ${Thread.currentThread().name}")
-        if (state.hiveDeleteMode) {
+        if (state.value.hiveDeleteMode) {
             toggleSelected(selectedHiveId)
             return
         }
@@ -234,7 +235,7 @@ class HiveViewModel @Inject constructor(
 
     fun navigate(navController: NavController, destination: Screen) {
         Log.d(this::class.simpleName, destination.name)
-        state = state.copy(currentScreenName = destination.name)
+        _state.update { it.copy(currentScreenName = destination.name) }
         closeOpenMenus()
         navController.navigate(destination.route)
     }
@@ -249,11 +250,13 @@ class HiveViewModel @Inject constructor(
     fun showDeleteHiveDialog(selectedHive: String) {
         setSelectedHive(selectedHive)
         // show confirmation dialog
-        state = state.copy(showDeleteHiveDialog = true)
+        _state.update { it.copy(showDeleteHiveDialog = true) }
     }
 
     fun dismissDeleteHiveDialog() {
-        state = state.copy(showDeleteHiveDialog = false)
+        _state.update {
+            it.copy(showDeleteHiveDialog = false)
+        }
     }
 
     fun onTapDeleteHiveConfirmationButton(selectedHiveId: String) {
@@ -264,19 +267,19 @@ class HiveViewModel @Inject constructor(
     }
 
     private fun addToSelectionList(hiveId: String) {
-        state = state.copy(selectionList = state.selectionList + hiveId)
+        _state.update { it.copy(selectionList = it.selectionList + hiveId) }
     }
 
     private fun removeFromSelectionList(hiveId: String) {
-        state = state.copy(selectionList = state.selectionList - hiveId)
+        _state.update { it.copy(selectionList = it.selectionList - hiveId) }
     }
 
     private fun clearSelectionList() {
-        state = state.copy(selectionList = emptyList())
+        _state.update { it.copy(selectionList = emptyList()) }
     }
 
     private fun toggleSelected(hiveId: String) {
-        if (state.selectionList.contains(hiveId)) {
+        if (state.value.selectionList.contains(hiveId)) {
             removeFromSelectionList(hiveId)
         } else {
             addToSelectionList(hiveId)
@@ -284,14 +287,14 @@ class HiveViewModel @Inject constructor(
     }
 
     private fun toggleHiveDeleteMode() {
-        state = state.copy(hiveDeleteMode = !state.hiveDeleteMode)
+        _state.value = state.value.copy(hiveDeleteMode = !state.value.hiveDeleteMode)
     }
 
     /**
      * Closes all open menus and clears the selection list.
      */
     private fun closeOpenMenus() {
-        state = state.copy(
+        _state.value = state.value.copy(
             navigationBarMenuState = MenuState.CLOSED,
             hiveDeleteMode = false,
             editHiveMenuState = MenuState.CLOSED,
@@ -302,14 +305,14 @@ class HiveViewModel @Inject constructor(
 
     private suspend fun deleteSelectedHives() {
         // delete all hives in selection list
-        state.selectionList.forEach { deleteHive(it) }
+        state.value.selectionList.forEach { deleteHive(it) }
         clearSelectionList()
     }
 
     private fun updateUserPreferences(userPreferences: UserPreferences) {
         viewModelScope.launch {
             runCatching { hiveRepository.updateUserPreferences(userPreferences) }.onSuccess {
-                state = state.copy(userPreferences = userPreferences)
+                _state.update { state.value.copy(userPreferences = userPreferences) }
             }.onFailure {
                 Toast.makeText(
                     app, "Error updating user preferences", Toast.LENGTH_SHORT
@@ -328,7 +331,7 @@ class HiveViewModel @Inject constructor(
         val temperatureMeasurement =
             TemperatureMeasurement.values().find { it.displayValue == string }
         runCatching { temperatureMeasurement!! }.onSuccess {
-            updateUserPreferences(state.userPreferences.copy(temperatureMeasurement = it))
+            updateUserPreferences(state.value.userPreferences.copy(temperatureMeasurement = it))
         }.onFailure {
             Toast.makeText(
                 app, "Error updating temperature unit measurement", Toast.LENGTH_SHORT
@@ -350,7 +353,7 @@ class HiveViewModel @Inject constructor(
     fun setTimeFormat(string: String) {
         val timeFormat = TimeFormat.values().find { it.displayValue == string }
         runCatching { timeFormat!! }.onSuccess {
-            updateUserPreferences(state.userPreferences.copy(timeFormat = it))
+            updateUserPreferences(state.value.userPreferences.copy(timeFormat = it))
         }.onFailure {
             Toast.makeText(
                 app, "Error updating time format", Toast.LENGTH_SHORT
@@ -370,26 +373,30 @@ class HiveViewModel @Inject constructor(
 
     private fun setSelectedHive(hiveId: String) {
         // Set the selected hive in the state by finding the hive with the matching id
-        state = state.copy(selectedHive = hives.value.find { it.id == hiveId })
+        _state.update { it.copy(selectedHive = hives.value.find { it.id == hiveId }) }
     }
 
     fun setHiveNotes(notes: String) {
-        state = state.copy(
-            selectedHive = state.selectedHive?.copy(
-                hiveInfo = state.selectedHive!!.hiveInfo.copy(notes = notes)
+        _state.update {
+            it.copy(
+                selectedHive = it.selectedHive?.copy(
+                    hiveInfo = it.selectedHive!!.hiveInfo.copy(notes = notes)
+                )
             )
-        )
+        }
     }
 
     fun setHiveName(name: String) {
-        runCatching { state.selectedHive!! }.onSuccess {
-            state = state.copy(
-                selectedHive = it.copy(
-                    hiveInfo = it.hiveInfo.copy(
-                        name = name, dateModified = System.currentTimeMillis().toString()
+        runCatching { state.value.selectedHive!! }.onSuccess {
+            _state.update {
+                it.copy(
+                    selectedHive = it.selectedHive?.copy(
+                        hiveInfo = it.selectedHive.hiveInfo.copy(
+                            name = name, dateModified = LocalDate.now()
+                        )
                     )
                 )
-            )
+            }
         }.onFailure {
             Toast.makeText(
                 app, "Error updating hive name", Toast.LENGTH_SHORT
@@ -398,7 +405,9 @@ class HiveViewModel @Inject constructor(
     }
 
     private fun toggleNavigationBarMenuState() {
-        state = state.copy(navigationBarMenuState = state.navigationBarMenuState.toggle())
+        _state.update {
+            it.copy(navigationBarMenuState = it.navigationBarMenuState.toggle())
+        }
     }
 
     fun onClickEditHiveButton(hiveId: String) {
@@ -408,24 +417,31 @@ class HiveViewModel @Inject constructor(
     }
 
     private fun setHiveInfoMenuState(state: MenuState) {
-        this.state = this.state.copy(editHiveMenuState = state)
+        _state.update { it.copy(editHiveMenuState = state) }
+    }
+
+    private fun setIsLoading(isLoading: Boolean) {
+        _state.update { it.copy(isLoading = isLoading) }
+    }
+
+    private fun setIsSuccess(isSuccess: Boolean) {
+        _state.update { it.copy(isSuccess = isSuccess, isLoading = false) }
+    }
+
+    private fun showError(error: String) {
+        _state.update { it.copy(isError = true, errorMessage = error, isLoading = false) }
     }
 
     private suspend fun getAllHives() {
-        state = state.copy(isLoading = true)
+        setIsLoading(true)
         runCatching {
             hiveRepository.getAllHives()
         }.onSuccess { hives ->
-            state = state.copy(
-                isLoading = false, isSuccess = true
-            )
+            setIsSuccess(true)
             _hives.value = hives
         }.onFailure { error ->
-            state = state.copy(
-                isLoading = false,
-                isError = true,
-                errorMessage = error.message ?: "Unknown error"
-            )
+            showError(error.message ?: "Unknown error")
+
             // make a toast
             Toast.makeText(
                 app, "Error getting hives.", Toast.LENGTH_SHORT
@@ -441,7 +457,7 @@ class HiveViewModel @Inject constructor(
     }
 
     fun getTemperatureValue(temperatureFahrenheit: Double): Double {
-        return when (state.userPreferences.temperatureMeasurement) {
+        return when (state.value.userPreferences.temperatureMeasurement) {
             TemperatureMeasurement.FAHRENHEIT -> temperatureFahrenheit
             TemperatureMeasurement.CELSIUS -> (temperatureFahrenheit - 32) * 5 / 9
         }
@@ -452,17 +468,15 @@ class HiveViewModel @Inject constructor(
             runCatching {
                 val hives = hiveRepository.getAllHives()
                 val hive = Hive(
-                    id = UUID.randomUUID().toString(),
-                    HiveInfo(
+                    id = UUID.randomUUID().toString(), HiveInfo(
                         name = "Hive ${hives.size + 1}",
-                    ),
-                    displayOrder = hives.size + 1
+                    ), displayOrder = hives.size + 1
                 )
                 hiveRepository.createHive(hive)
             }.onSuccess {
                 getAllHives()
             }.onFailure {
-                state = state.copy(isError = true, errorMessage = it.message ?: "")
+                showError(it.message ?: "Unknown error")
                 // Show error message
                 Toast.makeText(app, it.message, Toast.LENGTH_SHORT).show()
             }
@@ -472,18 +486,18 @@ class HiveViewModel @Inject constructor(
 
     private suspend fun updateHive(hive: Hive) {
         runCatching {
-            state = state.copy(isLoading = true)
+            setIsLoading(true)
             hiveRepository.updateHive(
                 hive.copy(
                     hiveInfo = hive.hiveInfo.copy(
-                        dateModified = System.currentTimeMillis().toString()
+                        dateModified = LocalDate.now()
                     )
                 )
             )
         }.onSuccess {
             getAllHives()
         }.onFailure {
-            state = state.copy(isError = true, errorMessage = it.message ?: "")
+            showError(it.message ?: "Unknown error")
             // Show error message
             Toast.makeText(app, it.message, Toast.LENGTH_SHORT).show()
         }
@@ -491,18 +505,13 @@ class HiveViewModel @Inject constructor(
 
     private suspend fun deleteHive(hiveId: String) {
         runCatching {
-            state = state.copy(isLoading = true)
+            setIsLoading(true)
             hiveRepository.deleteHive(hiveId)
         }.onSuccess {
             // get all hives again
             getAllHives()
         }.onFailure {
-            state =
-                state.copy(
-                    isLoading = false,
-                    isError = true,
-                    errorMessage = it.message ?: ""
-                )
+            showError(it.message ?: "Unknown error")
             // Show error message
             Toast.makeText(app, it.message, Toast.LENGTH_SHORT).show()
         }
@@ -513,28 +522,27 @@ class HiveViewModel @Inject constructor(
      */
     private fun deleteAllHives() {
         viewModelScope.launch {
-            state = state.copy(isLoading = true)
+            setIsLoading(true)
             runCatching {
                 hiveRepository.deleteAllHives()
             }.onSuccess {
+                setIsSuccess(true)
                 getAllHives()
             }.onFailure {
-                state =
-                    state.copy(isLoading = false, isError = true, errorMessage = it.message ?: "")
+                showError(it.message ?: "Unknown error")
             }
         }
     }
 
     private fun exportToCsv() {
         viewModelScope.launch {
-            state = state.copy(isLoading = true)
+            setIsLoading(true)
             runCatching {
                 hiveRepository.exportToCsv()
             }.onSuccess {
-                state = state.copy(isLoading = false, isSuccess = true)
+                setIsSuccess(true)
             }.onFailure {
-                state =
-                    state.copy(isLoading = false, isError = true, errorMessage = it.message ?: "")
+                showError(it.message ?: "Unknown error")
             }
         }
     }
@@ -545,9 +553,10 @@ class HiveViewModel @Inject constructor(
 
     fun writeBitmapToFile(bitmap: Bitmap?) {
         viewModelScope.launch {
+            setIsLoading(true)
             runCatching {
                 bitmap?.let {
-                    val uri = getImageUri("${state.selectedHive?.id}")
+                    val uri = getImageUri("${state.value.selectedHive?.id}")
                     val file = File(
                         uri.path ?: throw NotFoundException("Error getting file path")
                     )
@@ -556,7 +565,7 @@ class HiveViewModel @Inject constructor(
                     out.flush()
                     out.close()
                     // update the hive with the new image
-                    state.selectedHive?.let { hive ->
+                    state.value.selectedHive?.let { hive ->
                         updateHive(
                             hive.copy(
                                 hiveInfo = hive.hiveInfo.copy(
@@ -567,18 +576,19 @@ class HiveViewModel @Inject constructor(
                     }
                 }
             }.onSuccess {
-                state = state.copy(isLoading = false, isSuccess = true)
+                setIsSuccess(true)
                 _hives.value = hiveRepository.getAllHives()
             }.onFailure {
-                state = state.copy(isError = true, errorMessage = it.message ?: "")
+                showError(it.message ?: "Unknown error")
             }
         }
     }
 
     fun deleteImage() {
+        setIsLoading(true)
         viewModelScope.launch {
             runCatching {
-                state.selectedHive?.let { hive ->
+                state.value.selectedHive?.let { hive ->
                     updateHive(
                         hive.copy(
                             hiveInfo = hive.hiveInfo.copy(
@@ -588,10 +598,10 @@ class HiveViewModel @Inject constructor(
                     )
                 }
             }.onSuccess {
-                state = state.copy(isLoading = false, isSuccess = true)
-                _hives.value = hiveRepository.getAllHives()
+                setIsSuccess(true)
+                _hives.update { hiveRepository.getAllHives() }
             }.onFailure {
-                state = state.copy(isError = true, errorMessage = it.message ?: "")
+                showError(it.message ?: "Unknown error")
             }
         }
     }
@@ -617,14 +627,14 @@ class HiveViewModel @Inject constructor(
             // save the image uri to the disk
             uriFromExternalStorage?.let {
                 // copy
-                val uri = getImageUri(state.selectedHive!!.id)
+                val uri = getImageUri(state.value.selectedHive!!.id)
                 val inputStream = app.contentResolver.openInputStream(it)
                 val outputStream = app.contentResolver.openOutputStream(uri)
                 inputStream?.copyTo(outputStream!!)
                 inputStream?.close()
                 outputStream?.close()
                 // update the hive with the new image
-                state.selectedHive?.let { hive ->
+                state.value.selectedHive?.let { hive ->
                     updateHive(
                         hive.copy(
                             hiveInfo = hive.hiveInfo.copy(
@@ -639,13 +649,13 @@ class HiveViewModel @Inject constructor(
     }
 
     private fun deselectHive() {
-        state = state.copy(selectedHive = null)
+        _state.update { state.value.copy(selectedHive = null) }
     }
 
     fun onClickViewLogHistoryButton(id: String, navController: NavController) {
         // set the selected hive
         hives.value.find { hive -> hive.id == id }?.let { hive ->
-            state = state.copy(selectedHive = hive)
+            setSelectedHive(hive.id)
         }
         // close open menus
         closeOpenMenus()
@@ -654,13 +664,14 @@ class HiveViewModel @Inject constructor(
 
     fun deleteImage(uri: Uri) {
         viewModelScope.launch {
+            setIsLoading(true)
             runCatching {
                 app.contentResolver.delete(uri, null, null)
             }.onSuccess {
-                state = state.copy(isLoading = false, isSuccess = true)
-                _hives.value = hiveRepository.getAllHives()
+                setIsSuccess(true)
+                getAllHives()
             }.onFailure {
-                state = state.copy(isError = true, errorMessage = it.message ?: "")
+                showError(it.message ?: "Unknown error")
             }
         }
     }
@@ -672,12 +683,12 @@ class HiveViewModel @Inject constructor(
     fun onTapEditHiveNameButton(id: String) {
         setSelectedHive(id)
         // set editingTextField to true
-        state = state.copy(editingTextField = true)
+        _state.update { state.value.copy(editingTextField = true) }
     }
 
     fun onTapSaveHiveNameButton(id: String, editableString: String) {
         // set editingTextField to false
-        state = state.copy(editingTextField = false)
+        _state.update { state.value.copy(editingTextField = false) }
         // update the hive name
         hives.value.find { hive -> hive.id == id }?.let { hive ->
             viewModelScope.launch {
@@ -700,7 +711,14 @@ class HiveViewModel @Inject constructor(
     }
 
     fun toggleEditHiveMenu() {
-        state = state.copy(editHiveMenuState = MenuState.OPEN)
+        _state.update {
+            state.value.copy(
+                editHiveMenuState = when (state.value.editHiveMenuState) {
+                    MenuState.CLOSED -> MenuState.OPEN
+                    MenuState.OPEN -> MenuState.CLOSED
+                }
+            )
+        }
     }
 
     fun onTapLogDataButton(id: String, navController: NavController) {
@@ -714,31 +732,107 @@ class HiveViewModel @Inject constructor(
     }
 
     fun onDismissEditHiveMenu() {
-        state = state.copy(editHiveMenuState = MenuState.CLOSED)
+        closeOpenMenus()
     }
 
     fun onTapSaveButton(uri: Uri?, name: String) {
         closeOpenMenus()
+        setIsLoading(true)
         viewModelScope.launch {
             runCatching {
-                state.selectedHive?.let { hive ->
+                state.value.selectedHive?.let { hive ->
                     copyImageToInternalStorage(uri)
                     updateHive(
                         hive.copy(
                             hiveInfo = hive.hiveInfo.copy(
-                                name = name,
-                                image = uri?.toString() ?: hive.hiveInfo.image
+                                name = name, image = uri?.toString() ?: hive.hiveInfo.image
                             )
                         )
                     )
                     deselectHive()
                 }
             }.onSuccess {
-                state = state.copy(isLoading = false, isSuccess = true)
-                _hives.value = hiveRepository.getAllHives()
+                setIsSuccess(true)
+                getAllHives()
             }.onFailure {
-                state = state.copy(isError = true, errorMessage = it.message ?: "")
+                showError(it.message ?: "Unknown error")
             }
+        }
+    }
+
+    fun addHiveDataEntry(hiveDataEntry: HiveDataEntry) {
+        _state.update {
+            state.value.copy(
+                selectedHive =
+                state.value.selectedHive?.copy(
+                    hiveDataEntries = state.value.selectedHive?.hiveDataEntries?.plus(hiveDataEntry)
+                        ?: listOf(hiveDataEntry)
+                )
+            )
+        }
+        saveDataEntry(hiveDataEntry)
+    }
+
+    private fun removeHiveDataEntry(hiveDataEntry: HiveDataEntry) {
+        state.value.selectedHive?.let { hive ->
+            viewModelScope.launch {
+                updateHive(
+                    hive.copy(
+                        hiveDataEntries = hive.hiveDataEntries - hiveDataEntry
+                    )
+                )
+            }
+        }
+    }
+
+    private fun saveDataEntry(hiveDataEntry: HiveDataEntry) {
+        state.value.selectedHive?.let { hive ->
+            viewModelScope.launch {
+                // check if there is already a hive data entry for the same date
+                val updateInsteadOfCreate = hive.hiveDataEntries.find {
+                    it.date == hiveDataEntry.date
+                } != null
+
+                if (updateInsteadOfCreate) {
+                    updateHiveDataEntry(hiveDataEntry)
+                } else {
+                    createHiveDataEntry(hiveDataEntry)
+                }
+            }
+        }
+    }
+
+    private suspend fun updateHiveDataEntry(hiveDataEntry: HiveDataEntry) {
+        runCatching {
+            updateHive(
+                hive = state.value.selectedHive!!.copy(
+                    hiveDataEntries = state.value.selectedHive!!.hiveDataEntries.map {
+                        if (it.date == hiveDataEntry.date) {
+                            hiveDataEntry
+                        } else {
+                            it
+                        }
+                    }
+                )
+            )
+        }.onSuccess {
+            setIsSuccess(true)
+        }.onFailure {
+            showError(it.message ?: "Unknown error")
+        }
+    }
+
+    private suspend fun createHiveDataEntry(hiveDataEntry: HiveDataEntry) {
+        runCatching {
+            updateHive(
+                hive = state.value.selectedHive!!.copy(
+                    hiveDataEntries = state.value.selectedHive!!.hiveDataEntries + hiveDataEntry
+                )
+            )
+        }.onSuccess {
+            setIsSuccess(true)
+        }.onFailure {
+            showError(it.message ?: "Unknown error")
         }
     }
 }

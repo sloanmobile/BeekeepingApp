@@ -22,5 +22,5 @@ fun SettingsScreen(
     navController: NavController,
     hiveViewModel: HiveViewModel
 ) {
-
+    
 }

@@ -53,7 +53,7 @@ fun Activity.openAppSettings() {
 
 @Composable
 fun HivesScreen(navController: NavController, hiveViewModel: HiveViewModel) {
-    val state = hiveViewModel.state
+    val state by hiveViewModel.state.collectAsState()
     val hives by hiveViewModel.hives.collectAsState()
     var bitmapOrNull: Bitmap? by remember { mutableStateOf(null) }
     val permissionDialogQueue = hiveViewModel.visiblePermissionDialogQueue.firstOrNull()
@@ -72,7 +72,7 @@ fun HivesScreen(navController: NavController, hiveViewModel: HiveViewModel) {
         if (state.showDeleteHiveDialog && state.selectedHive != null) DeleteConfirmationDialog(
             onDismiss = { hiveViewModel.dismissDeleteHiveDialog() },
             onClick = {
-                hiveViewModel.onTapDeleteHiveConfirmationButton(state.selectedHive.id)
+                hiveViewModel.onTapDeleteHiveConfirmationButton(state.selectedHive!!.id)
                 hiveViewModel.dismissDeleteHiveDialog()
             })
     }
@@ -477,7 +477,7 @@ fun HiveCardAction(
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun PermissionsTest(navController: NavController, hiveViewModel: HiveViewModel) {
-    val state = hiveViewModel.state
+    val state by hiveViewModel.state.collectAsState()
     var bitmapOrNull: Bitmap? by remember { mutableStateOf(null) }
     val cameraOpenIntent =
         rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->

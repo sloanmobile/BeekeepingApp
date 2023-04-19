@@ -3,20 +3,15 @@ package com.reedsloan.beekeepingapp.presentation.hive_info
 import android.app.DatePickerDialog
 import android.icu.util.Calendar
 import android.widget.DatePicker
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -29,8 +24,12 @@ import com.kizitonwose.calendar.compose.rememberCalendarState
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.CalendarMonth
 import com.kizitonwose.calendar.core.firstDayOfWeekFromLocale
+import com.reedsloan.beekeepingapp.data.local.hive.HiveConditions
+import com.reedsloan.beekeepingapp.data.local.hive.HiveDataEntry
+import com.reedsloan.beekeepingapp.data.local.hive.HiveFeeding
+import com.reedsloan.beekeepingapp.data.local.hive.HiveHealth
 import com.reedsloan.beekeepingapp.presentation.viewmodel.hives.HiveViewModel
-import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.time.YearMonth
 import java.util.*
 
@@ -42,7 +41,13 @@ fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
             .testTag("HiveInfoScreen")
     ) {
 
-        val state = hiveViewModel.state
+        val state by hiveViewModel.state.collectAsState()
+        val hives by hiveViewModel.hives.collectAsState()
+        var currentHiveDataEntries = state.selectedHive?.hiveDataEntries ?: emptyList()
+
+        LaunchedEffect(key1 = state) {
+            currentHiveDataEntries = state.selectedHive?.hiveDataEntries ?: emptyList()
+        }
 
         // Initializing a Calendar
         val calendar = Calendar.getInstance()
@@ -66,7 +71,8 @@ fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                 date.value = "$mDayOfMonth/${mMonth + 1}/$mYear"
             }, year, month, day
         )
-
+        val selectedDate = remember { mutableStateOf(LocalDate.now()) }
+        var selectedDataEntry by remember { mutableStateOf<HiveDataEntry?>(null) }
 
         // Hive Name
         state.selectedHive?.hiveInfo?.let { hiveInfo ->
@@ -76,17 +82,11 @@ fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(16.dp)
             )
-
-//            Row {
-//                Button(onClick = {
-//                    datePickerDialog.show()
-//                }) {
-//                    Text(text = "Select Date")
-//                }
-//            }
         }
+        Text(text = "Select a date to update or enter data.", modifier = Modifier.padding(16.dp))
 
-        var currentMonth = remember { YearMonth.now() }
+
+        val currentMonth = remember { YearMonth.now() }
         val startMonth = remember { currentMonth.minusMonths(100) } // Adjust as needed
         val endMonth = remember { currentMonth.plusMonths(100) } // Adjust as needed
         val firstDayOfWeek = remember { firstDayOfWeekFromLocale() } // Available from the library
@@ -97,43 +97,101 @@ fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
             firstVisibleMonth = currentMonth,
             firstDayOfWeek = firstDayOfWeek
         )
-        Text(
-            text = "Swipe to change months",
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center
-        )
-        val scope = rememberCoroutineScope()
-        Icon(
-            imageVector = Icons.Rounded.ArrowBack,
-            contentDescription = "Previous month",
-            modifier = Modifier
-                .size(24.dp)
-                .align(Alignment.CenterHorizontally)
-                .clickable {
-                    // scroll to previous month
-                    scope.launch {
-                       currentMonth = currentMonth.minusMonths(1)
-                        calendarState.animateScrollToMonth(currentMonth)
-                    }
-                }
-        )
+
         HorizontalCalendar(
             state = calendarState,
-            dayContent = { Day(it) },
+            dayContent = { calendarDay ->
+                val isHighlighted = currentHiveDataEntries.any {
+                    it.date == calendarDay.date.toString()
+                }
+
+                Day(calendarDay, isHighlighted, onClick = { day ->
+                    // update the selected data entry
+                    currentHiveDataEntries.firstOrNull { it.date == day.date.toString() }?.let {
+                        selectedDataEntry = it
+                        return@Day
+                    }
+
+                    val newHiveDataEntry = HiveDataEntry(
+                        hiveId = state.selectedHive?.id ?: return@Day,
+                        date = day.date.toString(),
+                        hiveConditions = HiveConditions(),
+                        hiveHealth = HiveHealth(),
+                        feeding = HiveFeeding(),
+                        localPhotoUris = emptyList()
+                    )
+                    hiveViewModel.addHiveDataEntry(newHiveDataEntry)
+                    selectedDataEntry = newHiveDataEntry
+                })
+
+            },
             monthHeader = { Month(it) },
+        )
+
+        // Hive Data Entry
+        selectedDataEntry?.let { hiveDataEntry ->
+            HiveDataEntryScreen(
+                navController = navController,
+                hiveViewModel = hiveViewModel,
+                hiveDataEntry = hiveDataEntry
+            )
+        }
+    }
+}
+
+@Composable
+fun HiveDataEntryScreen(
+    navController: NavController,
+    hiveViewModel: HiveViewModel,
+    hiveDataEntry: HiveDataEntry
+) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .testTag("HiveInfoScreen")
+    ) {
+
+        val state by hiveViewModel.state.collectAsState()
+
+        // Hive Name
+        state.selectedHive?.hiveInfo?.let { hiveInfo ->
+            Text(
+                text = hiveInfo.name,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(16.dp)
+            )
+        }
+
+        // Hive Data Entry
+        Text(
+            text = hiveDataEntry.date.toString(),
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(16.dp)
         )
     }
 }
 
 @Composable
-fun Day(day: CalendarDay) {
+fun Day(day: CalendarDay, isHighlighted: Boolean?, onClick: (CalendarDay) -> Unit = {}) {
     Box(
         modifier = Modifier
-            .aspectRatio(1f), // This is important for square sizing!
+            .clip(MaterialTheme.shapes.small)
+            .aspectRatio(1f) // This is important for square sizing!
+            .background(
+                color = if (isHighlighted == true) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.surface
+                },
+            )
+            .clickable {
+                onClick(day)
+            },
         contentAlignment = Alignment.Center
     ) {
-        Text(text = day.date.dayOfMonth.toString())
+        Text(text = day.date.dayOfMonth.toString(), style = MaterialTheme.typography.bodyLarge)
     }
 }
 

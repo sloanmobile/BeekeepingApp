@@ -55,7 +55,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                     val navController = rememberNavController()
-                    val state = hiveViewModel.state
+                    val state by hiveViewModel.state.collectAsState()
 
                     state.selectedHive?.let { hive ->
                         SideSheetContainer(

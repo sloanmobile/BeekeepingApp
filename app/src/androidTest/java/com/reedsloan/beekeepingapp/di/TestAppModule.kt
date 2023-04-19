@@ -2,8 +2,8 @@ package com.reedsloan.beekeepingapp.di
 
 import android.app.Application
 import androidx.room.Room
-import com.reedsloan.beekeepingapp.data.repo.local.HiveDatabase
-import com.reedsloan.beekeepingapp.data.repo.local.HiveRepositoryImpl
+import com.reedsloan.beekeepingapp.data.repo.local.hive_repo.HiveDatabase
+import com.reedsloan.beekeepingapp.data.repo.local.hive_repo.HiveRepositoryImpl
 import com.reedsloan.beekeepingapp.domain.repo.HiveRepository
 import dagger.Module
 import dagger.Provides
