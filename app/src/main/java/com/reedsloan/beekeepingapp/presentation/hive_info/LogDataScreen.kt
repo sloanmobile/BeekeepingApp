@@ -6,8 +6,10 @@ import android.widget.DatePicker
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -126,6 +128,11 @@ fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
 
             },
             monthHeader = { Month(it) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .background(MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp), shape = MaterialTheme.shapes.medium),
+            contentPadding = PaddingValues(4.dp),
         )
 
         // Hive Data Entry
@@ -177,13 +184,15 @@ fun HiveDataEntryScreen(
 fun Day(day: CalendarDay, isHighlighted: Boolean?, onClick: (CalendarDay) -> Unit = {}) {
     Box(
         modifier = Modifier
-            .clip(MaterialTheme.shapes.small)
+            // rounded corners
+            .padding(2.dp)
+            .clip(RoundedCornerShape(100F))
             .aspectRatio(1f) // This is important for square sizing!
             .background(
                 color = if (isHighlighted == true) {
                     MaterialTheme.colorScheme.primary
                 } else {
-                    MaterialTheme.colorScheme.surface
+                    MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
                 },
             )
             .clickable {
@@ -191,7 +200,15 @@ fun Day(day: CalendarDay, isHighlighted: Boolean?, onClick: (CalendarDay) -> Uni
             },
         contentAlignment = Alignment.Center
     ) {
-        Text(text = day.date.dayOfMonth.toString(), style = MaterialTheme.typography.bodyLarge)
+        Text(
+            text = day.date.dayOfMonth.toString(),
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (isHighlighted == true) {
+                MaterialTheme.colorScheme.onPrimary
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            }
+        )
     }
 }
 
@@ -200,7 +217,7 @@ fun Month(month: CalendarMonth) {
     Text(
         text = "${month.yearMonth.month.name} ${month.yearMonth.year}",
         style = MaterialTheme.typography.titleLarge,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
         textAlign = TextAlign.Center
     )
 }
