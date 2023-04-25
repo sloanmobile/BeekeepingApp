@@ -189,9 +189,12 @@ fun HiveDataEntryScreen(
 
 @Composable
 fun Day(day: CalendarDay, isHighlighted: Boolean, onClick: (CalendarDay) -> Unit = {}) {
-    Box(modifier = Modifier
-        .padding(2.dp)
-        .aspectRatio(1f), contentAlignment = Alignment.Center) {
+    Box(
+        modifier = Modifier
+            .padding(2.dp)
+            .aspectRatio(1f) // this is necessary for the buttons evenly to fit in the layout
+        , contentAlignment = Alignment.Center
+    ) {
 
         // Show a primary color normal button if highlighted else show a surface color elevated button
         if (isHighlighted) {
@@ -201,7 +204,10 @@ fun Day(day: CalendarDay, isHighlighted: Boolean, onClick: (CalendarDay) -> Unit
                 modifier = Modifier.size(48.dp),
                 contentPadding = PaddingValues(0.dp) // this is necessary for the text to fit
             ) {
-                Text(text = day.date.dayOfMonth.toString(), style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    text = day.date.dayOfMonth.toString(),
+                    style = MaterialTheme.typography.bodyLarge
+                )
             }
         } else {
             // non-highlighted days are elevated buttons
@@ -211,7 +217,10 @@ fun Day(day: CalendarDay, isHighlighted: Boolean, onClick: (CalendarDay) -> Unit
                 elevation = ButtonDefaults.buttonElevation(2.dp, 2.dp, 2.dp, 2.dp),
                 contentPadding = PaddingValues(0.dp) // this is necessary for the text to fit
             ) {
-                Text(text = day.date.dayOfMonth.toString(), style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    text = day.date.dayOfMonth.toString(),
+                    style = MaterialTheme.typography.bodyLarge
+                )
             }
         }
     }
