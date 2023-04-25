@@ -7,6 +7,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.surfaceColorAtElevation
@@ -14,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -131,7 +135,10 @@ fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(8.dp)
-                .background(MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp), shape = MaterialTheme.shapes.medium),
+                .background(
+                    MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                    shape = MaterialTheme.shapes.medium
+                ),
             contentPadding = PaddingValues(4.dp),
         )
 
@@ -172,7 +179,7 @@ fun HiveDataEntryScreen(
 
         // Hive Data Entry
         Text(
-            text = hiveDataEntry.date.toString(),
+            text = hiveDataEntry.date,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(16.dp)
@@ -181,34 +188,60 @@ fun HiveDataEntryScreen(
 }
 
 @Composable
-fun Day(day: CalendarDay, isHighlighted: Boolean?, onClick: (CalendarDay) -> Unit = {}) {
-    Box(
-        modifier = Modifier
-            // rounded corners
-            .padding(2.dp)
-            .clip(RoundedCornerShape(100F))
-            .aspectRatio(1f) // This is important for square sizing!
-            .background(
-                color = if (isHighlighted == true) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
-                },
-            )
-            .clickable {
-                onClick(day)
-            },
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = day.date.dayOfMonth.toString(),
-            style = MaterialTheme.typography.bodyLarge,
-            color = if (isHighlighted == true) {
-                MaterialTheme.colorScheme.onPrimary
-            } else {
-                MaterialTheme.colorScheme.onSurface
+fun Day(day: CalendarDay, isHighlighted: Boolean, onClick: (CalendarDay) -> Unit = {}) {
+//    Box(
+//        modifier = Modifier
+//            // rounded corners
+//            .padding(2.dp)
+//            .clip(RoundedCornerShape(100F))
+//            .aspectRatio(1f) // This is important for square sizing!
+//            .background(
+//                color = if (isHighlighted == true) {
+//                    MaterialTheme.colorScheme.primary
+//                } else {
+//                    MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
+//                },
+//            )
+//            .clickable {
+//                onClick(day)
+//            },
+//        contentAlignment = Alignment.Center
+//    ) {
+//        Text(
+//            text = day.date.dayOfMonth.toString(),
+//            style = MaterialTheme.typography.bodyLarge,
+//            color = if (isHighlighted == true) {
+//                MaterialTheme.colorScheme.onPrimary
+//            } else {
+//                MaterialTheme.colorScheme.onSurface
+//            }
+//        )
+//    }
+    Box(modifier = Modifier
+        .padding(2.dp)
+        .aspectRatio(1f), contentAlignment = Alignment.Center) {
+
+        // Show a primary color normal button if highlighted else show a surface color elevated button
+        if (isHighlighted) {
+            // highlighted days are normal buttons
+            Button(
+                onClick = { onClick(day) },
+                modifier = Modifier.size(48.dp),
+                contentPadding = PaddingValues(0.dp) // this is necessary for the text to fit
+            ) {
+                Text(text = day.date.dayOfMonth.toString(), style = MaterialTheme.typography.bodyLarge)
             }
-        )
+        } else {
+            // non-highlighted days are elevated buttons
+            ElevatedButton(
+                onClick = { onClick(day) },
+                modifier = Modifier.size(48.dp),
+                elevation = ButtonDefaults.buttonElevation(2.dp, 2.dp, 2.dp, 2.dp),
+                contentPadding = PaddingValues(0.dp) // this is necessary for the text to fit
+            ) {
+                Text(text = day.date.dayOfMonth.toString(), style = MaterialTheme.typography.bodyLarge)
+            }
+        }
     }
 }
 
@@ -217,7 +250,9 @@ fun Month(month: CalendarMonth) {
     Text(
         text = "${month.yearMonth.month.name} ${month.yearMonth.year}",
         style = MaterialTheme.typography.titleLarge,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp),
         textAlign = TextAlign.Center
     )
 }
