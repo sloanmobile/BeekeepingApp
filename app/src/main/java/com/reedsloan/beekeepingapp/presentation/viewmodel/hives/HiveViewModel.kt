@@ -835,4 +835,12 @@ class HiveViewModel @Inject constructor(
             showError(it.message ?: "Unknown error")
         }
     }
+
+    fun setSelectedDataEntry(newHiveDataEntry: HiveDataEntry) {
+        _state.update {
+            state.value.copy(
+                selectedDataEntry = newHiveDataEntry
+            )
+        }
+    }
 }

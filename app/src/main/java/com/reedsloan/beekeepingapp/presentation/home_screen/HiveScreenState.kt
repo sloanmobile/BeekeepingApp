@@ -3,6 +3,7 @@ package com.reedsloan.beekeepingapp.presentation.home_screen
 import com.reedsloan.beekeepingapp.BuildConfig
 import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
+import com.reedsloan.beekeepingapp.data.local.hive.HiveDataEntry
 import com.reedsloan.beekeepingapp.presentation.screens.Screen
 
 data class HiveScreenState(
@@ -25,4 +26,5 @@ data class HiveScreenState(
     val currentScreenName: String = Screen.HomeScreen.name,
     val editingTextField: Boolean = false,
     val showDeleteHiveDialog: Boolean = false,
+    val selectedDataEntry: HiveDataEntry? = null,
 )

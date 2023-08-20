@@ -1,6 +1,6 @@
 package com.reedsloan.beekeepingapp.data.local.hive
 
-class HiveConditions (
+data class HiveConditions (
     /*
     ODOR: NORMAL, FOUL
     EQUIPMENT CONDITION: GOOD, FAIR, POOR, DAMAGED
@@ -17,7 +17,7 @@ class HiveConditions (
     LAYING PATTERN: SPOTTY, COMPACT, TIGHT, AVERAGE, NULL
     BROOD STAGE: EGG, LARVAE, PUPA
      */
-    val odor: Odor? = null,
+    var odor: Odor? = null,
     val equipmentCondition: EquipmentCondition? = null,
     val hiveCondition: HiveCondition? = null,
     val framesAndCombs: FramesAndCombs? = null,
