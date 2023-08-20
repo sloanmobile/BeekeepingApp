@@ -3,21 +3,26 @@ package com.reedsloan.beekeepingapp.presentation.hive_info
 import android.app.DatePickerDialog
 import android.icu.util.Calendar
 import android.widget.DatePicker
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
+import androidx.compose.foundation.lazy.staggeredgrid.LazyHorizontalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -30,10 +35,15 @@ import com.kizitonwose.calendar.compose.rememberCalendarState
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.CalendarMonth
 import com.kizitonwose.calendar.core.firstDayOfWeekFromLocale
+import com.reedsloan.beekeepingapp.data.local.hive.EquipmentCondition
+import com.reedsloan.beekeepingapp.data.local.hive.FoundationType
+import com.reedsloan.beekeepingapp.data.local.hive.FramesAndCombs
 import com.reedsloan.beekeepingapp.data.local.hive.HiveConditions
 import com.reedsloan.beekeepingapp.data.local.hive.HiveDataEntry
 import com.reedsloan.beekeepingapp.data.local.hive.HiveFeeding
 import com.reedsloan.beekeepingapp.data.local.hive.HiveHealth
+import com.reedsloan.beekeepingapp.data.local.hive.Odor
+import com.reedsloan.beekeepingapp.presentation.common.Container
 import com.reedsloan.beekeepingapp.presentation.viewmodel.hives.HiveViewModel
 import java.time.LocalDate
 import java.time.YearMonth
@@ -41,154 +51,295 @@ import java.util.*
 
 @Composable
 fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
-    Column(
-        Modifier
+    LazyColumn(
+        modifier = Modifier
             .fillMaxSize()
             .testTag("HiveInfoScreen")
     ) {
+        items(1) {
+            val state by hiveViewModel.state.collectAsState()
+            val hives by hiveViewModel.hives.collectAsState()
+            var currentHiveDataEntries = state.selectedHive?.hiveDataEntries ?: emptyList()
 
-        val state by hiveViewModel.state.collectAsState()
-        val hives by hiveViewModel.hives.collectAsState()
-        var currentHiveDataEntries = state.selectedHive?.hiveDataEntries ?: emptyList()
+            LaunchedEffect(key1 = state) {
+                currentHiveDataEntries = state.selectedHive?.hiveDataEntries ?: emptyList()
+            }
 
-        LaunchedEffect(key1 = state) {
-            currentHiveDataEntries = state.selectedHive?.hiveDataEntries ?: emptyList()
-        }
+            // Initializing a Calendar
+            val calendar = Calendar.getInstance()
 
-        // Initializing a Calendar
-        val calendar = Calendar.getInstance()
+            // Fetching current year, month and day
+            val year = calendar.get(Calendar.YEAR)
+            val month = calendar.get(Calendar.MONTH)
+            val day = calendar.get(Calendar.DAY_OF_MONTH)
 
-        // Fetching current year, month and day
-        val year = calendar.get(Calendar.YEAR)
-        val month = calendar.get(Calendar.MONTH)
-        val day = calendar.get(Calendar.DAY_OF_MONTH)
+            calendar.time = Date()
 
-        calendar.time = Date()
+            // Declaring a string value to
+            // store date in string format
+            val date = remember { mutableStateOf("") }
+            val context = LocalContext.current
+            // Declaring DatePickerDialog and setting
+            // initial values as current values (present year, month and day)
+            val datePickerDialog = DatePickerDialog(
+                context,
+                { _: DatePicker, mYear: Int, mMonth: Int, mDayOfMonth: Int ->
+                    date.value = "$mDayOfMonth/${mMonth + 1}/$mYear"
+                }, year, month, day
+            )
+            val selectedDate = remember { mutableStateOf(LocalDate.now()) }
 
-        // Declaring a string value to
-        // store date in string format
-        val date = remember { mutableStateOf("") }
-        val context = LocalContext.current
-        // Declaring DatePickerDialog and setting
-        // initial values as current values (present year, month and day)
-        val datePickerDialog = DatePickerDialog(
-            context,
-            { _: DatePicker, mYear: Int, mMonth: Int, mDayOfMonth: Int ->
-                date.value = "$mDayOfMonth/${mMonth + 1}/$mYear"
-            }, year, month, day
-        )
-        val selectedDate = remember { mutableStateOf(LocalDate.now()) }
-        var selectedDataEntry by remember { mutableStateOf<HiveDataEntry?>(null) }
-
-        // Hive Name
-        state.selectedHive?.hiveInfo?.let { hiveInfo ->
+            // Hive Name
+            state.selectedHive?.hiveInfo?.let { hiveInfo ->
+                Text(
+                    text = hiveInfo.name,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
             Text(
-                text = hiveInfo.name,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
+                text = "Select a date to update or enter data.",
                 modifier = Modifier.padding(16.dp)
             )
-        }
-        Text(text = "Select a date to update or enter data.", modifier = Modifier.padding(16.dp))
 
 
-        val currentMonth = remember { YearMonth.now() }
-        val startMonth = remember { currentMonth.minusMonths(100) } // Adjust as needed
-        val endMonth = remember { currentMonth.plusMonths(100) } // Adjust as needed
-        val firstDayOfWeek = remember { firstDayOfWeekFromLocale() } // Available from the library
+            val currentMonth = remember { YearMonth.now() }
+            val startMonth = remember { currentMonth.minusMonths(100) } // Adjust as needed
+            val endMonth = remember { currentMonth.plusMonths(100) } // Adjust as needed
+            val firstDayOfWeek =
+                remember { firstDayOfWeekFromLocale() } // Available from the library
 
-        val calendarState = rememberCalendarState(
-            startMonth = startMonth,
-            endMonth = endMonth,
-            firstVisibleMonth = currentMonth,
-            firstDayOfWeek = firstDayOfWeek
-        )
+            val calendarState = rememberCalendarState(
+                startMonth = startMonth,
+                endMonth = endMonth,
+                firstVisibleMonth = currentMonth,
+                firstDayOfWeek = firstDayOfWeek
+            )
 
-        HorizontalCalendar(
-            state = calendarState,
-            dayContent = { calendarDay ->
-                val isHighlighted = currentHiveDataEntries.any {
-                    it.date == calendarDay.date.toString()
-                }
+            HorizontalCalendar(
+                state = calendarState,
+                dayContent = { calendarDay ->
+                    val hasDataEntry =
+                        currentHiveDataEntries.any { it.date == calendarDay.date.toString() }
 
-                Day(calendarDay, isHighlighted, onClick = { day ->
-                    // update the selected data entry
-                    currentHiveDataEntries.firstOrNull { it.date == day.date.toString() }?.let {
-                        selectedDataEntry = it
-                        return@Day
+                    val isSelected = currentHiveDataEntries.any {
+                        state.selectedDataEntry?.date == calendarDay.date.toString()
                     }
 
-                    val newHiveDataEntry = HiveDataEntry(
-                        hiveId = state.selectedHive?.id ?: return@Day,
-                        date = day.date.toString(),
-                        hiveConditions = HiveConditions(),
-                        hiveHealth = HiveHealth(),
-                        feeding = HiveFeeding(),
-                        localPhotoUris = emptyList()
-                    )
-                    hiveViewModel.addHiveDataEntry(newHiveDataEntry)
-                    selectedDataEntry = newHiveDataEntry
-                })
+                    Day(
+                        day = calendarDay,
+                        isSelected = isSelected,
+                        hasDataEntry = hasDataEntry,
+                        onClick = { day ->
+                            // update the selected data entry
+                            currentHiveDataEntries.firstOrNull { it.date == day.date.toString() }
+                                ?.let {
+                                    hiveViewModel.setSelectedDataEntry(it)
+                                    return@Day
+                                }
 
-            },
-            monthHeader = { Month(it) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-                .background(
-                    MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                    shape = MaterialTheme.shapes.medium
-                ),
-            contentPadding = PaddingValues(4.dp),
-        )
+                            val newHiveDataEntry = HiveDataEntry(
+                                hiveId = state.selectedHive?.id ?: return@Day,
+                                date = day.date.toString(),
+                                hiveConditions = HiveConditions(),
+                                hiveHealth = HiveHealth(),
+                                feeding = HiveFeeding(),
+                                localPhotoUris = emptyList()
+                            )
+                            hiveViewModel.setSelectedDataEntry(newHiveDataEntry)
+                        })
 
-        // Hive Data Entry
-        selectedDataEntry?.let { hiveDataEntry ->
+                },
+                monthHeader = { Month(it) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+                    .background(
+                        MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                        shape = MaterialTheme.shapes.medium
+                    ),
+                contentPadding = PaddingValues(4.dp),
+            )
+
+            // Hive Data Entry
             HiveDataEntryScreen(
                 navController = navController,
-                hiveViewModel = hiveViewModel,
-                hiveDataEntry = hiveDataEntry
+                hiveViewModel = hiveViewModel
             )
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalStdlibApi::class)
 @Composable
 fun HiveDataEntryScreen(
     navController: NavController,
-    hiveViewModel: HiveViewModel,
-    hiveDataEntry: HiveDataEntry
+    hiveViewModel: HiveViewModel
 ) {
-    Column(
-        Modifier
-            .fillMaxSize()
-            .testTag("HiveInfoScreen")
-    ) {
+    Container {
 
-        val state by hiveViewModel.state.collectAsState()
+        Column(
+            Modifier
+                .fillMaxSize()
+                .testTag("HiveInfoScreen")
+        ) {
 
-        // Hive Name
-        state.selectedHive?.hiveInfo?.let { hiveInfo ->
-            Text(
-                text = hiveInfo.name,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(16.dp)
-            )
+            val state by hiveViewModel.state.collectAsState()
+
+            state.selectedDataEntry?.let { entry ->
+                // Hive Name
+                state.selectedHive?.hiveInfo?.let { hiveInfo ->
+                    Text(
+                        text = hiveInfo.name,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+
+                // Hive Data Entry
+                Text(
+                    text = entry.date,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+
+                // Hive Conditions
+                Text(
+                    text = "Hive Conditions",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+
+                DataEntryChip(
+                    title = "Odor",
+                    selectedValue = entry.hiveConditions.odor,
+                    enumClass = Odor::class.java,
+                    onChipSelected = {
+                        hiveViewModel.setSelectedDataEntry(
+                            entry.copy(
+                                hiveConditions = entry.hiveConditions.copy(
+                                    odor = it
+                                )
+                            )
+                        )
+                    },
+                    entry = entry,
+                )
+
+                // equipment condition
+                DataEntryChip(
+                    title = "Equipment Condition",
+                    selectedValue = entry.hiveConditions.equipmentCondition,
+                    enumClass = EquipmentCondition::class.java,
+                    onChipSelected = {
+                        hiveViewModel.setSelectedDataEntry(
+                            entry.copy(
+                                hiveConditions = entry.hiveConditions.copy(
+                                    equipmentCondition = it
+                                )
+                            )
+                        )
+                    },
+                    entry = entry,
+                )
+
+                // frames and combs
+                DataEntryChip(
+                    title = "Frames and Combs",
+                    selectedValue = entry.hiveConditions.framesAndCombs,
+                    enumClass = FramesAndCombs::class.java,
+                    onChipSelected = {
+                        hiveViewModel.setSelectedDataEntry(
+                            entry.copy(
+                                hiveConditions = entry.hiveConditions.copy(
+                                    framesAndCombs = it
+                                )
+                            )
+                        )
+                    },
+                    entry = entry,
+                )
+
+                // foundation type
+                DataEntryChip(
+                    title = "Foundation Type",
+                    selectedValue = entry.hiveConditions.foundationType,
+                    enumClass = FoundationType::class.java,
+                    onChipSelected = {
+                        hiveViewModel.setSelectedDataEntry(
+                            entry.copy(
+                                hiveConditions = entry.hiveConditions.copy(
+                                    foundationType = it
+                                )
+                            )
+                        )
+                    },
+                    entry = entry,
+                )
+            }
         }
+    }
 
-        // Hive Data Entry
-        Text(
-            text = hiveDataEntry.date,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(16.dp)
-        )
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@Composable
+fun <T : Enum<T>> DataEntryChip(
+    enumClass: Class<T>,
+    selectedValue: T?,
+    onChipSelected: (T?) -> Unit,
+    entry: HiveDataEntry,
+    title: String
+) {
+    Text(
+        text = title,
+        fontSize = 24.sp,
+        fontWeight = FontWeight.Bold,
+    )
+    Row(
+    ) {
+//        enumClass.enumConstants?.forEach { enumValue ->
+//            FilterChip(
+//                selected = entry.hiveConditions.odor == enumValue,
+//                onClick = {
+//                    onChipSelected(enumValue)
+//                },
+//                label = { Text(text = enumValue.toString()) },
+//                modifier = Modifier.padding(4.dp)
+//            )
+//        }
+
+        LazyHorizontalStaggeredGrid(
+            rows = StaggeredGridCells.Adaptive(48.dp),
+            modifier = Modifier
+                .padding(4.dp)
+                .height(48.dp)
+                .fillMaxWidth(),
+            contentPadding = PaddingValues(4.dp),
+            horizontalItemSpacing = 4.dp,
+        ) {
+            items(enumClass.enumConstants?.size ?: 0) { index ->
+                val enumValue = enumClass.enumConstants?.get(index)
+                FilterChip(
+                    selected = selectedValue == enumValue,
+                    onClick = {
+                        onChipSelected(enumValue)
+                    },
+                    label = { Text(text = enumValue.toString()) }
+                )
+            }
+        }
     }
 }
 
 @Composable
-fun Day(day: CalendarDay, isHighlighted: Boolean, onClick: (CalendarDay) -> Unit = {}) {
+fun Day(
+    day: CalendarDay,
+    hasDataEntry: Boolean,
+    isSelected: Boolean,
+    onClick: (CalendarDay) -> Unit = {}
+) {
     Box(
         modifier = Modifier
             .padding(2.dp)
@@ -197,9 +348,25 @@ fun Day(day: CalendarDay, isHighlighted: Boolean, onClick: (CalendarDay) -> Unit
     ) {
 
         // Show a primary color normal button if highlighted else show a surface color elevated button
-        if (isHighlighted) {
+        if (isSelected) {
             // highlighted days are normal buttons
-            Button(
+            OutlinedButton(
+                onClick = { onClick(day) },
+                modifier = Modifier.size(48.dp),
+                contentPadding = PaddingValues(0.dp), // this is necessary for the text to fit
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            ) {
+                Text(
+                    text = day.date.dayOfMonth.toString(),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+        } else if (hasDataEntry) {
+            // non-highlighted days are elevated buttons
+            FilledTonalButton(
                 onClick = { onClick(day) },
                 modifier = Modifier.size(48.dp),
                 contentPadding = PaddingValues(0.dp) // this is necessary for the text to fit
