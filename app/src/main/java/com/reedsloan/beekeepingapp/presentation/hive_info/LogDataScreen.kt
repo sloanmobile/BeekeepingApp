@@ -2,6 +2,7 @@ package com.reedsloan.beekeepingapp.presentation.hive_info
 
 import android.app.DatePickerDialog
 import android.icu.util.Calendar
+import android.util.Log
 import android.widget.DatePicker
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -45,6 +46,7 @@ import com.reedsloan.beekeepingapp.data.local.hive.HiveHealth
 import com.reedsloan.beekeepingapp.data.local.hive.Odor
 import com.reedsloan.beekeepingapp.presentation.common.Container
 import com.reedsloan.beekeepingapp.presentation.viewmodel.hives.HiveViewModel
+import org.jetbrains.kotlinx.dataframe.api.toValueColumn
 import java.time.LocalDate
 import java.time.YearMonth
 import java.util.*
@@ -120,12 +122,12 @@ fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
             HorizontalCalendar(
                 state = calendarState,
                 dayContent = { calendarDay ->
+
+                    Log.d("LogDataScreen", "${state.selectedDataEntry?.date} == ${calendarDay.date.toString()}")
                     val hasDataEntry =
                         currentHiveDataEntries.any { it.date == calendarDay.date.toString() }
 
-                    val isSelected = currentHiveDataEntries.any {
-                        state.selectedDataEntry?.date == calendarDay.date.toString()
-                    }
+                    val isSelected = state.selectedDataEntry?.date == calendarDay.date.toString()
 
                     Day(
                         day = calendarDay,
@@ -299,17 +301,6 @@ fun <T : Enum<T>> DataEntryChip(
     )
     Row(
     ) {
-//        enumClass.enumConstants?.forEach { enumValue ->
-//            FilterChip(
-//                selected = entry.hiveConditions.odor == enumValue,
-//                onClick = {
-//                    onChipSelected(enumValue)
-//                },
-//                label = { Text(text = enumValue.toString()) },
-//                modifier = Modifier.padding(4.dp)
-//            )
-//        }
-
         LazyHorizontalStaggeredGrid(
             rows = StaggeredGridCells.Adaptive(48.dp),
             modifier = Modifier
@@ -326,7 +317,13 @@ fun <T : Enum<T>> DataEntryChip(
                     onClick = {
                         onChipSelected(enumValue)
                     },
-                    label = { Text(text = enumValue.toString()) }
+                    label = {
+                        val firstPropertyName = enumClass.declaredFields.first().name
+                        val field = enumValue!!.javaClass.getDeclaredField(firstPropertyName)
+                        field.isAccessible = true
+                        val displayValue = field.get(enumValue) as String
+                        Text(text = displayValue)
+                    }
                 )
             }
         }
