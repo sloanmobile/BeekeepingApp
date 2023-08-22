@@ -8,8 +8,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 enum class Screen(val route: String, val displayText: String, val icon: ImageVector, val isBottomNav: Boolean = true) {
     HomeScreen("home_screen", "Home", Icons.Rounded.Home),
-    HiveScreen("hive_screen", "Hives", Icons.Rounded.Hive),
     SettingsScreen("settings_screen", "Settings", Icons.Rounded.Settings),
     SplashScreen("splash_screen", "Splash", Icons.Rounded.Home, false),
     LogDataScreen("log_data_screen", "Log Data", Icons.Rounded.Hive, false),
+    QuickLogScreen("quick_log_screen", "Quick Log", Icons.Rounded.Hive, false),
 }

@@ -1,7 +1,7 @@
 package com.reedsloan.beekeepingapp
 
-import com.reedsloan.beekeepingapp.presentation.hives_screen.EditHiveMenu
-import com.reedsloan.beekeepingapp.presentation.hives_screen.HivesScreen
+import com.reedsloan.beekeepingapp.presentation.home_screen.EditHiveMenu
+import com.reedsloan.beekeepingapp.presentation.home_screen.HomeScreen
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -11,10 +11,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Hive
-import androidx.compose.material.icons.rounded.Home
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,7 +25,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.reedsloan.beekeepingapp.presentation.common.containers.SideSheetContainer
 import com.reedsloan.beekeepingapp.presentation.hive_info.LogDataScreen
-import com.reedsloan.beekeepingapp.presentation.home_screen.HomeScreen
+import com.reedsloan.beekeepingapp.presentation.home_screen.QuickLogScreen
 import com.reedsloan.beekeepingapp.presentation.home_screen.WorkInProgressOverlayText
 import com.reedsloan.beekeepingapp.presentation.screens.Screen
 import com.reedsloan.beekeepingapp.presentation.settings.SettingsScreen
@@ -110,17 +106,17 @@ class MainActivity : ComponentActivity() {
                                 ) {
                                     HomeScreen(navController, hiveViewModel)
                                 }
-                                // add hive screen
-                                composable(
-                                    route = Screen.HiveScreen.route
-                                ) {
-                                    HivesScreen(navController, hiveViewModel)
-                                }
                                 // hive info screen
                                 composable(
                                     route = Screen.LogDataScreen.route,
                                 ) {
                                     LogDataScreen(navController, hiveViewModel)
+                                }
+                                // quick log screen
+                                composable(
+                                    route = Screen.QuickLogScreen.route,
+                                ) {
+                                    QuickLogScreen(navController, hiveViewModel)
                                 }
                                 // settings screen
                                 composable(

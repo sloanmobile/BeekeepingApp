@@ -4,19 +4,13 @@ import android.app.DatePickerDialog
 import android.icu.util.Calendar
 import android.util.Log
 import android.widget.DatePicker
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
-import androidx.compose.foundation.lazy.staggeredgrid.LazyHorizontalStaggeredGrid
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -45,8 +39,8 @@ import com.reedsloan.beekeepingapp.data.local.hive.HiveFeeding
 import com.reedsloan.beekeepingapp.data.local.hive.HiveHealth
 import com.reedsloan.beekeepingapp.data.local.hive.Odor
 import com.reedsloan.beekeepingapp.presentation.common.Container
+import com.reedsloan.beekeepingapp.presentation.common.DataEntryChip
 import com.reedsloan.beekeepingapp.presentation.viewmodel.hives.HiveViewModel
-import org.jetbrains.kotlinx.dataframe.api.toValueColumn
 import java.time.LocalDate
 import java.time.YearMonth
 import java.util.*
@@ -54,9 +48,7 @@ import java.util.*
 @Composable
 fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("HiveInfoScreen")
+        modifier = Modifier.fillMaxSize()
     ) {
         items(1) {
             val state by hiveViewModel.state.collectAsState()
@@ -225,8 +217,7 @@ fun HiveDataEntryScreen(
                                 )
                             )
                         )
-                    },
-                    entry = entry,
+                    }
                 )
 
                 // equipment condition
@@ -242,8 +233,7 @@ fun HiveDataEntryScreen(
                                 )
                             )
                         )
-                    },
-                    entry = entry,
+                    }
                 )
 
                 // frames and combs
@@ -259,8 +249,7 @@ fun HiveDataEntryScreen(
                                 )
                             )
                         )
-                    },
-                    entry = entry,
+                    }
                 )
 
                 // foundation type
@@ -276,58 +265,12 @@ fun HiveDataEntryScreen(
                                 )
                             )
                         )
-                    },
-                    entry = entry,
-                )
-            }
-        }
-    }
-
-}
-
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
-@Composable
-fun <T : Enum<T>> DataEntryChip(
-    enumClass: Class<T>,
-    selectedValue: T?,
-    onChipSelected: (T?) -> Unit,
-    entry: HiveDataEntry,
-    title: String
-) {
-    Text(
-        text = title,
-        fontSize = 24.sp,
-        fontWeight = FontWeight.Bold,
-    )
-    Row(
-    ) {
-        LazyHorizontalStaggeredGrid(
-            rows = StaggeredGridCells.Adaptive(48.dp),
-            modifier = Modifier
-                .padding(4.dp)
-                .height(48.dp)
-                .fillMaxWidth(),
-            contentPadding = PaddingValues(4.dp),
-            horizontalItemSpacing = 4.dp,
-        ) {
-            items(enumClass.enumConstants?.size ?: 0) { index ->
-                val enumValue = enumClass.enumConstants?.get(index)
-                FilterChip(
-                    selected = selectedValue == enumValue,
-                    onClick = {
-                        onChipSelected(enumValue)
-                    },
-                    label = {
-                        val firstPropertyName = enumClass.declaredFields.first().name
-                        val field = enumValue!!.javaClass.getDeclaredField(firstPropertyName)
-                        field.isAccessible = true
-                        val displayValue = field.get(enumValue) as String
-                        Text(text = displayValue)
                     }
                 )
             }
         }
     }
+
 }
 
 @Composable

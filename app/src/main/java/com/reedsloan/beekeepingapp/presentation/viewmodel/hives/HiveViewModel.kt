@@ -204,7 +204,7 @@ class HiveViewModel @Inject constructor(
         _state.update { it.copy(editingTextField = !it.editingTextField) }
     }
 
-    fun onTapAddHiveButton() {
+    fun onClickAddHiveAButton() {
         // make a toast notification
         Toast.makeText(app, "New hive created.", Toast.LENGTH_SHORT).show()
         closeOpenMenus()
@@ -218,7 +218,7 @@ class HiveViewModel @Inject constructor(
             return
         }
         setSelectedHive(selectedHiveId)
-        navController.navigate(Screen.HiveScreen.route)
+        navController.navigate(Screen.HomeScreen.route)
     }
 
 
@@ -371,7 +371,7 @@ class HiveViewModel @Inject constructor(
         )
     }
 
-    private fun setSelectedHive(hiveId: String) {
+    fun setSelectedHive(hiveId: String) {
         // Set the selected hive in the state by finding the hive with the matching id
         _state.update { it.copy(selectedHive = hives.value.find { it.id == hiveId }) }
     }
@@ -842,5 +842,10 @@ class HiveViewModel @Inject constructor(
                 selectedDataEntry = newHiveDataEntry
             )
         }
+    }
+
+    fun onTapQuickLogButton(navController: NavController) {
+        closeOpenMenus()
+        navController.navigate(Screen.QuickLogScreen.route)
     }
 }
