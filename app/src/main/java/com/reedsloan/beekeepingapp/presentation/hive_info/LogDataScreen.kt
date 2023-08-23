@@ -204,69 +204,6 @@ fun HiveDataEntryScreen(
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                 )
-
-                DataEntryChip(
-                    title = "Odor",
-                    selectedValue = entry.hiveConditions.odor,
-                    enumClass = Odor::class.java,
-                    onChipSelected = {
-                        hiveViewModel.setSelectedDataEntry(
-                            entry.copy(
-                                hiveConditions = entry.hiveConditions.copy(
-                                    odor = it
-                                )
-                            )
-                        )
-                    }
-                )
-
-                // equipment condition
-                DataEntryChip(
-                    title = "Equipment Condition",
-                    selectedValue = entry.hiveConditions.equipmentCondition,
-                    enumClass = EquipmentCondition::class.java,
-                    onChipSelected = {
-                        hiveViewModel.setSelectedDataEntry(
-                            entry.copy(
-                                hiveConditions = entry.hiveConditions.copy(
-                                    equipmentCondition = it
-                                )
-                            )
-                        )
-                    }
-                )
-
-                // frames and combs
-                DataEntryChip(
-                    title = "Frames and Combs",
-                    selectedValue = entry.hiveConditions.framesAndCombs,
-                    enumClass = FramesAndCombs::class.java,
-                    onChipSelected = {
-                        hiveViewModel.setSelectedDataEntry(
-                            entry.copy(
-                                hiveConditions = entry.hiveConditions.copy(
-                                    framesAndCombs = it
-                                )
-                            )
-                        )
-                    }
-                )
-
-                // foundation type
-                DataEntryChip(
-                    title = "Foundation Type",
-                    selectedValue = entry.hiveConditions.foundationType,
-                    enumClass = FoundationType::class.java,
-                    onChipSelected = {
-                        hiveViewModel.setSelectedDataEntry(
-                            entry.copy(
-                                hiveConditions = entry.hiveConditions.copy(
-                                    foundationType = it
-                                )
-                            )
-                        )
-                    }
-                )
             }
         }
     }

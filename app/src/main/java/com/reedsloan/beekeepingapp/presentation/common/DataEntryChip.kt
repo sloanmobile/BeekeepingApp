@@ -122,3 +122,175 @@ fun DataEntryChip(
         }
     }
 }
+
+/**
+ * Composable function for displaying a row of selectable filter chips for data entry using a list of string values.
+ *
+ * @param stringValues The list of string values to be displayed as filter chips.
+ * @param selectedValues The list of currently selected string values.
+ * @param onChipSelected Callback invoked when filter chips are selected.
+ * @param title The title or label displayed above the filter chips.
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@Composable
+fun MultiDataEntryChip(
+    stringValues: List<String>,
+    selectedValues: List<String>,
+    onChipSelected: (List<String>) -> Unit,
+    title: String? = null
+) {
+    if (title != null) {
+        Text(
+            text = title,
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+    Row(
+    ) {
+        LazyHorizontalStaggeredGrid(
+            rows = StaggeredGridCells.Adaptive(48.dp),
+            modifier = Modifier
+                .padding(4.dp)
+                .height(48.dp)
+                .fillMaxWidth(),
+            contentPadding = PaddingValues(4.dp),
+            horizontalItemSpacing = 4.dp,
+        ) {
+            items(stringValues) { value ->
+                FilterChip(
+                    selected = selectedValues.contains(value),
+                    onClick = {
+                        val updatedSelection = if (selectedValues.contains(value)) {
+                            selectedValues.filter { it != value }
+                        } else {
+                            selectedValues + value
+                        }
+                        onChipSelected(updatedSelection)
+                    },
+                    label = {
+                        Text(text = value)
+                    }
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Composable function for displaying a row of selectable filter chips for data entry.
+ *
+ * @param enumClass A Class object representing the enumeration class defining selectable values.
+ * @param selectedValues The list of currently selected enumeration values.
+ * @param onChipSelected Callback invoked when filter chips are selected.
+ * @param title The title or label displayed above the filter chips.
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@Composable
+fun <T : Enum<T>> DataEntryChip(
+    enumClass: Class<T>,
+    selectedValues: List<T>,
+    onChipSelected: (List<T?>) -> Unit,
+    title: String? = null
+) {
+    if (title != null) {
+        Text(
+            text = title,
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+    Row(
+    ) {
+        LazyHorizontalStaggeredGrid(
+            rows = StaggeredGridCells.Adaptive(48.dp),
+            modifier = Modifier
+                .padding(4.dp)
+                .height(48.dp)
+                .fillMaxWidth(),
+            contentPadding = PaddingValues(4.dp),
+            horizontalItemSpacing = 4.dp,
+        ) {
+            items(enumClass.enumConstants?.size ?: 0) { index ->
+                val enumValue = enumClass.enumConstants?.get(index)
+                FilterChip(
+                    selected = selectedValues.contains(enumValue),
+                    onClick = {
+                        val updatedSelection = if (selectedValues.contains(enumValue)) {
+                            selectedValues.filter { it != enumValue }
+                        } else {
+                            selectedValues + enumValue
+                        }
+                        onChipSelected(updatedSelection)
+                    },
+                    label = {
+                        val firstPropertyName = enumClass.declaredFields.first().name
+                        val field = enumValue!!.javaClass.getDeclaredField(firstPropertyName)
+                        field.isAccessible = true
+                        val displayValue = field.get(enumValue) as String
+                        Text(text = displayValue)
+                    }
+                )
+            }
+        }
+    }
+}
+/**
+ * Composable function for displaying a row of selectable filter chips for data entry.
+ *
+ * @param enumClass A Class object representing the enumeration class defining selectable values.
+ * @param selectedValues The list of currently selected enumeration values.
+ * @param onChipSelected Callback invoked when filter chips are selected.
+ * @param title The title or label displayed above the filter chips.
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@Composable
+fun <T : Enum<T>> MultiDataEntryChip(
+    enumClass: Class<T>,
+    selectedValues: List<T?>,
+    onChipSelected: (List<T?>) -> Unit,
+    title: String? = null
+) {
+    if (title != null) {
+        Text(
+            text = title,
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+    Row(
+    ) {
+        LazyHorizontalStaggeredGrid(
+            rows = StaggeredGridCells.Adaptive(48.dp),
+            modifier = Modifier
+                .padding(4.dp)
+                .height(48.dp)
+                .fillMaxWidth(),
+            contentPadding = PaddingValues(4.dp),
+            horizontalItemSpacing = 4.dp,
+        ) {
+            items(enumClass.enumConstants?.size ?: 0) { index ->
+                val enumValue = enumClass.enumConstants?.get(index)
+                FilterChip(
+                    selected = selectedValues.contains(enumValue),
+                    onClick = {
+                        val updatedSelection = if (selectedValues.contains(enumValue)) {
+                            selectedValues.filter { it != enumValue }
+                        } else {
+                            selectedValues + enumValue
+                        }
+                        onChipSelected(updatedSelection)
+                    },
+                    label = {
+                        val firstPropertyName = enumClass.declaredFields.first().name
+                        val field = enumValue!!.javaClass.getDeclaredField(firstPropertyName)
+                        field.isAccessible = true
+                        val displayValue = field.get(enumValue) as String
+                        Text(text = displayValue)
+                    }
+                )
+            }
+        }
+    }
+}
+

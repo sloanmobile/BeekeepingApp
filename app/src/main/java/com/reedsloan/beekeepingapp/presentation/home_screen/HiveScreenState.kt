@@ -3,8 +3,12 @@ package com.reedsloan.beekeepingapp.presentation.home_screen
 import com.reedsloan.beekeepingapp.BuildConfig
 import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
+import com.reedsloan.beekeepingapp.data.local.hive.HiveConditions
 import com.reedsloan.beekeepingapp.data.local.hive.HiveDataEntry
+import com.reedsloan.beekeepingapp.data.local.hive.HiveFeeding
+import com.reedsloan.beekeepingapp.data.local.hive.HiveHealth
 import com.reedsloan.beekeepingapp.presentation.screens.Screen
+import java.time.LocalDate
 
 data class HiveScreenState(
     val isLoading: Boolean = false,
@@ -26,5 +30,12 @@ data class HiveScreenState(
     val currentScreenName: String = Screen.HomeScreen.name,
     val editingTextField: Boolean = false,
     val showDeleteHiveDialog: Boolean = false,
-    val selectedDataEntry: HiveDataEntry? = null,
+    val selectedDataEntry: HiveDataEntry = HiveDataEntry(
+        hiveId = "",
+        date = LocalDate.now().toString(),
+        hiveConditions = HiveConditions(),
+        hiveHealth = HiveHealth(),
+        feeding = HiveFeeding(),
+        localPhotoUris = emptyList()
+    )
 )

@@ -436,38 +436,38 @@ fun HiveCard(
                         }
                     }
             }
-//            Row(
-//                horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier
-//                    .fillMaxWidth()
-//                    .padding(4.dp)
-//            ) {
-//                HiveCardAction(
-//                    icon = Icons.Filled.Book, text = "Log Data", modifier = Modifier
-//                        .weight(1f)
-//                        .padding(end = 4.dp)
-//                ) {
-//                    hiveViewModel.onTapLogDataButton(hive.id, navController)
-//                }
-//                HiveCardAction(
-//                    icon = Icons.Filled.History, text = "View Logs", modifier = Modifier
-//                        .weight(1f)
-//                        .padding(end = 4.dp)
-//                ) {
-//                    hiveViewModel.onTapViewLogsButton(hive.id)
-//                }
-//                HiveCardAction(
-//                    icon = Icons.Filled.Edit, text = "Edit", modifier = Modifier
-//                        .weight(1f)
-//                        .padding(end = 4.dp)
-//                ) {
-//                    hiveViewModel.onTapEditHiveButton(hive.id)
-//                }
-//                HiveCardAction(
-//                    icon = Icons.Filled.Delete, text = "Delete", modifier = Modifier.weight(1f)
-//                ) {
-//                    hiveViewModel.showDeleteHiveDialog(hive.id)
-//                }
-//            }
+            Row(
+                horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(4.dp)
+            ) {
+                HiveCardAction(
+                    icon = Icons.Filled.Book, text = "Log Data", modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 4.dp)
+                ) {
+                    hiveViewModel.onTapLogDataButton(hive.id, navController)
+                }
+                HiveCardAction(
+                    icon = Icons.Filled.History, text = "View Logs", modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 4.dp)
+                ) {
+                    hiveViewModel.onTapViewLogsButton(hive.id)
+                }
+                HiveCardAction(
+                    icon = Icons.Filled.Edit, text = "Edit", modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 4.dp)
+                ) {
+                    hiveViewModel.onTapEditHiveButton(hive.id)
+                }
+                HiveCardAction(
+                    icon = Icons.Filled.Delete, text = "Delete", modifier = Modifier.weight(1f)
+                ) {
+                    hiveViewModel.showDeleteHiveDialog(hive.id)
+                }
+            }
         }
     }
 }

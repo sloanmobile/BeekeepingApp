@@ -848,4 +848,21 @@ class HiveViewModel @Inject constructor(
         closeOpenMenus()
         navController.navigate(Screen.QuickLogScreen.route)
     }
+
+    fun onTapSaveDataEntry() {
+        state.value.selectedDataEntry.let { hiveDataEntry ->
+            addHiveDataEntry(hiveDataEntry)
+        }
+    }
+
+    fun getDefaultDataEntry(): HiveDataEntry {
+        return HiveDataEntry(
+            hiveId = state.value.selectedHive?.id ?: "",
+            date = LocalDate.now().toString(),
+            hiveConditions = HiveConditions(),
+            hiveHealth = HiveHealth(),
+            feeding = HiveFeeding(),
+            localPhotoUris = emptyList()
+        )
+    }
 }
