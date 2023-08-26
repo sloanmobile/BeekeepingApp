@@ -179,6 +179,9 @@ class HiveViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Use this function to handle the back button press instead of using popBackStack() directly.
+     */
     fun backHandler(navController: NavController) {
         if (state.value.hiveDeleteMode) {
             toggleHiveDeleteMode()
@@ -204,40 +207,16 @@ class HiveViewModel @Inject constructor(
         _state.update { it.copy(editingTextField = !it.editingTextField) }
     }
 
-    fun onClickAddHiveAButton() {
+    fun onClickAddHiveButton() {
         // make a toast notification
         Toast.makeText(app, "New hive created.", Toast.LENGTH_SHORT).show()
         closeOpenMenus()
         createHive()
     }
 
-    fun onTapViewHiveLog(selectedHiveId: String, navController: NavController) {
-        Log.d("HiveListItem", "Thread: ${Thread.currentThread().name}")
-        if (state.value.hiveDeleteMode) {
-            toggleSelected(selectedHiveId)
-            return
-        }
-        setSelectedHive(selectedHiveId)
-        navController.navigate(Screen.HomeScreen.route)
-    }
-
-
-    fun onLongPressHiveListItem(selectedHiveId: String) {
-        // enable delete mode
-        toggleHiveDeleteMode()
-        // add hive to selection list
-        addToSelectionList(selectedHiveId)
-    }
 
     fun onTapNavigationExpandButton() {
         toggleNavigationBarMenuState()
-    }
-
-    fun navigate(navController: NavController, destination: Screen) {
-        Log.d(this::class.simpleName, destination.name)
-        _state.update { it.copy(currentScreenName = destination.name) }
-        closeOpenMenus()
-        navController.navigate(destination.route)
     }
 
     fun onTapDeleteSelectedHiveButton() {
@@ -380,7 +359,7 @@ class HiveViewModel @Inject constructor(
         _state.update {
             it.copy(
                 selectedHive = it.selectedHive?.copy(
-                    hiveInfo = it.selectedHive!!.hiveInfo.copy(notes = notes)
+                    hiveDetails = it.selectedHive!!.hiveDetails.copy(notes = notes)
                 )
             )
         }
@@ -391,7 +370,7 @@ class HiveViewModel @Inject constructor(
             _state.update {
                 it.copy(
                     selectedHive = it.selectedHive?.copy(
-                        hiveInfo = it.selectedHive.hiveInfo.copy(
+                        hiveDetails = it.selectedHive.hiveDetails.copy(
                             name = name, dateModified = LocalDate.now()
                         )
                     )
@@ -489,7 +468,7 @@ class HiveViewModel @Inject constructor(
             setIsLoading(true)
             hiveRepository.updateHive(
                 hive.copy(
-                    hiveInfo = hive.hiveInfo.copy(
+                    hiveDetails = hive.hiveDetails.copy(
                         dateModified = LocalDate.now()
                     )
                 )
@@ -568,7 +547,7 @@ class HiveViewModel @Inject constructor(
                     state.value.selectedHive?.let { hive ->
                         updateHive(
                             hive.copy(
-                                hiveInfo = hive.hiveInfo.copy(
+                                hiveDetails = hive.hiveDetails.copy(
                                     image = file.absolutePath
                                 )
                             )
@@ -591,7 +570,7 @@ class HiveViewModel @Inject constructor(
                 state.value.selectedHive?.let { hive ->
                     updateHive(
                         hive.copy(
-                            hiveInfo = hive.hiveInfo.copy(
+                            hiveDetails = hive.hiveDetails.copy(
                                 image = ""
                             )
                         )
@@ -637,12 +616,11 @@ class HiveViewModel @Inject constructor(
                 state.value.selectedHive?.let { hive ->
                     updateHive(
                         hive.copy(
-                            hiveInfo = hive.hiveInfo.copy(
+                            hiveDetails = hive.hiveDetails.copy(
                                 image = uri.toString()
                             )
                         )
                     )
-                    deselectHive()
                 }
             }
         }
@@ -694,7 +672,7 @@ class HiveViewModel @Inject constructor(
             viewModelScope.launch {
                 updateHive(
                     hive.copy(
-                        hiveInfo = hive.hiveInfo.copy(
+                        hiveDetails = hive.hiveDetails.copy(
                             name = editableString
                         )
                     )
@@ -744,8 +722,8 @@ class HiveViewModel @Inject constructor(
                     copyImageToInternalStorage(uri)
                     updateHive(
                         hive.copy(
-                            hiveInfo = hive.hiveInfo.copy(
-                                name = name, image = uri?.toString() ?: hive.hiveInfo.image
+                            hiveDetails = hive.hiveDetails.copy(
+                                name = name, image = uri?.toString() ?: hive.hiveDetails.image
                             )
                         )
                     )
@@ -864,5 +842,48 @@ class HiveViewModel @Inject constructor(
             feeding = HiveFeeding(),
             localPhotoUris = emptyList()
         )
+    }
+
+    fun onTapSettingsButton(navController: NavController) {
+        closeOpenMenus()
+        navController.navigate(Screen.SettingsScreen.route)
+    }
+
+    fun onTapHiveCard(id: String, navController: NavController) {
+        setSelectedHive(id)
+        closeOpenMenus()
+        navController.navigate(Screen.HiveDetailsScreen.route)
+    }
+
+    fun setImageForSelectedHive(uri: Uri?) {
+        setIsLoading(true)
+        viewModelScope.launch {
+            runCatching {
+                state.value.selectedHive?.let { hive ->
+                    copyImageToInternalStorage(uri)
+                    updateHive(
+                        hive.copy(
+                            hiveDetails = hive.hiveDetails.copy(
+                                image = uri?.toString() ?: hive.hiveDetails.image
+                            )
+                        )
+                    )
+                }
+            }.onSuccess {
+                setIsSuccess(true)
+                getAllHives()
+            }.onFailure {
+                showError(it.message ?: "Unknown error")
+            }
+        }
+    }
+
+    fun onTapInspectionsButton(navController: NavController) {
+        closeOpenMenus()
+        navController.navigate(Screen.InspectionsScreen.route)
+    }
+
+    fun onClickAddInspectionButton() {
+        TODO("Not yet implemented")
     }
 }

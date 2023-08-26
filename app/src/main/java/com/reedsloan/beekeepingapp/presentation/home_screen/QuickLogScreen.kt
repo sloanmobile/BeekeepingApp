@@ -4,7 +4,6 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -27,7 +26,6 @@ import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -53,11 +51,9 @@ import com.reedsloan.beekeepingapp.data.local.hive.QueenMarker
 import com.reedsloan.beekeepingapp.data.local.hive.Temperament
 import com.reedsloan.beekeepingapp.data.local.hive.Weather
 import com.reedsloan.beekeepingapp.presentation.common.DataEntryChip
-import com.reedsloan.beekeepingapp.presentation.common.MultiDataEntryChip
 import com.reedsloan.beekeepingapp.presentation.hive_info.Day
 import com.reedsloan.beekeepingapp.presentation.hive_info.Month
 import com.reedsloan.beekeepingapp.presentation.viewmodel.hives.HiveViewModel
-import java.time.LocalDate
 import java.time.YearMonth
 
 @Composable
@@ -93,10 +89,10 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                 textAlign = TextAlign.Center
             )
             DataEntryChip(
-                stringValues = hives.map { it.hiveInfo.name },
-                selectedValue = state.selectedHive?.hiveInfo?.name,
+                stringValues = hives.map { it.hiveDetails.name },
+                selectedValue = state.selectedHive?.hiveDetails?.name,
                 onChipSelected = { selectedHiveName ->
-                    val selectedHive = hives.find { it.hiveInfo.name == selectedHiveName }
+                    val selectedHive = hives.find { it.hiveDetails.name == selectedHiveName }
                     if (selectedHive != null) {
                         hiveViewModel.setSelectedHive(selectedHive.id)
                         hiveViewModel.setSelectedDataEntry(entry.copy(hiveId = selectedHive.id))

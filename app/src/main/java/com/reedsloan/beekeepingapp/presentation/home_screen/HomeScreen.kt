@@ -11,9 +11,12 @@ import android.provider.Settings
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -45,7 +48,7 @@ fun Activity.openAppSettings() {
     ).also(::startActivity)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(navController: NavController, hiveViewModel: HiveViewModel) {
     val state by hiveViewModel.state.collectAsState()
@@ -91,53 +94,60 @@ fun HomeScreen(navController: NavController, hiveViewModel: HiveViewModel) {
     }
 
     Column(Modifier.fillMaxSize()) {
-        LazyColumn(
+        Column(
             horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxSize()
         ) {
-            items(items = hives, key = { it.id }) { hive ->
-                HiveCard(
-                    hive = hive,
-                    navController = navController,
-                    hiveViewModel = hiveViewModel,
-                )
-            }
-            // add hive button
-            item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    shape = MaterialTheme.shapes.large,
-                    onClick = {
-                        hiveViewModel.onClickAddHiveAButton()
+            TopAppBar(
+                title = {
+                    Text(text = "Hives")
+                },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        hiveViewModel.backHandler(navController)
+                    }) {
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
                     }
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        Icon(Icons.Filled.Add, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "Add Hive")
+                },
+                actions = {
+                    IconButton(onClick = {
+                        hiveViewModel.onTapSettingsButton(navController)
+                    }) {
+                        Icon(Icons.Filled.Settings, contentDescription = "Settings")
                     }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(
+                        2.dp
+                    ),
+                ),
+            )
+
+            // get display width
+            val displayWidth = LocalContext.current.resources.displayMetrics.widthPixels
+
+            Spacer(modifier = Modifier.height(16.dp))
+            LazyVerticalGrid(columns = GridCells.Fixed(2), modifier = Modifier.fillMaxWidth()) {
+                items(hives) { hive ->
+                    HiveCard(
+                        hive = hive,
+                        navController = navController,
+                        hiveViewModel = hiveViewModel
+                    )
                 }
             }
         }
     }
+
     Box(Modifier.fillMaxSize()) {
         ExtendedFloatingActionButton(
-            onClick = { hiveViewModel.onTapQuickLogButton(navController)
-                      },
+            onClick = { hiveViewModel.onClickAddHiveButton() },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
         ) {
-            Icon(Icons.Filled.Hive, contentDescription = null)
+            Icon(Icons.Filled.Add, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
-            Text(text = "Quick Log")
+            Text(text = "ADD HIVE")
         }
     }
 }
@@ -239,14 +249,7 @@ fun EditHiveMenu(
     }
 
 
-    val state = hiveViewModel.state
     val context = LocalContext.current
-
-    var display by remember {
-        mutableStateOf(
-            true
-        )
-    }
 
     val imagePickerIntent =
         rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { imageUri ->
@@ -261,7 +264,7 @@ fun EditHiveMenu(
             }
         }
 
-    val hiveName = remember { mutableStateOf(TextFieldValue(hive.hiveInfo.name)) }
+    val hiveName = remember { mutableStateOf(TextFieldValue(hive.hiveDetails.name)) }
 
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
         Column {
@@ -274,11 +277,10 @@ fun EditHiveMenu(
                     .fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(16.dp))
-            Spacer(modifier = Modifier.height(16.dp))
             if (!isLoading) {
                 // Hive image
                 AsyncImage(
-                    model = uri ?: hive.hiveInfo.image,
+                    model = uri ?: hive.hiveDetails.image,
                     contentDescription = "Hive image",
                     modifier = Modifier
                         .fillMaxWidth()
@@ -391,21 +393,19 @@ fun HiveCard(
     navController: NavController,
     hiveViewModel: HiveViewModel,
 ) {
-    OutlinedCard(
-        Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-    ) {
+    OutlinedCard(Modifier.padding(8.dp).clickable {
+        hiveViewModel.onTapHiveCard(hive.id, navController)
+    }) {
         // Card content
-        Column(Modifier.fillMaxSize()) {
-            hive.hiveInfo.image?.let { image ->
+        Column(Modifier.fillMaxWidth().height(230.dp)) {
+            hive.hiveDetails.image?.let { image ->
                 // Hive image
                 AsyncImage(
                     model = image,
                     contentDescription = "Hive image",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(200.dp)
+                        .height(150.dp)
                         .clip(MaterialTheme.shapes.large),
                     contentScale = ContentScale.Crop,
                     onError = {
@@ -417,57 +417,57 @@ fun HiveCard(
                     filterQuality = FilterQuality.High,
                 )
             }
-                Row(horizontalArrangement = Arrangement.SpaceBetween) {
-                    Column(Modifier.padding(16.dp)) {
-                        Row {
-                            // Hive name
-                            Text(
-                                text = hive.hiveInfo.name,
-                                style = MaterialTheme.typography.headlineSmall,
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row {
-                            // Last inspection date
-                            Text(
-                                text = "Last inspection: ${hive.hiveDataEntries.lastOrNull()?.date ?: "Never"}",
-                                style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
-                            )
-                        }
+            Row(horizontalArrangement = Arrangement.SpaceBetween) {
+                Column(Modifier.padding(16.dp)) {
+                    Row {
+                        // Hive name
+                        Text(
+                            text = hive.hiveDetails.name,
+                            style = MaterialTheme.typography.titleMedium
+                        )
                     }
-            }
-            Row(
-                horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(4.dp)
-            ) {
-                HiveCardAction(
-                    icon = Icons.Filled.Book, text = "Log Data", modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 4.dp)
-                ) {
-                    hiveViewModel.onTapLogDataButton(hive.id, navController)
-                }
-                HiveCardAction(
-                    icon = Icons.Filled.History, text = "View Logs", modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 4.dp)
-                ) {
-                    hiveViewModel.onTapViewLogsButton(hive.id)
-                }
-                HiveCardAction(
-                    icon = Icons.Filled.Edit, text = "Edit", modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 4.dp)
-                ) {
-                    hiveViewModel.onTapEditHiveButton(hive.id)
-                }
-                HiveCardAction(
-                    icon = Icons.Filled.Delete, text = "Delete", modifier = Modifier.weight(1f)
-                ) {
-                    hiveViewModel.showDeleteHiveDialog(hive.id)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row {
+                        // Last inspection date
+                        Text(
+                            text = "Last inspection: ${hive.hiveDataEntries.lastOrNull()?.date ?: "Never"}",
+                            style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
+                        )
+                    }
                 }
             }
+//            Row(
+//                horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier
+//                    .fillMaxWidth()
+//                    .padding(4.dp)
+//            ) {
+//                HiveCardAction(
+//                    icon = Icons.Filled.Book, text = "Log Data", modifier = Modifier
+//                        .weight(1f)
+//                        .padding(end = 4.dp)
+//                ) {
+//                    hiveViewModel.onTapLogDataButton(hive.id, navController)
+//                }
+//                HiveCardAction(
+//                    icon = Icons.Filled.History, text = "View Logs", modifier = Modifier
+//                        .weight(1f)
+//                        .padding(end = 4.dp)
+//                ) {
+//                    hiveViewModel.onTapViewLogsButton(hive.id)
+//                }
+//                HiveCardAction(
+//                    icon = Icons.Filled.Edit, text = "Edit", modifier = Modifier
+//                        .weight(1f)
+//                        .padding(end = 4.dp)
+//                ) {
+//                    hiveViewModel.onTapEditHiveButton(hive.id)
+//                }
+//                HiveCardAction(
+//                    icon = Icons.Filled.Delete, text = "Delete", modifier = Modifier.weight(1f)
+//                ) {
+//                    hiveViewModel.showDeleteHiveDialog(hive.id)
+//                }
+//            }
         }
     }
 }

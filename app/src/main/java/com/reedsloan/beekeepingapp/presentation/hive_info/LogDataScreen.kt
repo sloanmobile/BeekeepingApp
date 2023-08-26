@@ -30,16 +30,11 @@ import com.kizitonwose.calendar.compose.rememberCalendarState
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.CalendarMonth
 import com.kizitonwose.calendar.core.firstDayOfWeekFromLocale
-import com.reedsloan.beekeepingapp.data.local.hive.EquipmentCondition
-import com.reedsloan.beekeepingapp.data.local.hive.FoundationType
-import com.reedsloan.beekeepingapp.data.local.hive.FramesAndCombs
 import com.reedsloan.beekeepingapp.data.local.hive.HiveConditions
 import com.reedsloan.beekeepingapp.data.local.hive.HiveDataEntry
 import com.reedsloan.beekeepingapp.data.local.hive.HiveFeeding
 import com.reedsloan.beekeepingapp.data.local.hive.HiveHealth
-import com.reedsloan.beekeepingapp.data.local.hive.Odor
 import com.reedsloan.beekeepingapp.presentation.common.Container
-import com.reedsloan.beekeepingapp.presentation.common.DataEntryChip
 import com.reedsloan.beekeepingapp.presentation.viewmodel.hives.HiveViewModel
 import java.time.LocalDate
 import java.time.YearMonth
@@ -84,7 +79,7 @@ fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
             val selectedDate = remember { mutableStateOf(LocalDate.now()) }
 
             // Hive Name
-            state.selectedHive?.hiveInfo?.let { hiveInfo ->
+            state.selectedHive?.hiveDetails?.let { hiveInfo ->
                 Text(
                     text = hiveInfo.name,
                     fontSize = 24.sp,
@@ -183,7 +178,7 @@ fun HiveDataEntryScreen(
 
             state.selectedDataEntry?.let { entry ->
                 // Hive Name
-                state.selectedHive?.hiveInfo?.let { hiveInfo ->
+                state.selectedHive?.hiveDetails?.let { hiveInfo ->
                     Text(
                         text = hiveInfo.name,
                         fontSize = 24.sp,

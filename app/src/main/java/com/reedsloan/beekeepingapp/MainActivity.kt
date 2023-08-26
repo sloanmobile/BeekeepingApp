@@ -23,10 +23,13 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.reedsloan.beekeepingapp.presentation.apiaries_screen.ApiariesScreen
 import com.reedsloan.beekeepingapp.presentation.common.containers.SideSheetContainer
+import com.reedsloan.beekeepingapp.presentation.hive_details_screen.HiveDetailsScreen
 import com.reedsloan.beekeepingapp.presentation.hive_info.LogDataScreen
 import com.reedsloan.beekeepingapp.presentation.home_screen.QuickLogScreen
 import com.reedsloan.beekeepingapp.presentation.home_screen.WorkInProgressOverlayText
+import com.reedsloan.beekeepingapp.presentation.inspections_screen.InspectionsScreen
 import com.reedsloan.beekeepingapp.presentation.screens.Screen
 import com.reedsloan.beekeepingapp.presentation.settings.SettingsScreen
 import com.reedsloan.beekeepingapp.presentation.ui.theme.AppTheme
@@ -57,7 +60,7 @@ class MainActivity : ComponentActivity() {
                         SideSheetContainer(
                             // using a raw string with """ instead of " to get quotes in the string
                             display = state.editHiveMenuState.isOpen(),
-                            title = """Editing "${hive.hiveInfo.name}"""",
+                            title = """Editing "${hive.hiveDetails.name}"""",
                             onDismiss = { hiveViewModel.onDismissEditHiveMenu() }) {
                             EditHiveMenu(
                                 hiveViewModel = hiveViewModel,
@@ -68,14 +71,14 @@ class MainActivity : ComponentActivity() {
                     }
 
                     // replace with custom bottom bar
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .zIndex(1F),
-                        contentAlignment = Alignment.BottomCenter
-                    ) {
-                        BottomBar(navController)
-                    }
+//                    Box(
+//                        modifier = Modifier
+//                            .fillMaxSize()
+//                            .zIndex(1F),
+//                        contentAlignment = Alignment.BottomCenter
+//                    ) {
+//                        BottomBar(navController)
+//                    }
 
                     Column(
                         Modifier
@@ -93,7 +96,7 @@ class MainActivity : ComponentActivity() {
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(bottom = 80.dp)
+//                                .padding(bottom = 80.dp) // bottom bar height
                         ) {
                             // fragment for each screen
                             NavHost(
@@ -123,6 +126,24 @@ class MainActivity : ComponentActivity() {
                                     route = Screen.SettingsScreen.route
                                 ) {
                                     SettingsScreen(navController, hiveViewModel)
+                                }
+                                // apiaries screen
+                                composable(
+                                    route = Screen.ApiariesScreen.route
+                                ) {
+                                    ApiariesScreen(navController, hiveViewModel)
+                                }
+                                // hive details screen
+                                composable(
+                                    route = Screen.HiveDetailsScreen.route
+                                ) {
+                                    HiveDetailsScreen(navController, hiveViewModel)
+                                }
+                                // inspections screen
+                                composable(
+                                    route = Screen.InspectionsScreen.route
+                                ) {
+                                    InspectionsScreen(navController, hiveViewModel)
                                 }
                             }
                         }
