@@ -8,13 +8,17 @@ import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.captionBarPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -51,7 +55,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -64,7 +71,7 @@ import coil.compose.AsyncImage
 import com.reedsloan.beekeepingapp.presentation.home_screen.HiveScreenState
 import com.reedsloan.beekeepingapp.presentation.viewmodel.hives.HiveViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel) {
     val state by hiveViewModel.state.collectAsState()
@@ -97,7 +104,6 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
                         )
                     }
 
-
                     val context = LocalContext.current
 
                     val imagePickerIntent =
@@ -105,6 +111,7 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
                             isLoading = false
                             uri = imageUri
                             hiveViewModel.setImageForSelectedHive(imageUri)
+                            isSheetOpen = false
                         }
 
                     val cameraOpenIntent =
@@ -112,6 +119,7 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
                             if (it) {
                                 isLoading = false
                                 hiveViewModel.setImageForSelectedHive(uri)
+                                isSheetOpen = false
                             }
                         }
 
@@ -194,7 +202,6 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
                         ) {
                             ConstraintLayout(Modifier.fillMaxSize()) {
                                 val (icon, text) = createRefs()
-
                                 Icon(
                                     Icons.Filled.Image,
                                     contentDescription = null,
@@ -210,6 +217,44 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
                                     bottom.linkTo(parent.bottom)
                                     end.linkTo(parent.end)
                                 }, style = MaterialTheme.typography.titleMedium)
+                            }
+                        }
+
+                        // Remove image button
+                        if (hive.hiveDetails.image != null) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            ElevatedButton(
+                                onClick = {
+                                    hiveViewModel.removeImageForSelectedHive()
+                                    isSheetOpen = false
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp),
+                            ) {
+                                ConstraintLayout(Modifier.fillMaxSize()) {
+                                    val (icon, text) = createRefs()
+
+                                    Icon(
+                                        Icons.Filled.Image,
+                                        contentDescription = null,
+                                        modifier = Modifier.constrainAs(icon) {
+                                            start.linkTo(parent.start)
+                                            top.linkTo(parent.top)
+                                            bottom.linkTo(parent.bottom)
+                                        })
+
+                                    Text(
+                                        text = "REMOVE IMAGE",
+                                        modifier = Modifier.constrainAs(text) {
+                                            start.linkTo(parent.start)
+                                            top.linkTo(parent.top)
+                                            bottom.linkTo(parent.bottom)
+                                            end.linkTo(parent.end)
+                                        },
+                                        style = MaterialTheme.typography.titleMedium
+                                    )
+                                }
                             }
                         }
                         Spacer(modifier = Modifier.height(16.dp))
@@ -266,7 +311,7 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
                                 }
                                 .clip(
                                     RoundedCornerShape(
-                                        bottomEndPercent = 35, bottomStartPercent = 35
+                                        bottomEndPercent = 20, bottomStartPercent = 20
                                     )
                                 ),
                             contentScale = ContentScale.Crop,

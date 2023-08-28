@@ -12,6 +12,8 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -24,11 +26,13 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -38,6 +42,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.reedsloan.beekeepingapp.R
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
 import com.reedsloan.beekeepingapp.presentation.common.data.PermissionRequest
 import com.reedsloan.beekeepingapp.presentation.viewmodel.hives.HiveViewModel
@@ -393,11 +398,17 @@ fun HiveCard(
     navController: NavController,
     hiveViewModel: HiveViewModel,
 ) {
-    OutlinedCard(Modifier.padding(8.dp).clickable {
-        hiveViewModel.onTapHiveCard(hive.id, navController)
-    }) {
+    OutlinedCard(
+        Modifier
+            .padding(8.dp)
+            .clickable {
+                hiveViewModel.onTapHiveCard(hive.id, navController)
+            }) {
         // Card content
-        Column(Modifier.fillMaxWidth().height(230.dp)) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .height(230.dp)) {
             hive.hiveDetails.image?.let { image ->
                 // Hive image
                 AsyncImage(
@@ -415,6 +426,23 @@ fun HiveCard(
                         )
                     },
                     filterQuality = FilterQuality.High,
+                )
+            } ?: run {
+
+                // use camera icon as placeholder
+                Image(
+                    imageVector = Icons.Filled.CameraAlt,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(150.dp)
+                        .clip(MaterialTheme.shapes.large)
+                        .background(MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp))
+                        .padding(16.dp)
+                        .alpha(0.5f),
+                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
                 )
             }
             Row(horizontalArrangement = Arrangement.SpaceBetween) {

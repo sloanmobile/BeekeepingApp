@@ -352,7 +352,7 @@ class HiveViewModel @Inject constructor(
 
     fun setSelectedHive(hiveId: String) {
         // Set the selected hive in the state by finding the hive with the matching id
-        _state.update { hiveScreenState -> hiveScreenState.copy(selectedHive = hives.value.find { it.id == hiveId }) }
+        _state.update { it.copy(selectedHive = hives.value.find { it.id == hiveId }) }
     }
 
     fun setHiveNotes(notes: String) {
@@ -862,11 +862,47 @@ class HiveViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching {
                 state.value.selectedHive?.let { hive ->
+
+                    // delete the current image from the disk if it exists
+                    hive.hiveDetails.image?.let {
+                        removeImageForSelectedHive()
+                    }
+
                     copyImageToInternalStorage(uri)
+
+                    // update the hive with the new image
                     updateHive(
                         hive.copy(
                             hiveDetails = hive.hiveDetails.copy(
                                 image = uri?.toString() ?: hive.hiveDetails.image
+                            )
+                        )
+                    )
+                }
+            }.onSuccess {
+                showSuccess()
+            }.onFailure {
+                showError(it.message ?: "Unknown error")
+            }
+        }
+    }
+
+    fun removeImageForSelectedHive() {
+        setIsLoading(true)
+        viewModelScope.launch {
+            runCatching {
+                // delete the image from the disk
+                state.value.selectedHive?.hiveDetails?.image?.let { uriString ->
+                    val uri = Uri.parse(uriString)
+                    deleteImage(uri)
+                    // update the hive with the new image
+                }
+
+                state.value.selectedHive?.let { hive ->
+                    updateHive(
+                        hive.copy(
+                            hiveDetails = hive.hiveDetails.copy(
+                                image = null
                             )
                         )
                     )
