@@ -61,6 +61,7 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.reedsloan.beekeepingapp.presentation.home_screen.HiveScreenState
 import com.reedsloan.beekeepingapp.presentation.viewmodel.hives.HiveViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -248,8 +249,8 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
                 ),
             ),
         )
-        LazyColumn(horizontalAlignment = Alignment.CenterHorizontally, content = {
-            item {
+        LazyColumn(horizontalAlignment = Alignment.CenterHorizontally) {
+            item(key = state.isLoading, contentType = HiveScreenState::class) {
                 // Photo of hive if it exists otherwise show an add photo button
                 hive.hiveDetails.image?.let { image ->
                     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
@@ -278,7 +279,6 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
                             filterQuality = FilterQuality.High,
                         )
                     }
-
                 } ?: run {
                     // Open the bottom sheet to take a photo or select from gallery
                     Column {
@@ -323,7 +323,7 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
                         hiveViewModel.onTapInspectionsButton(navController)
                     })
             }
-        })
+        }
     }
 }
 

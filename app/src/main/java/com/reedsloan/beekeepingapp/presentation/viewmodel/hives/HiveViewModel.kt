@@ -352,7 +352,7 @@ class HiveViewModel @Inject constructor(
 
     fun setSelectedHive(hiveId: String) {
         // Set the selected hive in the state by finding the hive with the matching id
-        _state.update { it.copy(selectedHive = hives.value.find { it.id == hiveId }) }
+        _state.update { hiveScreenState -> hiveScreenState.copy(selectedHive = hives.value.find { it.id == hiveId }) }
     }
 
     fun setHiveNotes(notes: String) {
@@ -403,12 +403,13 @@ class HiveViewModel @Inject constructor(
         _state.update { it.copy(isLoading = isLoading) }
     }
 
-    private fun setIsSuccess(isSuccess: Boolean) {
-        _state.update { it.copy(isSuccess = isSuccess, isLoading = false) }
+    private fun showSuccess() {
+        _state.update { it.copy(isSuccess = true, isLoading = false) }
+        setIsLoading(false)
     }
 
     private fun showError(error: String) {
-        _state.update { it.copy(isError = true, errorMessage = error, isLoading = false) }
+        _state.update { it.copy(isError = true, errorMessage = error, isLoading = false, isSuccess = false) }
     }
 
     private suspend fun getAllHives() {
@@ -416,8 +417,10 @@ class HiveViewModel @Inject constructor(
         runCatching {
             hiveRepository.getAllHives()
         }.onSuccess { hives ->
-            setIsSuccess(true)
             _hives.value = hives
+            // update the selected hive if it exists
+            setSelectedHive(state.value.selectedHive?.id ?: "")
+            showSuccess()
         }.onFailure { error ->
             showError(error.message ?: "Unknown error")
 
@@ -505,7 +508,7 @@ class HiveViewModel @Inject constructor(
             runCatching {
                 hiveRepository.deleteAllHives()
             }.onSuccess {
-                setIsSuccess(true)
+                showSuccess()
                 getAllHives()
             }.onFailure {
                 showError(it.message ?: "Unknown error")
@@ -519,7 +522,7 @@ class HiveViewModel @Inject constructor(
             runCatching {
                 hiveRepository.exportToCsv()
             }.onSuccess {
-                setIsSuccess(true)
+                showSuccess()
             }.onFailure {
                 showError(it.message ?: "Unknown error")
             }
@@ -555,7 +558,7 @@ class HiveViewModel @Inject constructor(
                     }
                 }
             }.onSuccess {
-                setIsSuccess(true)
+                showSuccess()
                 _hives.value = hiveRepository.getAllHives()
             }.onFailure {
                 showError(it.message ?: "Unknown error")
@@ -577,7 +580,7 @@ class HiveViewModel @Inject constructor(
                     )
                 }
             }.onSuccess {
-                setIsSuccess(true)
+                showSuccess()
                 _hives.update { hiveRepository.getAllHives() }
             }.onFailure {
                 showError(it.message ?: "Unknown error")
@@ -646,7 +649,7 @@ class HiveViewModel @Inject constructor(
             runCatching {
                 app.contentResolver.delete(uri, null, null)
             }.onSuccess {
-                setIsSuccess(true)
+                showSuccess()
                 getAllHives()
             }.onFailure {
                 showError(it.message ?: "Unknown error")
@@ -730,8 +733,7 @@ class HiveViewModel @Inject constructor(
                     deselectHive()
                 }
             }.onSuccess {
-                setIsSuccess(true)
-                getAllHives()
+                showSuccess()
             }.onFailure {
                 showError(it.message ?: "Unknown error")
             }
@@ -794,7 +796,7 @@ class HiveViewModel @Inject constructor(
                 )
             )
         }.onSuccess {
-            setIsSuccess(true)
+            showSuccess()
         }.onFailure {
             showError(it.message ?: "Unknown error")
         }
@@ -808,7 +810,7 @@ class HiveViewModel @Inject constructor(
                 )
             )
         }.onSuccess {
-            setIsSuccess(true)
+            showSuccess()
         }.onFailure {
             showError(it.message ?: "Unknown error")
         }
@@ -870,8 +872,7 @@ class HiveViewModel @Inject constructor(
                     )
                 }
             }.onSuccess {
-                setIsSuccess(true)
-                getAllHives()
+                showSuccess()
             }.onFailure {
                 showError(it.message ?: "Unknown error")
             }
