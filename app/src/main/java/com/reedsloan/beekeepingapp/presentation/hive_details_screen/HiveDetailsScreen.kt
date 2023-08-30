@@ -31,9 +31,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Hive
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -60,6 +62,7 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
@@ -364,16 +367,29 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
                 // Inspections Button
                 HiveDetailsAction(title = "Inspections",
                     description = "View and edit inspections",
+                    icon = Icons.Default.Hive,
                     onClick = {
                         hiveViewModel.onTapInspectionsButton(navController)
                     })
+
+                Spacer(modifier = Modifier.height(16.dp))
+                // Tasks Button
+                HiveDetailsAction(title = "Tasks",
+                    description = "View and edit tasks",
+                    icon = Icons.Default.TaskAlt,
+                    onClick = {
+                        hiveViewModel.onTapTasksButton(navController)
+                    })
+
+                Spacer(modifier = Modifier.height(16.dp))
+                //
             }
         }
     }
 }
 
 @Composable
-fun HiveDetailsAction(title: String, description: String, onClick: () -> Unit) {
+fun HiveDetailsAction(title: String, description: String, icon: ImageVector, onClick: () -> Unit) {
     OutlinedButton(
         onClick = onClick,
         modifier = Modifier
@@ -381,17 +397,39 @@ fun HiveDetailsAction(title: String, description: String, onClick: () -> Unit) {
             .height(100.dp),
         shape = MaterialTheme.shapes.extraLarge
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            // Inspections
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = title, style = MaterialTheme.typography.titleLarge)
+        ConstraintLayout {
+            val (iconLeft, columnCenter) = createRefs()
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(48.dp)
+                    .constrainAs(iconLeft) {
+                        start.linkTo(parent.start)
+                        top.linkTo(parent.top)
+                        bottom.linkTo(parent.bottom)
+                    }
+            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .constrainAs(columnCenter) {
+                        start.linkTo(parent.start)
+                        top.linkTo(parent.top)
+                        bottom.linkTo(parent.bottom)
+                        end.linkTo(parent.end)
+                    }
+            ) {
+                // Title
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = title, style = MaterialTheme.typography.titleLarge)
+                }
+                // Description
+                Text(text = description)
             }
-            // Description
-            Text(text = description)
         }
     }
 }

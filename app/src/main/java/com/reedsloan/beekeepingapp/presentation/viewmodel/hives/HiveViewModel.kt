@@ -923,4 +923,9 @@ class HiveViewModel @Inject constructor(
     fun onClickAddInspectionButton() {
         TODO("Not yet implemented")
     }
+
+    fun onTapTasksButton(navController: NavController) {
+        closeOpenMenus()
+        navController.navigate(Screen.TasksScreen.route)
+    }
 }
