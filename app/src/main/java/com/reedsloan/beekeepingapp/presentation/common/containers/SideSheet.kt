@@ -1,9 +1,11 @@
 package com.reedsloan.beekeepingapp.presentation.common.containers
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.with
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,6 +23,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun SideSheetContainer(
     display: Boolean,
@@ -40,12 +43,13 @@ fun SideSheetContainer(
                 slideInHorizontally(
                     initialOffsetX = { 300 },
                     animationSpec = tween(300)
-                ) with slideOutHorizontally(
+                ) togetherWith slideOutHorizontally(
                     targetOffsetX = { 1000 },
                     animationSpec = tween(300)
                 )
 
-            }) { target ->
+            }, label = ""
+        ) { target ->
             val animatable by remember {
                 mutableStateOf(
                     androidx.compose.animation.core.Animatable(
@@ -55,7 +59,7 @@ fun SideSheetContainer(
             }
 
             val visible = animatable.value > 0.1f
-
+            val interactionSource by remember { mutableStateOf(MutableInteractionSource()) }
             if (visible) {
                 LaunchedEffect(key1 = target) {
                     animatable.animateTo(if (target) 1f else 0f)
@@ -72,7 +76,7 @@ fun SideSheetContainer(
                             .fillMaxHeight()
                             .width(300.dp)
                             .clickable(
-                                interactionSource = MutableInteractionSource(),
+                                interactionSource = interactionSource,
                                 indication = null
                             ) { }
                             .align(Alignment.End),

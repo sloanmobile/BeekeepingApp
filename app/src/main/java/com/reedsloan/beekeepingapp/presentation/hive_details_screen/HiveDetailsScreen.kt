@@ -10,15 +10,12 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.captionBarPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -57,12 +54,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.PathFillType
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
@@ -71,6 +71,8 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.reedsloan.beekeepingapp.icons.rememberHive
+import com.reedsloan.beekeepingapp.icons.rememberTaskAlt
 import com.reedsloan.beekeepingapp.presentation.home_screen.HiveScreenState
 import com.reedsloan.beekeepingapp.presentation.viewmodel.hives.HiveViewModel
 
@@ -382,7 +384,6 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
                     })
 
                 Spacer(modifier = Modifier.height(16.dp))
-                //
             }
         }
     }
