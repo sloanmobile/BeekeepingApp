@@ -32,17 +32,16 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.core.app.ActivityCompat.checkSelfPermission
 import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
-import com.reedsloan.beekeepingapp.R
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
 import com.reedsloan.beekeepingapp.presentation.common.data.PermissionRequest
 import com.reedsloan.beekeepingapp.presentation.viewmodel.hives.HiveViewModel
@@ -131,7 +130,7 @@ fun HomeScreen(navController: NavController, hiveViewModel: HiveViewModel) {
             val displayWidth = LocalContext.current.resources.displayMetrics.widthPixels
 
             Spacer(modifier = Modifier.height(16.dp))
-            LazyVerticalGrid(columns = GridCells.Fixed(2), modifier = Modifier.fillMaxWidth()) {
+            LazyVerticalGrid(columns = GridCells.Fixed(1), modifier = Modifier.fillMaxWidth()) {
                 items(hives) { hive ->
                     HiveCard(
                         hive = hive,
@@ -145,10 +144,11 @@ fun HomeScreen(navController: NavController, hiveViewModel: HiveViewModel) {
 
     Box(Modifier.fillMaxSize()) {
         ExtendedFloatingActionButton(
-            onClick = { hiveViewModel.onClickAddHiveButton() },
+            onClick = { hiveViewModel.onTapAddHiveButton() },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
+                .zIndex(1F)
         ) {
             Icon(Icons.Filled.Add, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
@@ -289,8 +289,7 @@ fun EditHiveMenu(
                     contentDescription = "Hive image",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(200.dp)
-                        .clip(MaterialTheme.shapes.large),
+                        .height(200.dp),
                     contentScale = ContentScale.Crop,
                     onError = {
                         Log.e(
@@ -398,7 +397,7 @@ fun HiveCard(
     navController: NavController,
     hiveViewModel: HiveViewModel,
 ) {
-    OutlinedCard(
+    ElevatedCard(
         Modifier
             .padding(8.dp)
             .clickable {
@@ -407,8 +406,7 @@ fun HiveCard(
         // Card content
         Column(
             Modifier
-                .fillMaxWidth()
-                .height(230.dp)) {
+                .fillMaxWidth()) {
             hive.hiveDetails.image?.let { image ->
                 // Hive image
                 AsyncImage(
@@ -416,7 +414,7 @@ fun HiveCard(
                     contentDescription = "Hive image",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(150.dp)
+                        .height(152.dp)
                         .clip(MaterialTheme.shapes.large),
                     contentScale = ContentScale.Crop,
                     onError = {
@@ -435,8 +433,7 @@ fun HiveCard(
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(150.dp)
-                        .clip(MaterialTheme.shapes.large)
+                        .height(152.dp)
                         .background(MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp))
                         .padding(16.dp)
                         .alpha(0.5f),
@@ -451,16 +448,21 @@ fun HiveCard(
                         // Hive name
                         Text(
                             text = hive.hiveDetails.name,
-                            style = MaterialTheme.typography.titleMedium
+                            style = MaterialTheme.typography.titleLarge
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
-                    Row {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         // Last inspection date
+                        // recent icon
                         Text(
-                            text = "Last inspection: ${hive.hiveDataEntries.lastOrNull()?.date ?: "Never"}",
+                            text = "Last Inspection: ${hive.hiveInspections.lastOrNull()?.date ?: "Never"}",
                             style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
                         )
+//                        Text(
+//                            text = "Last inspection: ${hive.hiveInspections.lastOrNull()?.date ?: "Never"}",
+//                            style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
+//                        )
                     }
                 }
             }

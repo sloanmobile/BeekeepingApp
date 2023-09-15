@@ -117,61 +117,6 @@ class HiveViewModel @Inject constructor(
         }
     }
 
-    fun getDaysOfCalendar(dateTimeNow: LocalDateTime): List<LocalDateTime> {
-        val year = dateTimeNow.year
-
-        val month = dateTimeNow.month
-        val isLeapYear = Year.isLeap(year.toLong())
-
-        val daysInMonth = when (month) {
-            Month.FEBRUARY -> if (isLeapYear) 29 else 28
-            Month.APRIL, Month.JUNE, Month.SEPTEMBER, Month.NOVEMBER -> 30
-            else -> 31
-        }
-        val firstDayOfMonth = dateTimeNow.withDayOfMonth(1)
-
-        val days: MutableList<LocalDateTime> = mutableListOf()
-
-        val daysFromSunday = when (firstDayOfMonth.dayOfWeek) {
-            DayOfWeek.SUNDAY -> 0
-            DayOfWeek.MONDAY -> 1
-            DayOfWeek.TUESDAY -> 2
-            DayOfWeek.WEDNESDAY -> 3
-            DayOfWeek.THURSDAY -> 4
-            DayOfWeek.FRIDAY -> 5
-            DayOfWeek.SATURDAY -> 6
-            else -> 0
-        }
-
-        val firstDayInNextMonth = firstDayOfMonth.plusMonths(1).withDayOfMonth(1)
-
-        val daysInPreviousMonth = when (dateTimeNow.minusMonths(1).withDayOfMonth(1).month) {
-            Month.FEBRUARY -> if (isLeapYear) 29 else 28
-            Month.APRIL, Month.JUNE, Month.SEPTEMBER, Month.NOVEMBER -> 30
-            else -> 31
-        }
-        val finalDayInPreviousMonth = dateTimeNow.minusMonths(1).withDayOfMonth(daysInPreviousMonth)
-
-
-        // add days from previous month (or skip if first day of month is Sunday)
-        for (i in daysFromSunday downTo 1) {
-            days.add(finalDayInPreviousMonth.minusDays(i - 1.toLong()))
-        }
-
-        // add days from current month
-        for (i in 0 until daysInMonth) {
-            days.add(firstDayOfMonth.plusDays(i.toLong()))
-        }
-
-        // add days from next month (or skip if last day of month is Saturday)
-        for (i in 0 until 42 - days.size) {
-            days.add(firstDayInNextMonth.plusDays((i).toLong()))
-        }
-
-
-        return days.toList()
-    }
-
 
     private suspend fun getUserPreferences() {
         runCatching { hiveRepository.getUserPreferences() }.onSuccess { userPreferences ->
@@ -207,7 +152,7 @@ class HiveViewModel @Inject constructor(
         _state.update { it.copy(editingTextField = !it.editingTextField) }
     }
 
-    fun onClickAddHiveButton() {
+    fun onTapAddHiveButton() {
         // make a toast notification
         Toast.makeText(app, "New hive created.", Toast.LENGTH_SHORT).show()
         closeOpenMenus()
@@ -387,12 +332,6 @@ class HiveViewModel @Inject constructor(
         _state.update {
             it.copy(navigationBarMenuState = it.navigationBarMenuState.toggle())
         }
-    }
-
-    fun onClickEditHiveButton(hiveId: String) {
-        setSelectedHive(hiveId)
-        closeOpenMenus()
-        setHiveInfoMenuState(MenuState.OPEN)
     }
 
     private fun setHiveInfoMenuState(state: MenuState) {
@@ -633,7 +572,7 @@ class HiveViewModel @Inject constructor(
         _state.update { state.value.copy(selectedHive = null) }
     }
 
-    fun onClickViewLogHistoryButton(id: String, navController: NavController) {
+    fun onTapViewLogHistoryButton(id: String, navController: NavController) {
         // set the selected hive
         hives.value.find { hive -> hive.id == id }?.let { hive ->
             setSelectedHive(hive.id)
@@ -740,55 +679,55 @@ class HiveViewModel @Inject constructor(
         }
     }
 
-    fun addHiveDataEntry(hiveDataEntry: HiveDataEntry) {
+    fun addHiveInspection(hiveInspection: HiveInspection) {
         _state.update {
             state.value.copy(
                 selectedHive =
                 state.value.selectedHive?.copy(
-                    hiveDataEntries = state.value.selectedHive?.hiveDataEntries?.plus(hiveDataEntry)
-                        ?: listOf(hiveDataEntry)
+                    hiveInspections = state.value.selectedHive?.hiveInspections?.plus(hiveInspection)
+                        ?: listOf(hiveInspection)
                 )
             )
         }
-        saveDataEntry(hiveDataEntry)
+        saveDataEntry(hiveInspection)
     }
 
-    private fun removeHiveDataEntry(hiveDataEntry: HiveDataEntry) {
+    private fun removeHiveDataEntry(hiveInspection: HiveInspection) {
         state.value.selectedHive?.let { hive ->
             viewModelScope.launch {
                 updateHive(
                     hive.copy(
-                        hiveDataEntries = hive.hiveDataEntries - hiveDataEntry
+                        hiveInspections = hive.hiveInspections - hiveInspection
                     )
                 )
             }
         }
     }
 
-    private fun saveDataEntry(hiveDataEntry: HiveDataEntry) {
+    private fun saveDataEntry(hiveInspection: HiveInspection) {
         state.value.selectedHive?.let { hive ->
             viewModelScope.launch {
                 // check if there is already a hive data entry for the same date
-                val updateInsteadOfCreate = hive.hiveDataEntries.find {
-                    it.date == hiveDataEntry.date
+                val updateInsteadOfCreate = hive.hiveInspections.find {
+                    it.date == hiveInspection.date
                 } != null
 
                 if (updateInsteadOfCreate) {
-                    updateHiveDataEntry(hiveDataEntry)
+                    updateHiveInspection(hiveInspection)
                 } else {
-                    createHiveDataEntry(hiveDataEntry)
+                    createHiveDataEntry(hiveInspection)
                 }
             }
         }
     }
-
-    private suspend fun updateHiveDataEntry(hiveDataEntry: HiveDataEntry) {
+ 
+    private suspend fun updateHiveInspection(hiveInspection: HiveInspection) {
         runCatching {
             updateHive(
                 hive = state.value.selectedHive!!.copy(
-                    hiveDataEntries = state.value.selectedHive!!.hiveDataEntries.map {
-                        if (it.date == hiveDataEntry.date) {
-                            hiveDataEntry
+                    hiveInspections = state.value.selectedHive!!.hiveInspections.map {
+                        if (it.date == hiveInspection.date) {
+                            hiveInspection
                         } else {
                             it
                         }
@@ -802,11 +741,11 @@ class HiveViewModel @Inject constructor(
         }
     }
 
-    private suspend fun createHiveDataEntry(hiveDataEntry: HiveDataEntry) {
+    private suspend fun createHiveDataEntry(hiveInspection: HiveInspection) {
         runCatching {
             updateHive(
                 hive = state.value.selectedHive!!.copy(
-                    hiveDataEntries = state.value.selectedHive!!.hiveDataEntries + hiveDataEntry
+                    hiveInspections = state.value.selectedHive!!.hiveInspections + hiveInspection
                 )
             )
         }.onSuccess {
@@ -816,27 +755,28 @@ class HiveViewModel @Inject constructor(
         }
     }
 
-    fun setSelectedDataEntry(newHiveDataEntry: HiveDataEntry) {
+    fun setSelectedDataEntry(newHiveInspection: HiveInspection) {
         _state.update {
             state.value.copy(
-                selectedDataEntry = newHiveDataEntry
+                selectedHiveInspection = newHiveInspection
             )
         }
     }
 
-    fun onTapQuickLogButton(navController: NavController) {
-        closeOpenMenus()
-        navController.navigate(Screen.QuickLogScreen.route)
-    }
-
-    fun onTapSaveDataEntry() {
-        state.value.selectedDataEntry.let { hiveDataEntry ->
-            addHiveDataEntry(hiveDataEntry)
+    fun onTapSaveDataEntry(navController: NavController) {
+        state.value.selectedHiveInspection.let {
+            if (it != null) {
+                viewModelScope.launch {
+                    saveDataEntry(it)
+                }
+            }
         }
+        closeOpenMenus()
+        navController.popBackStack()
     }
 
-    fun getDefaultDataEntry(): HiveDataEntry {
-        return HiveDataEntry(
+    fun getDefaultHiveInspection(): HiveInspection {
+        return HiveInspection(
             hiveId = state.value.selectedHive?.id ?: "",
             date = LocalDate.now().toString(),
             hiveConditions = HiveConditions(),
@@ -920,12 +860,49 @@ class HiveViewModel @Inject constructor(
         navController.navigate(Screen.InspectionsScreen.route)
     }
 
-    fun onClickAddInspectionButton() {
-        TODO("Not yet implemented")
+    fun onTapAddInspectionButton() {
+        closeOpenMenus()
+        // make a toast notification
+        Toast.makeText(app, "New inspection created.", Toast.LENGTH_SHORT).show()
+        createInspection()
+    }
+
+    /**
+     * Creates a new hive inspection for the selected hive.
+     * @see [HiveInspection]
+     */
+    private fun createInspection() {
+    viewModelScope.launch {
+            runCatching {
+                val hive = state.value.selectedHive ?: return@runCatching
+                val hiveInspection = getDefaultHiveInspection()
+                updateHive(
+                    hive.copy(
+                        hiveInspections = hive.hiveInspections + hiveInspection
+                    )
+                )
+            }.onSuccess {
+                getAllHives()
+            }.onFailure {
+                showError(it.message ?: "Unknown error")
+                // Show error message
+                Toast.makeText(app, it.message, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     fun onTapTasksButton(navController: NavController) {
         closeOpenMenus()
         navController.navigate(Screen.TasksScreen.route)
+    }
+
+    fun onTapInspectionButton(inspection: HiveInspection, navController: NavController) {
+        setSelectedDataEntry(inspection)
+        closeOpenMenus()
+        navController.navigate(Screen.LogDataScreen.route)
+    }
+
+    fun onTapDeleteInspectionButton(inspection: HiveInspection) {
+        removeHiveDataEntry(inspection)
     }
 }

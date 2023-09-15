@@ -75,7 +75,7 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
     )
 
     var showDatePicker by remember { mutableStateOf(false) }
-    val entry = state.selectedDataEntry
+    val entry = state.selectedHiveInspection ?: return
 
     LazyColumn(
         horizontalAlignment = Alignment.CenterHorizontally, // Aligns content horizontally to the center
@@ -93,10 +93,6 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                 selectedValue = state.selectedHive?.hiveDetails?.name,
                 onChipSelected = { selectedHiveName ->
                     val selectedHive = hives.find { it.hiveDetails.name == selectedHiveName }
-                    if (selectedHive != null) {
-                        hiveViewModel.setSelectedHive(selectedHive.id)
-                        hiveViewModel.setSelectedDataEntry(entry.copy(hiveId = selectedHive.id))
-                    }
                 }
             )
             Spacer(modifier = Modifier.width(16.dp))
@@ -121,7 +117,7 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
 
             Text(
                 text = "Current Hive Data Entries ${ 
-                    state.selectedHive?.hiveDataEntries?.map { it.date }
+                    state.selectedHive?.hiveInspections?.map { it.date }
                 }", style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center
             )
@@ -132,7 +128,7 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                     state = calendarState,
                     dayContent = { calendarDay ->
                         val currentHiveDataEntries =
-                            state.selectedHive?.hiveDataEntries ?: emptyList()
+                            state.selectedHive?.hiveInspections ?: emptyList()
 
                         val hasDataEntry =
                             currentHiveDataEntries.any { it.date == calendarDay.date.toString() }
@@ -150,7 +146,7 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                                         if(existingDataEntry == null) {
                                             // update the selected data entry to the default
                                             hiveViewModel.setSelectedDataEntry(
-                                                hiveViewModel.getDefaultDataEntry().copy(
+                                                hiveViewModel.getDefaultHiveInspection().copy(
                                                     date = day.date.toString()
                                                 )
                                             )
@@ -421,7 +417,7 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
     Box(Modifier.fillMaxSize()) {
         ExtendedFloatingActionButton(
             onClick = {
-                hiveViewModel.onTapSaveDataEntry()
+                hiveViewModel.onTapSaveDataEntry(navController = navController)
             },
             modifier = Modifier
                 .align(Alignment.BottomEnd)

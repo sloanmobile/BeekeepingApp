@@ -31,7 +31,7 @@ import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.CalendarMonth
 import com.kizitonwose.calendar.core.firstDayOfWeekFromLocale
 import com.reedsloan.beekeepingapp.data.local.hive.HiveConditions
-import com.reedsloan.beekeepingapp.data.local.hive.HiveDataEntry
+import com.reedsloan.beekeepingapp.data.local.hive.HiveInspection
 import com.reedsloan.beekeepingapp.data.local.hive.HiveFeeding
 import com.reedsloan.beekeepingapp.data.local.hive.HiveHealth
 import com.reedsloan.beekeepingapp.presentation.common.Container
@@ -48,10 +48,10 @@ fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
         items(1) {
             val state by hiveViewModel.state.collectAsState()
             val hives by hiveViewModel.hives.collectAsState()
-            var currentHiveDataEntries = state.selectedHive?.hiveDataEntries ?: emptyList()
+            var currentHiveDataEntries = state.selectedHive?.hiveInspections ?: emptyList()
 
             LaunchedEffect(key1 = state) {
-                currentHiveDataEntries = state.selectedHive?.hiveDataEntries ?: emptyList()
+                currentHiveDataEntries = state.selectedHive?.hiveInspections ?: emptyList()
             }
 
             // Initializing a Calendar
@@ -110,11 +110,11 @@ fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                 state = calendarState,
                 dayContent = { calendarDay ->
 
-                    Log.d("LogDataScreen", "${state.selectedDataEntry?.date} == ${calendarDay.date.toString()}")
+                    Log.d("LogDataScreen", "${state.selectedHiveInspection?.date} == ${calendarDay.date.toString()}")
                     val hasDataEntry =
                         currentHiveDataEntries.any { it.date == calendarDay.date.toString() }
 
-                    val isSelected = state.selectedDataEntry?.date == calendarDay.date.toString()
+                    val isSelected = state.selectedHiveInspection?.date == calendarDay.date.toString()
 
                     Day(
                         day = calendarDay,
@@ -128,7 +128,7 @@ fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                                     return@Day
                                 }
 
-                            val newHiveDataEntry = HiveDataEntry(
+                            val newHiveInspection = HiveInspection(
                                 hiveId = state.selectedHive?.id ?: return@Day,
                                 date = day.date.toString(),
                                 hiveConditions = HiveConditions(),
@@ -136,7 +136,7 @@ fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                                 feeding = HiveFeeding(),
                                 localPhotoUris = emptyList()
                             )
-                            hiveViewModel.setSelectedDataEntry(newHiveDataEntry)
+                            hiveViewModel.setSelectedDataEntry(newHiveInspection)
                         })
 
                 },
@@ -176,7 +176,7 @@ fun HiveDataEntryScreen(
 
             val state by hiveViewModel.state.collectAsState()
 
-            state.selectedDataEntry?.let { entry ->
+            state.selectedHiveInspection?.let { entry ->
                 // Hive Name
                 state.selectedHive?.hiveDetails?.let { hiveInfo ->
                     Text(
