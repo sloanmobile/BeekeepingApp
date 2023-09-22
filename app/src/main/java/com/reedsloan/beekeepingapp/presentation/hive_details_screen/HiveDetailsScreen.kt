@@ -1,6 +1,7 @@
 package com.reedsloan.beekeepingapp.presentation.hive_details_screen
 
 import android.Manifest
+import android.app.Activity
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -10,7 +11,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -30,20 +29,12 @@ import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Hive
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.TaskAlt
-import androidx.compose.material.icons.outlined.Hive
 import androidx.compose.material.icons.rounded.Hive
 import androidx.compose.material.icons.rounded.TaskAlt
-import androidx.compose.material.icons.twotone.Hive
-import androidx.compose.material.icons.twotone.TaskAlt
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -51,7 +42,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -77,7 +67,10 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.reedsloan.beekeepingapp.presentation.common.PermissionDialog
+import com.reedsloan.beekeepingapp.presentation.home_screen.DeleteConfirmationDialog
 import com.reedsloan.beekeepingapp.presentation.home_screen.HiveScreenState
+import com.reedsloan.beekeepingapp.presentation.home_screen.openAppSettings
 import com.reedsloan.beekeepingapp.presentation.viewmodel.hives.HiveViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -87,6 +80,45 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
     val hive = state.selectedHive ?: return
     val sheetState = rememberModalBottomSheetState()
     var isSheetOpen by remember { mutableStateOf(false) }
+    val permissionDialogQueue = hiveViewModel.visiblePermissionDialogQueue.firstOrNull()
+    val context = LocalContext.current
+
+    val multiplePermissionsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        permissions.forEach { (permission, granted) ->
+            hiveViewModel.onPermissionResult(
+                permission = permission, granted = granted
+            )
+        }
+    }
+    Box(Modifier.fillMaxSize()) {
+        if (state.showDeleteHiveDialog) DeleteConfirmationDialog(
+            onDismiss = { hiveViewModel.dismissDeleteHiveDialog() },
+            onClick = {
+                hiveViewModel.onTapDeleteHiveConfirmationButton(state.selectedHive!!.id)
+                hiveViewModel.dismissDeleteHiveDialog()
+            })
+    }
+
+    Box(Modifier.fillMaxSize()) {
+        permissionDialogQueue?.let {
+            PermissionDialog(
+                permissionRequest = it,
+                isPermanentlyDeclined = !ActivityCompat.shouldShowRequestPermissionRationale(
+                    context as Activity, it.permission
+                ),
+                onDismiss = { hiveViewModel.dismissDialog() },
+                onConfirm = {
+                    multiplePermissionsLauncher.launch(arrayOf(it.permission))
+                },
+                onGoToAppSettingsClick = {
+                    context.openAppSettings()
+                    hiveViewModel.dismissDialog()
+                },
+            )
+        }
+    }
 
     BackHandler {
         if (isSheetOpen) {

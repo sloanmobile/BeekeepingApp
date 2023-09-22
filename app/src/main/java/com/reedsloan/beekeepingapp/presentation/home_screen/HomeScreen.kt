@@ -57,45 +57,7 @@ fun Activity.openAppSettings() {
 fun HomeScreen(navController: NavController, hiveViewModel: HiveViewModel) {
     val state by hiveViewModel.state.collectAsState()
     val hives by hiveViewModel.hives.collectAsState()
-    val permissionDialogQueue = hiveViewModel.visiblePermissionDialogQueue.firstOrNull()
-    val context = LocalContext.current
 
-    val multiplePermissionsLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        permissions.forEach { (permission, granted) ->
-            hiveViewModel.onPermissionResult(
-                permission = permission, granted = granted
-            )
-        }
-    }
-    Box(Modifier.fillMaxSize()) {
-        if (state.showDeleteHiveDialog && state.selectedHive != null) DeleteConfirmationDialog(
-            onDismiss = { hiveViewModel.dismissDeleteHiveDialog() },
-            onClick = {
-                hiveViewModel.onTapDeleteHiveConfirmationButton(state.selectedHive!!.id)
-                hiveViewModel.dismissDeleteHiveDialog()
-            })
-    }
-
-    Box(Modifier.fillMaxSize()) {
-        permissionDialogQueue?.let {
-            PermissionDialog(
-                permissionRequest = it,
-                isPermanentlyDeclined = !shouldShowRequestPermissionRationale(
-                    context as Activity, it.permission
-                ),
-                onDismiss = { hiveViewModel.dismissDialog() },
-                onConfirm = {
-                    multiplePermissionsLauncher.launch(arrayOf(it.permission))
-                },
-                onGoToAppSettingsClick = {
-                    context.openAppSettings()
-                    hiveViewModel.dismissDialog()
-                },
-            )
-        }
-    }
 
     Column(Modifier.fillMaxSize()) {
         Column(
@@ -177,59 +139,6 @@ fun DeleteConfirmationDialog(onClick: () -> Unit, onDismiss: () -> Unit) {
             }
         }, dismissButton = {
             Button(onClick = { onDismiss() }) {
-                Text(text = "Cancel")
-            }
-        })
-}
-
-@Composable
-fun PermissionDialog(
-    permissionRequest: PermissionRequest,
-    isPermanentlyDeclined: Boolean,
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
-    onGoToAppSettingsClick: () -> Unit
-) {
-    AlertDialog(onDismissRequest = {
-        onDismiss()
-    }, title = {
-        Text(text = "Permission required")
-    }, text = {
-        Text(
-            text = if (isPermanentlyDeclined) {
-                permissionRequest.isPermanentlyDeniedMessage
-            } else {
-                permissionRequest.message
-            }
-        )
-    },
-        icon = {
-            Icon(
-                imageVector = Icons.Filled.Security,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp)
-            )
-        },
-        confirmButton = {
-            Button(onClick = {
-                if (isPermanentlyDeclined) {
-                    onGoToAppSettingsClick()
-                } else {
-                    onConfirm()
-                }
-            }) {
-                Text(
-                    text = if (isPermanentlyDeclined) {
-                        "Go to app settings"
-                    } else {
-                        "Confirm"
-                    }
-                )
-            }
-        }, dismissButton = {
-            Button(onClick = {
-                onDismiss()
-            }) {
                 Text(text = "Cancel")
             }
         })
