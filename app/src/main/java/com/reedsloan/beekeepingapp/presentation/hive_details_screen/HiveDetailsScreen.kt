@@ -103,17 +103,18 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
 
     Box(Modifier.fillMaxSize()) {
         permissionDialogQueue?.let {
+            val activity = context as Activity
             PermissionDialog(
                 permissionRequest = it,
                 isPermanentlyDeclined = !ActivityCompat.shouldShowRequestPermissionRationale(
-                    context as Activity, it.permission
-                ),
+                    activity, it.permission
+                ) && !hiveViewModel.isPermissionRequestFirstTime(it.permission),
                 onDismiss = { hiveViewModel.dismissDialog() },
                 onConfirm = {
                     multiplePermissionsLauncher.launch(arrayOf(it.permission))
                 },
                 onGoToAppSettingsClick = {
-                    context.openAppSettings()
+                    activity.openAppSettings()
                     hiveViewModel.dismissDialog()
                 },
             )

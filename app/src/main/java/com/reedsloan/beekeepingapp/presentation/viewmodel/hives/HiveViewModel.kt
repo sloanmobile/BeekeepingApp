@@ -54,6 +54,12 @@ class HiveViewModel @Inject constructor(
         }
     }
 
+    fun isPermissionRequestFirstTime(permission: String): Boolean {
+
+        Log.d("HiveViewModel", "isPermissionRequestFirstTime: ${!state.value.userPreferences.requestedPermissions.contains(permission)}")
+        return !state.value.userPreferences.requestedPermissions.contains(permission)
+    }
+
     fun dismissDialog() {
         visiblePermissionDialogQueue.removeFirst()
     }
@@ -63,6 +69,17 @@ class HiveViewModel @Inject constructor(
      * If it was denied, the open app settings dialog will be shown.
      */
     fun onPermissionResult(permission: String, granted: Boolean) {
+        // add the permission requested to the user preferences
+        // so the permanently denied dialog will be shown if needed
+        // only add one of each permission
+        if (!state.value.userPreferences.requestedPermissions.contains(permission)) {
+            updateUserPreferences(
+                state.value.userPreferences.copy(
+                    requestedPermissions = state.value.userPreferences.requestedPermissions + permission
+                )
+            )
+        }
+
         if (granted) {
             dismissDialog()
         } else {
@@ -348,7 +365,14 @@ class HiveViewModel @Inject constructor(
     }
 
     private fun showError(error: String) {
-        _state.update { it.copy(isError = true, errorMessage = error, isLoading = false, isSuccess = false) }
+        _state.update {
+            it.copy(
+                isError = true,
+                errorMessage = error,
+                isLoading = false,
+                isSuccess = false
+            )
+        }
     }
 
     private suspend fun getAllHives() {
@@ -720,7 +744,7 @@ class HiveViewModel @Inject constructor(
             }
         }
     }
- 
+
     private suspend fun updateHiveInspection(hiveInspection: HiveInspection) {
         runCatching {
             updateHive(
@@ -872,7 +896,7 @@ class HiveViewModel @Inject constructor(
      * @see [HiveInspection]
      */
     private fun createInspection() {
-    viewModelScope.launch {
+        viewModelScope.launch {
             runCatching {
                 val hive = state.value.selectedHive ?: return@runCatching
                 val hiveInspection = getDefaultHiveInspection()
