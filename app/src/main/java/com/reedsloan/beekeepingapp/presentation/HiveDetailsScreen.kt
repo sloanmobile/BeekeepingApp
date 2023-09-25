@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.presentation.hive_details_screen
+package com.reedsloan.beekeepingapp.presentation
 
 import android.Manifest
 import android.app.Activity
@@ -68,10 +68,7 @@ import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.reedsloan.beekeepingapp.presentation.common.PermissionDialog
-import com.reedsloan.beekeepingapp.presentation.home_screen.DeleteConfirmationDialog
-import com.reedsloan.beekeepingapp.presentation.home_screen.HiveScreenState
-import com.reedsloan.beekeepingapp.presentation.home_screen.openAppSettings
-import com.reedsloan.beekeepingapp.presentation.viewmodel.hives.HiveViewModel
+import com.reedsloan.beekeepingapp.presentation.viewmodel.HiveViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -145,8 +142,6 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
                             false
                         )
                     }
-
-                    val context = LocalContext.current
 
                     val imagePickerIntent =
                         rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { imageUri ->

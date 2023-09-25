@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.presentation.log_viewer
+package com.reedsloan.beekeepingapp.presentation
 
 import androidx.compose.runtime.Composable
 

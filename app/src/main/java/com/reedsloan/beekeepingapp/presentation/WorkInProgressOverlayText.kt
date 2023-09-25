@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.presentation.home_screen
+package com.reedsloan.beekeepingapp.presentation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize

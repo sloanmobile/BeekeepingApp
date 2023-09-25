@@ -1,21 +1,18 @@
-package com.reedsloan.beekeepingapp.presentation.viewmodel.hives
+package com.reedsloan.beekeepingapp.presentation
 
 import com.reedsloan.beekeepingapp.BuildConfig
 import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
-import com.reedsloan.beekeepingapp.presentation.home_screen.MenuState
-import com.reedsloan.beekeepingapp.presentation.screens.Screen
+import com.reedsloan.beekeepingapp.data.local.hive.HiveInspection
 
-data class HiveState(
+data class HiveScreenState(
     val isLoading: Boolean = false,
     val isError: Boolean = false,
     val isSuccess: Boolean = false,
     val errorMessage: String = "",
     val navigationBarMenuState: MenuState = MenuState.CLOSED,
-    val hiveInfoMenuState: MenuState = MenuState.CLOSED,
     val isCameraPermissionAllowed: Boolean = false,
     val isStoragePermissionAllowed: Boolean = false,
-    val hives: List<Hive> = emptyList(),
     val selectedHive: Hive? = null,
     val userPreferences: UserPreferences = UserPreferences(),
     val appVersionNumber: String = BuildConfig.VERSION_NAME,
@@ -24,5 +21,8 @@ data class HiveState(
     val hiveDeleteMode: Boolean = false,
     val selectionList: List<String> = emptyList(),
     val showAddHiveButton: Boolean = true,
-    val currentScreenName: String = Screen.HomeScreen.name
+    val currentScreenName: String = Screen.HomeScreen.name,
+    val editingTextField: Boolean = false,
+    val showDeleteHiveDialog: Boolean = false,
+    val selectedHiveInspection: HiveInspection? = null,
 )

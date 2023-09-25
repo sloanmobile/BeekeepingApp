@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.presentation.screens
+package com.reedsloan.beekeepingapp.presentation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Hive

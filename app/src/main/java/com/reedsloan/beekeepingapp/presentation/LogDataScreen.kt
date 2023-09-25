@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.presentation.hive_info
+package com.reedsloan.beekeepingapp.presentation
 
 import android.app.DatePickerDialog
 import android.icu.util.Calendar
@@ -35,7 +35,7 @@ import com.reedsloan.beekeepingapp.data.local.hive.HiveInspection
 import com.reedsloan.beekeepingapp.data.local.hive.HiveFeeding
 import com.reedsloan.beekeepingapp.data.local.hive.HiveHealth
 import com.reedsloan.beekeepingapp.presentation.common.Container
-import com.reedsloan.beekeepingapp.presentation.viewmodel.hives.HiveViewModel
+import com.reedsloan.beekeepingapp.presentation.viewmodel.HiveViewModel
 import java.time.LocalDate
 import java.time.YearMonth
 import java.util.*
@@ -124,7 +124,7 @@ fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                             // update the selected data entry
                             currentHiveDataEntries.firstOrNull { it.date == day.date.toString() }
                                 ?.let {
-                                    hiveViewModel.setSelectedDataEntry(it)
+                                    hiveViewModel.updateSelectedInspection(it)
                                     return@Day
                                 }
 
@@ -136,7 +136,7 @@ fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                                 feeding = HiveFeeding(),
                                 localPhotoUris = emptyList()
                             )
-                            hiveViewModel.setSelectedDataEntry(newHiveInspection)
+                            hiveViewModel.updateSelectedInspection(newHiveInspection)
                         })
 
                 },

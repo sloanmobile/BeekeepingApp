@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.presentation.viewmodel.hives
+package com.reedsloan.beekeepingapp.presentation.viewmodel
 
 import android.app.Activity
 import android.app.Application
@@ -21,9 +21,9 @@ import com.reedsloan.beekeepingapp.data.local.TemperatureMeasurement
 import com.reedsloan.beekeepingapp.data.local.hive.*
 import com.reedsloan.beekeepingapp.domain.repo.HiveRepository
 import com.reedsloan.beekeepingapp.presentation.common.data.PermissionRequest
-import com.reedsloan.beekeepingapp.presentation.home_screen.HiveScreenState
-import com.reedsloan.beekeepingapp.presentation.home_screen.MenuState
-import com.reedsloan.beekeepingapp.presentation.screens.Screen
+import com.reedsloan.beekeepingapp.presentation.HiveScreenState
+import com.reedsloan.beekeepingapp.presentation.MenuState
+import com.reedsloan.beekeepingapp.presentation.Screen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -46,7 +46,6 @@ class HiveViewModel @Inject constructor(
 
     val visiblePermissionDialogQueue = mutableStateListOf<PermissionRequest>()
 
-
     init {
         viewModelScope.launch {
             getUserPreferences()
@@ -55,8 +54,6 @@ class HiveViewModel @Inject constructor(
     }
 
     fun isPermissionRequestFirstTime(permission: String): Boolean {
-
-        Log.d("HiveViewModel", "isPermissionRequestFirstTime: ${!state.value.userPreferences.requestedPermissions.contains(permission)}")
         return !state.value.userPreferences.requestedPermissions.contains(permission)
     }
 
@@ -103,7 +100,10 @@ class HiveViewModel @Inject constructor(
             }
 
             else -> {
-                throw IllegalArgumentException("Unknown permission: $permission, please add it to the getPermissionRequest function.")
+                throw IllegalArgumentException(
+                    "Unknown permission: $permission, please add it" +
+                            "to the getPermissionRequest function."
+                )
             }
         }
 
@@ -152,9 +152,6 @@ class HiveViewModel @Inject constructor(
             toggleEditingTextField()
             return
         } else if (state.value.showDeleteHiveDialog) {
-            closeOpenMenus()
-            return
-        } else if (state.value.editHiveMenuState == MenuState.OPEN) {
             closeOpenMenus()
             return
         }
@@ -219,14 +216,6 @@ class HiveViewModel @Inject constructor(
         _state.update { it.copy(selectionList = emptyList()) }
     }
 
-    private fun toggleSelected(hiveId: String) {
-        if (state.value.selectionList.contains(hiveId)) {
-            removeFromSelectionList(hiveId)
-        } else {
-            addToSelectionList(hiveId)
-        }
-    }
-
     private fun toggleHiveDeleteMode() {
         _state.value = state.value.copy(hiveDeleteMode = !state.value.hiveDeleteMode)
     }
@@ -238,7 +227,6 @@ class HiveViewModel @Inject constructor(
         _state.value = state.value.copy(
             navigationBarMenuState = MenuState.CLOSED,
             hiveDeleteMode = false,
-            editHiveMenuState = MenuState.CLOSED,
             showExtraButtons = false
         )
         clearSelectionList()
@@ -302,6 +290,11 @@ class HiveViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Hides the keyboard. This can be used when the user taps outside of the keyboard or
+     * when the user taps the back button.
+     * @param [Context] The context of the current activity.
+     */
     fun hideKeyboard(context: Context) {
         // hide the keyboard
         val inputMethodManager =
@@ -312,47 +305,15 @@ class HiveViewModel @Inject constructor(
         )
     }
 
-    fun setSelectedHive(hiveId: String) {
+    private fun setSelectedHive(hiveId: String) {
         // Set the selected hive in the state by finding the hive with the matching id
         _state.update { it.copy(selectedHive = hives.value.find { it.id == hiveId }) }
-    }
-
-    fun setHiveNotes(notes: String) {
-        _state.update {
-            it.copy(
-                selectedHive = it.selectedHive?.copy(
-                    hiveDetails = it.selectedHive!!.hiveDetails.copy(notes = notes)
-                )
-            )
-        }
-    }
-
-    fun setHiveName(name: String) {
-        runCatching { state.value.selectedHive!! }.onSuccess {
-            _state.update {
-                it.copy(
-                    selectedHive = it.selectedHive?.copy(
-                        hiveDetails = it.selectedHive.hiveDetails.copy(
-                            name = name, dateModified = LocalDate.now()
-                        )
-                    )
-                )
-            }
-        }.onFailure {
-            Toast.makeText(
-                app, "Error updating hive name", Toast.LENGTH_SHORT
-            ).show()
-        }
     }
 
     private fun toggleNavigationBarMenuState() {
         _state.update {
             it.copy(navigationBarMenuState = it.navigationBarMenuState.toggle())
         }
-    }
-
-    private fun setHiveInfoMenuState(state: MenuState) {
-        _state.update { it.copy(editHiveMenuState = state) }
     }
 
     private fun setIsLoading(isLoading: Boolean) {
@@ -451,6 +412,7 @@ class HiveViewModel @Inject constructor(
     private suspend fun deleteHive(hiveId: String) {
         runCatching {
             setIsLoading(true)
+            deselectHive()
             hiveRepository.deleteHive(hiveId)
         }.onSuccess {
             // get all hives again
@@ -567,7 +529,12 @@ class HiveViewModel @Inject constructor(
         )
     }
 
-    fun copyImageToInternalStorage(uriFromExternalStorage: Uri?) {
+    /**
+     * Copies the image from the external storage to the internal storage. This is needed because
+     * the image uri from the external storage is not persistent.
+     * @param [Uri] The uri of the image from the external storage.
+     */
+    private fun copyImageToInternalStorage(uriFromExternalStorage: Uri?) {
         viewModelScope.launch {
             // save the image uri to the disk
             uriFromExternalStorage?.let {
@@ -592,18 +559,12 @@ class HiveViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Deselects the selected hive. This is used in the deletion process to prevent the user from
+     * editing the hive while it is being deleted.
+     */
     private fun deselectHive() {
         _state.update { state.value.copy(selectedHive = null) }
-    }
-
-    fun onTapViewLogHistoryButton(id: String, navController: NavController) {
-        // set the selected hive
-        hives.value.find { hive -> hive.id == id }?.let { hive ->
-            setSelectedHive(hive.id)
-        }
-        // close open menus
-        closeOpenMenus()
-        TODO("Navigate to the log history screen")
     }
 
     fun deleteImage(uri: Uri) {
@@ -620,102 +581,6 @@ class HiveViewModel @Inject constructor(
         }
     }
 
-    fun onTapChoosePhotoButton(selectedHiveId: String) {
-        setSelectedHive(selectedHiveId)
-    }
-
-    fun onTapEditHiveNameButton(id: String) {
-        setSelectedHive(id)
-        // set editingTextField to true
-        _state.update { state.value.copy(editingTextField = true) }
-    }
-
-    fun onTapSaveHiveNameButton(id: String, editableString: String) {
-        // set editingTextField to false
-        _state.update { state.value.copy(editingTextField = false) }
-        // update the hive name
-        hives.value.find { hive -> hive.id == id }?.let { hive ->
-            viewModelScope.launch {
-                updateHive(
-                    hive.copy(
-                        hiveDetails = hive.hiveDetails.copy(
-                            name = editableString
-                        )
-                    )
-                )
-                deselectHive()
-            }
-        }
-    }
-
-    fun onTapEditHiveButton(id: String) {
-        setSelectedHive(id)
-        closeOpenMenus()
-        toggleEditHiveMenu()
-    }
-
-    fun toggleEditHiveMenu() {
-        _state.update {
-            state.value.copy(
-                editHiveMenuState = when (state.value.editHiveMenuState) {
-                    MenuState.CLOSED -> MenuState.OPEN
-                    MenuState.OPEN -> MenuState.CLOSED
-                }
-            )
-        }
-    }
-
-    fun onTapLogDataButton(id: String, navController: NavController) {
-        setSelectedHive(id)
-        closeOpenMenus()
-        navController.navigate(Screen.LogDataScreen.route)
-    }
-
-    fun onTapViewLogsButton(id: String) {
-        TODO("Navigate to the log history screen")
-    }
-
-    fun onDismissEditHiveMenu() {
-        closeOpenMenus()
-    }
-
-    fun onTapSaveButton(uri: Uri?, name: String) {
-        closeOpenMenus()
-        setIsLoading(true)
-        viewModelScope.launch {
-            runCatching {
-                state.value.selectedHive?.let { hive ->
-                    copyImageToInternalStorage(uri)
-                    updateHive(
-                        hive.copy(
-                            hiveDetails = hive.hiveDetails.copy(
-                                name = name, image = uri?.toString() ?: hive.hiveDetails.image
-                            )
-                        )
-                    )
-                    deselectHive()
-                }
-            }.onSuccess {
-                showSuccess()
-            }.onFailure {
-                showError(it.message ?: "Unknown error")
-            }
-        }
-    }
-
-    fun addHiveInspection(hiveInspection: HiveInspection) {
-        _state.update {
-            state.value.copy(
-                selectedHive =
-                state.value.selectedHive?.copy(
-                    hiveInspections = state.value.selectedHive?.hiveInspections?.plus(hiveInspection)
-                        ?: listOf(hiveInspection)
-                )
-            )
-        }
-        saveDataEntry(hiveInspection)
-    }
-
     private fun removeHiveDataEntry(hiveInspection: HiveInspection) {
         state.value.selectedHive?.let { hive ->
             viewModelScope.launch {
@@ -728,19 +593,10 @@ class HiveViewModel @Inject constructor(
         }
     }
 
-    private fun saveDataEntry(hiveInspection: HiveInspection) {
-        state.value.selectedHive?.let { hive ->
+    private fun saveInspection(hiveInspection: HiveInspection) {
+        state.value.selectedHive?.let {
             viewModelScope.launch {
-                // check if there is already a hive data entry for the same date
-                val updateInsteadOfCreate = hive.hiveInspections.find {
-                    it.date == hiveInspection.date
-                } != null
-
-                if (updateInsteadOfCreate) {
-                    updateHiveInspection(hiveInspection)
-                } else {
-                    createHiveDataEntry(hiveInspection)
-                }
+                updateHiveInspection(hiveInspection)
             }
         }
     }
@@ -761,25 +617,11 @@ class HiveViewModel @Inject constructor(
         }.onSuccess {
             showSuccess()
         }.onFailure {
-            showError(it.message ?: "Unknown error")
+            showError(it.message ?: "Error updating hive inspection")
         }
     }
 
-    private suspend fun createHiveDataEntry(hiveInspection: HiveInspection) {
-        runCatching {
-            updateHive(
-                hive = state.value.selectedHive!!.copy(
-                    hiveInspections = state.value.selectedHive!!.hiveInspections + hiveInspection
-                )
-            )
-        }.onSuccess {
-            showSuccess()
-        }.onFailure {
-            showError(it.message ?: "Unknown error")
-        }
-    }
-
-    fun setSelectedDataEntry(newHiveInspection: HiveInspection) {
+    fun updateSelectedInspection(newHiveInspection: HiveInspection) {
         _state.update {
             state.value.copy(
                 selectedHiveInspection = newHiveInspection
@@ -787,19 +629,21 @@ class HiveViewModel @Inject constructor(
         }
     }
 
-    fun onTapSaveDataEntry(navController: NavController) {
-        state.value.selectedHiveInspection.let {
-            if (it != null) {
-                viewModelScope.launch {
-                    saveDataEntry(it)
-                }
-            }
+    fun saveInspection(navController: NavController) {
+        state.value.selectedHiveInspection?.let { inspection ->
+            saveInspection(inspection)
+            closeOpenMenus()
+            navController.popBackStack()
+            return
         }
-        closeOpenMenus()
-        navController.popBackStack()
+
+        // make a toast notification if the inspection is null (shouldn't happen)
+        Toast.makeText(app, "Error saving inspection.", Toast.LENGTH_SHORT).show()
+        // log error
+        Log.e("HiveViewModel", "Error saving inspection, inspection is null.")
     }
 
-    fun getDefaultHiveInspection(): HiveInspection {
+    private fun getDefaultInspection(): HiveInspection {
         return HiveInspection(
             hiveId = state.value.selectedHive?.id ?: "",
             date = LocalDate.now().toString(),
@@ -899,7 +743,7 @@ class HiveViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching {
                 val hive = state.value.selectedHive ?: return@runCatching
-                val hiveInspection = getDefaultHiveInspection()
+                val hiveInspection = getDefaultInspection()
                 updateHive(
                     hive.copy(
                         hiveInspections = hive.hiveInspections + hiveInspection
@@ -921,9 +765,9 @@ class HiveViewModel @Inject constructor(
     }
 
     fun onTapInspectionButton(inspection: HiveInspection, navController: NavController) {
-        setSelectedDataEntry(inspection)
+        updateSelectedInspection(inspection)
         closeOpenMenus()
-        navController.navigate(Screen.LogDataScreen.route)
+        navController.navigate(Screen.QuickLogScreen.route)
     }
 
     fun onTapDeleteInspectionButton(inspection: HiveInspection) {
