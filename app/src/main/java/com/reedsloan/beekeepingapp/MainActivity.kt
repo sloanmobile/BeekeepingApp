@@ -8,7 +8,6 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,7 +23,7 @@ import com.reedsloan.beekeepingapp.presentation.HomeScreen
 import com.reedsloan.beekeepingapp.presentation.InspectionsScreen
 import com.reedsloan.beekeepingapp.presentation.LogDataScreen
 import com.reedsloan.beekeepingapp.presentation.QuickLogScreen
-import com.reedsloan.beekeepingapp.presentation.Screen
+import com.reedsloan.beekeepingapp.presentation.common.Screen
 import com.reedsloan.beekeepingapp.presentation.SettingsScreen
 import com.reedsloan.beekeepingapp.presentation.WorkInProgressOverlayText
 import com.reedsloan.beekeepingapp.presentation.ui.theme.AppTheme

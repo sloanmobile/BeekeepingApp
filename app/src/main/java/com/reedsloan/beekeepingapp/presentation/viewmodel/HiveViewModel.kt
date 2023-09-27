@@ -23,7 +23,7 @@ import com.reedsloan.beekeepingapp.domain.repo.HiveRepository
 import com.reedsloan.beekeepingapp.presentation.common.data.PermissionRequest
 import com.reedsloan.beekeepingapp.presentation.HiveScreenState
 import com.reedsloan.beekeepingapp.presentation.MenuState
-import com.reedsloan.beekeepingapp.presentation.Screen
+import com.reedsloan.beekeepingapp.presentation.common.Screen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
