@@ -593,14 +593,6 @@ class HiveViewModel @Inject constructor(
         }
     }
 
-    private fun saveInspection(hiveInspection: HiveInspection) {
-        state.value.selectedHive?.let {
-            viewModelScope.launch {
-                updateHiveInspection(hiveInspection)
-            }
-        }
-    }
-
     private suspend fun updateHiveInspection(hiveInspection: HiveInspection) {
         runCatching {
             updateHive(
@@ -630,17 +622,28 @@ class HiveViewModel @Inject constructor(
     }
 
     fun saveInspection(navController: NavController) {
-        state.value.selectedHiveInspection?.let { inspection ->
-            saveInspection(inspection)
-            closeOpenMenus()
-            navController.popBackStack()
-            return
+        viewModelScope.launch {
+            runCatching {
+                state.value.selectedHive?.let { hive ->
+                    updateHive(
+                        hive.copy(
+                            hiveInspections = hive.hiveInspections.map {
+                                if (it.id == state.value.selectedHiveInspection?.id) {
+                                    state.value.selectedHiveInspection!!
+                                } else {
+                                    it
+                                }
+                            }
+                        )
+                    )
+                }
+            }.onSuccess {
+                showSuccess()
+                navController.popBackStack()
+            }.onFailure {
+                showError(it.message ?: "Error saving hive inspection")
+            }
         }
-
-        // make a toast notification if the inspection is null (shouldn't happen)
-        Toast.makeText(app, "Error saving inspection.", Toast.LENGTH_SHORT).show()
-        // log error
-        Log.e("HiveViewModel", "Error saving inspection, inspection is null.")
     }
 
     private fun getDefaultInspection(): HiveInspection {
