@@ -113,7 +113,7 @@ dependencies {
     implementation "androidx.compose.material:material-icons-extended:$compose_version"
 
     // accompanist permissions
-    implementation "com.google.accompanist:accompanist-permissions:0.27.1"
+    implementation "com.google.accompanist:accompanist-permissions:0.32.0"
 
     // kotlin-csv
     implementation 'com.github.doyaaaaaken:kotlin-csv-jvm:1.7.0' //for JVM platform
