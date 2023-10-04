@@ -1,21 +1,16 @@
-package com.reedsloan.beekeepingapp.presentation.hive_info
+package com.reedsloan.beekeepingapp.presentation
 
 import android.app.DatePickerDialog
 import android.icu.util.Calendar
+import android.util.Log
 import android.widget.DatePicker
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
-import androidx.compose.foundation.lazy.staggeredgrid.LazyHorizontalStaggeredGrid
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -35,16 +30,12 @@ import com.kizitonwose.calendar.compose.rememberCalendarState
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.CalendarMonth
 import com.kizitonwose.calendar.core.firstDayOfWeekFromLocale
-import com.reedsloan.beekeepingapp.data.local.hive.EquipmentCondition
-import com.reedsloan.beekeepingapp.data.local.hive.FoundationType
-import com.reedsloan.beekeepingapp.data.local.hive.FramesAndCombs
 import com.reedsloan.beekeepingapp.data.local.hive.HiveConditions
-import com.reedsloan.beekeepingapp.data.local.hive.HiveDataEntry
+import com.reedsloan.beekeepingapp.data.local.hive.HiveInspection
 import com.reedsloan.beekeepingapp.data.local.hive.HiveFeeding
 import com.reedsloan.beekeepingapp.data.local.hive.HiveHealth
-import com.reedsloan.beekeepingapp.data.local.hive.Odor
 import com.reedsloan.beekeepingapp.presentation.common.Container
-import com.reedsloan.beekeepingapp.presentation.viewmodel.hives.HiveViewModel
+import com.reedsloan.beekeepingapp.presentation.viewmodel.HiveViewModel
 import java.time.LocalDate
 import java.time.YearMonth
 import java.util.*
@@ -52,17 +43,15 @@ import java.util.*
 @Composable
 fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("HiveInfoScreen")
+        modifier = Modifier.fillMaxSize()
     ) {
         items(1) {
             val state by hiveViewModel.state.collectAsState()
             val hives by hiveViewModel.hives.collectAsState()
-            var currentHiveDataEntries = state.selectedHive?.hiveDataEntries ?: emptyList()
+            var currentHiveDataEntries = state.selectedHive?.hiveInspections ?: emptyList()
 
             LaunchedEffect(key1 = state) {
-                currentHiveDataEntries = state.selectedHive?.hiveDataEntries ?: emptyList()
+                currentHiveDataEntries = state.selectedHive?.hiveInspections ?: emptyList()
             }
 
             // Initializing a Calendar
@@ -90,7 +79,7 @@ fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
             val selectedDate = remember { mutableStateOf(LocalDate.now()) }
 
             // Hive Name
-            state.selectedHive?.hiveInfo?.let { hiveInfo ->
+            state.selectedHive?.hiveDetails?.let { hiveInfo ->
                 Text(
                     text = hiveInfo.name,
                     fontSize = 24.sp,
@@ -120,12 +109,12 @@ fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
             HorizontalCalendar(
                 state = calendarState,
                 dayContent = { calendarDay ->
+
+                    Log.d("LogDataScreen", "${state.selectedHiveInspection?.date} == ${calendarDay.date.toString()}")
                     val hasDataEntry =
                         currentHiveDataEntries.any { it.date == calendarDay.date.toString() }
 
-                    val isSelected = currentHiveDataEntries.any {
-                        state.selectedDataEntry?.date == calendarDay.date.toString()
-                    }
+                    val isSelected = state.selectedHiveInspection?.date == calendarDay.date.toString()
 
                     Day(
                         day = calendarDay,
@@ -135,11 +124,11 @@ fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                             // update the selected data entry
                             currentHiveDataEntries.firstOrNull { it.date == day.date.toString() }
                                 ?.let {
-                                    hiveViewModel.setSelectedDataEntry(it)
+                                    hiveViewModel.updateSelectedInspection(it)
                                     return@Day
                                 }
 
-                            val newHiveDataEntry = HiveDataEntry(
+                            val newHiveInspection = HiveInspection(
                                 hiveId = state.selectedHive?.id ?: return@Day,
                                 date = day.date.toString(),
                                 hiveConditions = HiveConditions(),
@@ -147,7 +136,7 @@ fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                                 feeding = HiveFeeding(),
                                 localPhotoUris = emptyList()
                             )
-                            hiveViewModel.setSelectedDataEntry(newHiveDataEntry)
+                            hiveViewModel.updateSelectedInspection(newHiveInspection)
                         })
 
                 },
@@ -187,9 +176,9 @@ fun HiveDataEntryScreen(
 
             val state by hiveViewModel.state.collectAsState()
 
-            state.selectedDataEntry?.let { entry ->
+            state.selectedHiveInspection?.let { entry ->
                 // Hive Name
-                state.selectedHive?.hiveInfo?.let { hiveInfo ->
+                state.selectedHive?.hiveDetails?.let { hiveInfo ->
                     Text(
                         text = hiveInfo.name,
                         fontSize = 24.sp,
@@ -210,127 +199,10 @@ fun HiveDataEntryScreen(
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                 )
-
-                DataEntryChip(
-                    title = "Odor",
-                    selectedValue = entry.hiveConditions.odor,
-                    enumClass = Odor::class.java,
-                    onChipSelected = {
-                        hiveViewModel.setSelectedDataEntry(
-                            entry.copy(
-                                hiveConditions = entry.hiveConditions.copy(
-                                    odor = it
-                                )
-                            )
-                        )
-                    },
-                    entry = entry,
-                )
-
-                // equipment condition
-                DataEntryChip(
-                    title = "Equipment Condition",
-                    selectedValue = entry.hiveConditions.equipmentCondition,
-                    enumClass = EquipmentCondition::class.java,
-                    onChipSelected = {
-                        hiveViewModel.setSelectedDataEntry(
-                            entry.copy(
-                                hiveConditions = entry.hiveConditions.copy(
-                                    equipmentCondition = it
-                                )
-                            )
-                        )
-                    },
-                    entry = entry,
-                )
-
-                // frames and combs
-                DataEntryChip(
-                    title = "Frames and Combs",
-                    selectedValue = entry.hiveConditions.framesAndCombs,
-                    enumClass = FramesAndCombs::class.java,
-                    onChipSelected = {
-                        hiveViewModel.setSelectedDataEntry(
-                            entry.copy(
-                                hiveConditions = entry.hiveConditions.copy(
-                                    framesAndCombs = it
-                                )
-                            )
-                        )
-                    },
-                    entry = entry,
-                )
-
-                // foundation type
-                DataEntryChip(
-                    title = "Foundation Type",
-                    selectedValue = entry.hiveConditions.foundationType,
-                    enumClass = FoundationType::class.java,
-                    onChipSelected = {
-                        hiveViewModel.setSelectedDataEntry(
-                            entry.copy(
-                                hiveConditions = entry.hiveConditions.copy(
-                                    foundationType = it
-                                )
-                            )
-                        )
-                    },
-                    entry = entry,
-                )
             }
         }
     }
 
-}
-
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
-@Composable
-fun <T : Enum<T>> DataEntryChip(
-    enumClass: Class<T>,
-    selectedValue: T?,
-    onChipSelected: (T?) -> Unit,
-    entry: HiveDataEntry,
-    title: String
-) {
-    Text(
-        text = title,
-        fontSize = 24.sp,
-        fontWeight = FontWeight.Bold,
-    )
-    Row(
-    ) {
-//        enumClass.enumConstants?.forEach { enumValue ->
-//            FilterChip(
-//                selected = entry.hiveConditions.odor == enumValue,
-//                onClick = {
-//                    onChipSelected(enumValue)
-//                },
-//                label = { Text(text = enumValue.toString()) },
-//                modifier = Modifier.padding(4.dp)
-//            )
-//        }
-
-        LazyHorizontalStaggeredGrid(
-            rows = StaggeredGridCells.Adaptive(48.dp),
-            modifier = Modifier
-                .padding(4.dp)
-                .height(48.dp)
-                .fillMaxWidth(),
-            contentPadding = PaddingValues(4.dp),
-            horizontalItemSpacing = 4.dp,
-        ) {
-            items(enumClass.enumConstants?.size ?: 0) { index ->
-                val enumValue = enumClass.enumConstants?.get(index)
-                FilterChip(
-                    selected = selectedValue == enumValue,
-                    onClick = {
-                        onChipSelected(enumValue)
-                    },
-                    label = { Text(text = enumValue.toString()) }
-                )
-            }
-        }
-    }
 }
 
 @Composable

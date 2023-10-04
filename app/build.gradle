@@ -2,8 +2,7 @@ plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
     id 'dagger.hilt.android.plugin'
-    id 'com.google.devtools.ksp' version "$kotlin_version-1.0.9"
-    id 'kotlin-kapt'
+    id 'com.google.devtools.ksp'
 }
 
 kotlin {
@@ -19,12 +18,12 @@ kotlin {
 
 android {
     namespace 'com.reedsloan.beekeepingapp'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.reedsloan.beekeepingapp"
         minSdk 26
-        targetSdk 33
+        targetSdk 34
         versionCode 1
         versionName "1.0.0"
 
@@ -41,11 +40,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility JavaVersion.VERSION_18
+        targetCompatibility JavaVersion.VERSION_18
     }
     kotlinOptions {
-        jvmTarget = '17'
+        jvmTarget = '18'
     }
     buildFeatures {
         compose true
@@ -70,13 +69,13 @@ android {
 
 dependencies {
 
-    implementation 'androidx.core:core-ktx:1.9.0'
+    implementation 'androidx.core:core-ktx:1.10.1'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.5.1'
-    implementation 'androidx.activity:activity-compose:1.6.1'
+    implementation 'androidx.activity:activity-compose:1.7.2'
     implementation "androidx.compose.ui:ui:$compose_version"
     implementation "androidx.compose.ui:ui-tooling-preview:$compose_version"
-    implementation "androidx.compose.material3:material3:1.1.0-beta01"
-    implementation "androidx.compose.material3:material3-window-size-class:1.1.0-beta01"
+    implementation "androidx.compose.material3:material3:1.2.0-alpha06"
+    implementation "androidx.compose.material3:material3-window-size-class:1.2.0-alpha06"
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
@@ -84,17 +83,17 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
 
     // Compose dependencies
-    implementation "androidx.lifecycle:lifecycle-viewmodel-compose:2.6.0-alpha04"
-    implementation "androidx.navigation:navigation-compose:2.5.3"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0-alpha01"
+    implementation "androidx.navigation:navigation-compose:2.7.1"
     implementation "androidx.compose.foundation:foundation:$compose_version"
     // compose constraint layout
     implementation "androidx.constraintlayout:constraintlayout-compose:1.0.1"
 
     // Dagger - Hilt
     implementation "com.google.dagger:hilt-android:$hilt_version"
-    kapt "com.google.dagger:hilt-android-compiler:$hilt_version"
-    kapt "androidx.hilt:hilt-compiler:1.0.0"
-    implementation 'androidx.hilt:hilt-navigation-compose:1.0.0'
+    ksp  "com.google.dagger:hilt-android-compiler:$hilt_version"
+    ksp  "androidx.hilt:hilt-compiler:1.0.0"
+    implementation 'androidx.hilt:hilt-navigation-compose:1.1.0-alpha01'
 
     // Ktor Client
     implementation "io.ktor:ktor-client-core:$ktor_version"
@@ -104,7 +103,7 @@ dependencies {
 
     // Room
     implementation "androidx.room:room-runtime:$room_version"
-    kapt "androidx.room:room-compiler:$room_version"
+    ksp "androidx.room:room-compiler:$room_version"
     // Kotlin Extensions and Coroutines support for Room
     implementation "androidx.room:room-ktx:$room_version"
 
@@ -123,45 +122,6 @@ dependencies {
 
     implementation "com.github.tehras:charts:0.2.4-alpha"
 
-
-    // junit
-    androidTestImplementation "junit:junit:4.13.2"
-    // arch
-    androidTestImplementation "androidx.arch.core:core-testing:2.1.0"
-    // kotlinx-coroutines-test
-    androidTestImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3"
-    // google truth
-    androidTestImplementation "com.google.truth:truth:1.1.5"
-    // okhttp3 mockwebserver
-    androidTestImplementation "com.squareup.okhttp3:mockwebserver:4.11.0"
-    // mockk
-    androidTestImplementation "io.mockk:mockk:1.13.8"
-    debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_version"
-
-    // Instrumentation tests
-    // hilt
-    androidTestImplementation "com.google.dagger:hilt-android-testing:$hilt_version"
-    kaptAndroidTest "com.google.dagger:hilt-android-compiler:$hilt_version"
-    androidTestImplementation 'junit:junit:4.13.2'
-
-
-    // To use the androidx.test.core APIs
-    androidTestImplementation "androidx.test:core:1.5.0"
-    // Kotlin extensions for androidx.test.core
-    androidTestImplementation "androidx.test:core-ktx:1.5.0"
-
-    // To use the androidx.test.espresso
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
-    androidTestImplementation 'androidx.test:runner:1.4.0'
-    androidTestImplementation 'androidx.test:rules:1.4.0'
-
-    // To use the JUnit Extension APIs
-    androidTestImplementation "androidx.test.ext:junit:1.1.5"
-    // Kotlin extensions for androidx.test.ext.junit
-    androidTestImplementation "androidx.test.ext:junit-ktx:1.1.5"
-
-    implementation "dev.chrisbanes.snapper:snapper:0.3.0"
-
     // coil
     implementation("io.coil-kt:coil-compose:2.2.2")
 
@@ -171,5 +131,5 @@ dependencies {
     // https://github.com/kizitonwose/Calendar
 
     // The compose calendar library
-    implementation "com.kizitonwose.calendar:compose:2.3.0"
+    implementation "com.kizitonwose.calendar:compose:2.4.0-beta01"
 }

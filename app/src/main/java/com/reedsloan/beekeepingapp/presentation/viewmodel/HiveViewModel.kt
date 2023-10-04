@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.presentation.viewmodel.hives
+package com.reedsloan.beekeepingapp.presentation.viewmodel
 
 import android.app.Activity
 import android.app.Application
@@ -21,9 +21,9 @@ import com.reedsloan.beekeepingapp.data.local.TemperatureMeasurement
 import com.reedsloan.beekeepingapp.data.local.hive.*
 import com.reedsloan.beekeepingapp.domain.repo.HiveRepository
 import com.reedsloan.beekeepingapp.presentation.common.data.PermissionRequest
-import com.reedsloan.beekeepingapp.presentation.home_screen.HiveScreenState
-import com.reedsloan.beekeepingapp.presentation.home_screen.MenuState
-import com.reedsloan.beekeepingapp.presentation.screens.Screen
+import com.reedsloan.beekeepingapp.presentation.HiveScreenState
+import com.reedsloan.beekeepingapp.presentation.MenuState
+import com.reedsloan.beekeepingapp.presentation.common.Screen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -46,12 +46,15 @@ class HiveViewModel @Inject constructor(
 
     val visiblePermissionDialogQueue = mutableStateListOf<PermissionRequest>()
 
-
     init {
         viewModelScope.launch {
             getUserPreferences()
             getAllHives()
         }
+    }
+
+    fun isPermissionRequestFirstTime(permission: String): Boolean {
+        return !state.value.userPreferences.requestedPermissions.contains(permission)
     }
 
     fun dismissDialog() {
@@ -63,6 +66,17 @@ class HiveViewModel @Inject constructor(
      * If it was denied, the open app settings dialog will be shown.
      */
     fun onPermissionResult(permission: String, granted: Boolean) {
+        // add the permission requested to the user preferences
+        // so the permanently denied dialog will be shown if needed
+        // only add one of each permission
+        if (!state.value.userPreferences.requestedPermissions.contains(permission)) {
+            updateUserPreferences(
+                state.value.userPreferences.copy(
+                    requestedPermissions = state.value.userPreferences.requestedPermissions + permission
+                )
+            )
+        }
+
         if (granted) {
             dismissDialog()
         } else {
@@ -86,7 +100,10 @@ class HiveViewModel @Inject constructor(
             }
 
             else -> {
-                throw IllegalArgumentException("Unknown permission: $permission, please add it to the getPermissionRequest function.")
+                throw IllegalArgumentException(
+                    "Unknown permission: $permission, please add it" +
+                            "to the getPermissionRequest function."
+                )
             }
         }
 
@@ -117,61 +134,6 @@ class HiveViewModel @Inject constructor(
         }
     }
 
-    fun getDaysOfCalendar(dateTimeNow: LocalDateTime): List<LocalDateTime> {
-        val year = dateTimeNow.year
-
-        val month = dateTimeNow.month
-        val isLeapYear = Year.isLeap(year.toLong())
-
-        val daysInMonth = when (month) {
-            Month.FEBRUARY -> if (isLeapYear) 29 else 28
-            Month.APRIL, Month.JUNE, Month.SEPTEMBER, Month.NOVEMBER -> 30
-            else -> 31
-        }
-        val firstDayOfMonth = dateTimeNow.withDayOfMonth(1)
-
-        val days: MutableList<LocalDateTime> = mutableListOf()
-
-        val daysFromSunday = when (firstDayOfMonth.dayOfWeek) {
-            DayOfWeek.SUNDAY -> 0
-            DayOfWeek.MONDAY -> 1
-            DayOfWeek.TUESDAY -> 2
-            DayOfWeek.WEDNESDAY -> 3
-            DayOfWeek.THURSDAY -> 4
-            DayOfWeek.FRIDAY -> 5
-            DayOfWeek.SATURDAY -> 6
-            else -> 0
-        }
-
-        val firstDayInNextMonth = firstDayOfMonth.plusMonths(1).withDayOfMonth(1)
-
-        val daysInPreviousMonth = when (dateTimeNow.minusMonths(1).withDayOfMonth(1).month) {
-            Month.FEBRUARY -> if (isLeapYear) 29 else 28
-            Month.APRIL, Month.JUNE, Month.SEPTEMBER, Month.NOVEMBER -> 30
-            else -> 31
-        }
-        val finalDayInPreviousMonth = dateTimeNow.minusMonths(1).withDayOfMonth(daysInPreviousMonth)
-
-
-        // add days from previous month (or skip if first day of month is Sunday)
-        for (i in daysFromSunday downTo 1) {
-            days.add(finalDayInPreviousMonth.minusDays(i - 1.toLong()))
-        }
-
-        // add days from current month
-        for (i in 0 until daysInMonth) {
-            days.add(firstDayOfMonth.plusDays(i.toLong()))
-        }
-
-        // add days from next month (or skip if last day of month is Saturday)
-        for (i in 0 until 42 - days.size) {
-            days.add(firstDayInNextMonth.plusDays((i).toLong()))
-        }
-
-
-        return days.toList()
-    }
-
 
     private suspend fun getUserPreferences() {
         runCatching { hiveRepository.getUserPreferences() }.onSuccess { userPreferences ->
@@ -179,6 +141,9 @@ class HiveViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Use this function to handle the back button press instead of using popBackStack() directly.
+     */
     fun backHandler(navController: NavController) {
         if (state.value.hiveDeleteMode) {
             toggleHiveDeleteMode()
@@ -187,9 +152,6 @@ class HiveViewModel @Inject constructor(
             toggleEditingTextField()
             return
         } else if (state.value.showDeleteHiveDialog) {
-            closeOpenMenus()
-            return
-        } else if (state.value.editHiveMenuState == MenuState.OPEN) {
             closeOpenMenus()
             return
         }
@@ -211,33 +173,9 @@ class HiveViewModel @Inject constructor(
         createHive()
     }
 
-    fun onTapViewHiveLog(selectedHiveId: String, navController: NavController) {
-        Log.d("HiveListItem", "Thread: ${Thread.currentThread().name}")
-        if (state.value.hiveDeleteMode) {
-            toggleSelected(selectedHiveId)
-            return
-        }
-        setSelectedHive(selectedHiveId)
-        navController.navigate(Screen.HiveScreen.route)
-    }
-
-
-    fun onLongPressHiveListItem(selectedHiveId: String) {
-        // enable delete mode
-        toggleHiveDeleteMode()
-        // add hive to selection list
-        addToSelectionList(selectedHiveId)
-    }
 
     fun onTapNavigationExpandButton() {
         toggleNavigationBarMenuState()
-    }
-
-    fun navigate(navController: NavController, destination: Screen) {
-        Log.d(this::class.simpleName, destination.name)
-        _state.update { it.copy(currentScreenName = destination.name) }
-        closeOpenMenus()
-        navController.navigate(destination.route)
     }
 
     fun onTapDeleteSelectedHiveButton() {
@@ -278,14 +216,6 @@ class HiveViewModel @Inject constructor(
         _state.update { it.copy(selectionList = emptyList()) }
     }
 
-    private fun toggleSelected(hiveId: String) {
-        if (state.value.selectionList.contains(hiveId)) {
-            removeFromSelectionList(hiveId)
-        } else {
-            addToSelectionList(hiveId)
-        }
-    }
-
     private fun toggleHiveDeleteMode() {
         _state.value = state.value.copy(hiveDeleteMode = !state.value.hiveDeleteMode)
     }
@@ -297,7 +227,6 @@ class HiveViewModel @Inject constructor(
         _state.value = state.value.copy(
             navigationBarMenuState = MenuState.CLOSED,
             hiveDeleteMode = false,
-            editHiveMenuState = MenuState.CLOSED,
             showExtraButtons = false
         )
         clearSelectionList()
@@ -361,6 +290,11 @@ class HiveViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Hides the keyboard. This can be used when the user taps outside of the keyboard or
+     * when the user taps the back button.
+     * @param [Context] The context of the current activity.
+     */
     fun hideKeyboard(context: Context) {
         // hide the keyboard
         val inputMethodManager =
@@ -376,60 +310,30 @@ class HiveViewModel @Inject constructor(
         _state.update { it.copy(selectedHive = hives.value.find { it.id == hiveId }) }
     }
 
-    fun setHiveNotes(notes: String) {
-        _state.update {
-            it.copy(
-                selectedHive = it.selectedHive?.copy(
-                    hiveInfo = it.selectedHive!!.hiveInfo.copy(notes = notes)
-                )
-            )
-        }
-    }
-
-    fun setHiveName(name: String) {
-        runCatching { state.value.selectedHive!! }.onSuccess {
-            _state.update {
-                it.copy(
-                    selectedHive = it.selectedHive?.copy(
-                        hiveInfo = it.selectedHive.hiveInfo.copy(
-                            name = name, dateModified = LocalDate.now()
-                        )
-                    )
-                )
-            }
-        }.onFailure {
-            Toast.makeText(
-                app, "Error updating hive name", Toast.LENGTH_SHORT
-            ).show()
-        }
-    }
-
     private fun toggleNavigationBarMenuState() {
         _state.update {
             it.copy(navigationBarMenuState = it.navigationBarMenuState.toggle())
         }
     }
 
-    fun onClickEditHiveButton(hiveId: String) {
-        setSelectedHive(hiveId)
-        closeOpenMenus()
-        setHiveInfoMenuState(MenuState.OPEN)
-    }
-
-    private fun setHiveInfoMenuState(state: MenuState) {
-        _state.update { it.copy(editHiveMenuState = state) }
-    }
-
     private fun setIsLoading(isLoading: Boolean) {
         _state.update { it.copy(isLoading = isLoading) }
     }
 
-    private fun setIsSuccess(isSuccess: Boolean) {
-        _state.update { it.copy(isSuccess = isSuccess, isLoading = false) }
+    private fun showSuccess() {
+        _state.update { it.copy(isSuccess = true, isLoading = false) }
+        setIsLoading(false)
     }
 
     private fun showError(error: String) {
-        _state.update { it.copy(isError = true, errorMessage = error, isLoading = false) }
+        _state.update {
+            it.copy(
+                isError = true,
+                errorMessage = error,
+                isLoading = false,
+                isSuccess = false
+            )
+        }
     }
 
     private suspend fun getAllHives() {
@@ -437,8 +341,10 @@ class HiveViewModel @Inject constructor(
         runCatching {
             hiveRepository.getAllHives()
         }.onSuccess { hives ->
-            setIsSuccess(true)
             _hives.value = hives
+            // update the selected hive if it exists
+            setSelectedHive(state.value.selectedHive?.id ?: "")
+            showSuccess()
         }.onFailure { error ->
             showError(error.message ?: "Unknown error")
 
@@ -489,7 +395,7 @@ class HiveViewModel @Inject constructor(
             setIsLoading(true)
             hiveRepository.updateHive(
                 hive.copy(
-                    hiveInfo = hive.hiveInfo.copy(
+                    hiveDetails = hive.hiveDetails.copy(
                         dateModified = LocalDate.now()
                     )
                 )
@@ -506,6 +412,7 @@ class HiveViewModel @Inject constructor(
     private suspend fun deleteHive(hiveId: String) {
         runCatching {
             setIsLoading(true)
+            deselectHive()
             hiveRepository.deleteHive(hiveId)
         }.onSuccess {
             // get all hives again
@@ -526,7 +433,7 @@ class HiveViewModel @Inject constructor(
             runCatching {
                 hiveRepository.deleteAllHives()
             }.onSuccess {
-                setIsSuccess(true)
+                showSuccess()
                 getAllHives()
             }.onFailure {
                 showError(it.message ?: "Unknown error")
@@ -540,7 +447,7 @@ class HiveViewModel @Inject constructor(
             runCatching {
                 hiveRepository.exportToCsv()
             }.onSuccess {
-                setIsSuccess(true)
+                showSuccess()
             }.onFailure {
                 showError(it.message ?: "Unknown error")
             }
@@ -568,7 +475,7 @@ class HiveViewModel @Inject constructor(
                     state.value.selectedHive?.let { hive ->
                         updateHive(
                             hive.copy(
-                                hiveInfo = hive.hiveInfo.copy(
+                                hiveDetails = hive.hiveDetails.copy(
                                     image = file.absolutePath
                                 )
                             )
@@ -576,7 +483,7 @@ class HiveViewModel @Inject constructor(
                     }
                 }
             }.onSuccess {
-                setIsSuccess(true)
+                showSuccess()
                 _hives.value = hiveRepository.getAllHives()
             }.onFailure {
                 showError(it.message ?: "Unknown error")
@@ -591,14 +498,14 @@ class HiveViewModel @Inject constructor(
                 state.value.selectedHive?.let { hive ->
                     updateHive(
                         hive.copy(
-                            hiveInfo = hive.hiveInfo.copy(
+                            hiveDetails = hive.hiveDetails.copy(
                                 image = ""
                             )
                         )
                     )
                 }
             }.onSuccess {
-                setIsSuccess(true)
+                showSuccess()
                 _hives.update { hiveRepository.getAllHives() }
             }.onFailure {
                 showError(it.message ?: "Unknown error")
@@ -622,7 +529,12 @@ class HiveViewModel @Inject constructor(
         )
     }
 
-    fun copyImageToInternalStorage(uriFromExternalStorage: Uri?) {
+    /**
+     * Copies the image from the external storage to the internal storage. This is needed because
+     * the image uri from the external storage is not persistent.
+     * @param [Uri] The uri of the image from the external storage.
+     */
+    private fun copyImageToInternalStorage(uriFromExternalStorage: Uri?) {
         viewModelScope.launch {
             // save the image uri to the disk
             uriFromExternalStorage?.let {
@@ -637,29 +549,22 @@ class HiveViewModel @Inject constructor(
                 state.value.selectedHive?.let { hive ->
                     updateHive(
                         hive.copy(
-                            hiveInfo = hive.hiveInfo.copy(
+                            hiveDetails = hive.hiveDetails.copy(
                                 image = uri.toString()
                             )
                         )
                     )
-                    deselectHive()
                 }
             }
         }
     }
 
+    /**
+     * Deselects the selected hive. This is used in the deletion process to prevent the user from
+     * editing the hive while it is being deleted.
+     */
     private fun deselectHive() {
         _state.update { state.value.copy(selectedHive = null) }
-    }
-
-    fun onClickViewLogHistoryButton(id: String, navController: NavController) {
-        // set the selected hive
-        hives.value.find { hive -> hive.id == id }?.let { hive ->
-            setSelectedHive(hive.id)
-        }
-        // close open menus
-        closeOpenMenus()
-        TODO("Navigate to the log history screen")
     }
 
     fun deleteImage(uri: Uri) {
@@ -668,7 +573,7 @@ class HiveViewModel @Inject constructor(
             runCatching {
                 app.contentResolver.delete(uri, null, null)
             }.onSuccess {
-                setIsSuccess(true)
+                showSuccess()
                 getAllHives()
             }.onFailure {
                 showError(it.message ?: "Unknown error")
@@ -676,139 +581,25 @@ class HiveViewModel @Inject constructor(
         }
     }
 
-    fun onTapChoosePhotoButton(selectedHiveId: String) {
-        setSelectedHive(selectedHiveId)
-    }
-
-    fun onTapEditHiveNameButton(id: String) {
-        setSelectedHive(id)
-        // set editingTextField to true
-        _state.update { state.value.copy(editingTextField = true) }
-    }
-
-    fun onTapSaveHiveNameButton(id: String, editableString: String) {
-        // set editingTextField to false
-        _state.update { state.value.copy(editingTextField = false) }
-        // update the hive name
-        hives.value.find { hive -> hive.id == id }?.let { hive ->
-            viewModelScope.launch {
-                updateHive(
-                    hive.copy(
-                        hiveInfo = hive.hiveInfo.copy(
-                            name = editableString
-                        )
-                    )
-                )
-                deselectHive()
-            }
-        }
-    }
-
-    fun onTapEditHiveButton(id: String) {
-        setSelectedHive(id)
-        closeOpenMenus()
-        toggleEditHiveMenu()
-    }
-
-    fun toggleEditHiveMenu() {
-        _state.update {
-            state.value.copy(
-                editHiveMenuState = when (state.value.editHiveMenuState) {
-                    MenuState.CLOSED -> MenuState.OPEN
-                    MenuState.OPEN -> MenuState.CLOSED
-                }
-            )
-        }
-    }
-
-    fun onTapLogDataButton(id: String, navController: NavController) {
-        setSelectedHive(id)
-        closeOpenMenus()
-        navController.navigate(Screen.LogDataScreen.route)
-    }
-
-    fun onTapViewLogsButton(id: String) {
-        TODO("Navigate to the log history screen")
-    }
-
-    fun onDismissEditHiveMenu() {
-        closeOpenMenus()
-    }
-
-    fun onTapSaveButton(uri: Uri?, name: String) {
-        closeOpenMenus()
-        setIsLoading(true)
-        viewModelScope.launch {
-            runCatching {
-                state.value.selectedHive?.let { hive ->
-                    copyImageToInternalStorage(uri)
-                    updateHive(
-                        hive.copy(
-                            hiveInfo = hive.hiveInfo.copy(
-                                name = name, image = uri?.toString() ?: hive.hiveInfo.image
-                            )
-                        )
-                    )
-                    deselectHive()
-                }
-            }.onSuccess {
-                setIsSuccess(true)
-                getAllHives()
-            }.onFailure {
-                showError(it.message ?: "Unknown error")
-            }
-        }
-    }
-
-    fun addHiveDataEntry(hiveDataEntry: HiveDataEntry) {
-        _state.update {
-            state.value.copy(
-                selectedHive =
-                state.value.selectedHive?.copy(
-                    hiveDataEntries = state.value.selectedHive?.hiveDataEntries?.plus(hiveDataEntry)
-                        ?: listOf(hiveDataEntry)
-                )
-            )
-        }
-        saveDataEntry(hiveDataEntry)
-    }
-
-    private fun removeHiveDataEntry(hiveDataEntry: HiveDataEntry) {
+    private fun removeHiveDataEntry(hiveInspection: HiveInspection) {
         state.value.selectedHive?.let { hive ->
             viewModelScope.launch {
                 updateHive(
                     hive.copy(
-                        hiveDataEntries = hive.hiveDataEntries - hiveDataEntry
+                        hiveInspections = hive.hiveInspections - hiveInspection
                     )
                 )
             }
         }
     }
 
-    private fun saveDataEntry(hiveDataEntry: HiveDataEntry) {
-        state.value.selectedHive?.let { hive ->
-            viewModelScope.launch {
-                // check if there is already a hive data entry for the same date
-                val updateInsteadOfCreate = hive.hiveDataEntries.find {
-                    it.date == hiveDataEntry.date
-                } != null
-
-                if (updateInsteadOfCreate) {
-                    updateHiveDataEntry(hiveDataEntry)
-                } else {
-                    createHiveDataEntry(hiveDataEntry)
-                }
-            }
-        }
-    }
-
-    private suspend fun updateHiveDataEntry(hiveDataEntry: HiveDataEntry) {
+    private suspend fun updateHiveInspection(hiveInspection: HiveInspection) {
         runCatching {
             updateHive(
                 hive = state.value.selectedHive!!.copy(
-                    hiveDataEntries = state.value.selectedHive!!.hiveDataEntries.map {
-                        if (it.date == hiveDataEntry.date) {
-                            hiveDataEntry
+                    hiveInspections = state.value.selectedHive!!.hiveInspections.map {
+                        if (it.date == hiveInspection.date) {
+                            hiveInspection
                         } else {
                             it
                         }
@@ -816,31 +607,173 @@ class HiveViewModel @Inject constructor(
                 )
             )
         }.onSuccess {
-            setIsSuccess(true)
+            showSuccess()
         }.onFailure {
-            showError(it.message ?: "Unknown error")
+            showError(it.message ?: "Error updating hive inspection")
         }
     }
 
-    private suspend fun createHiveDataEntry(hiveDataEntry: HiveDataEntry) {
-        runCatching {
-            updateHive(
-                hive = state.value.selectedHive!!.copy(
-                    hiveDataEntries = state.value.selectedHive!!.hiveDataEntries + hiveDataEntry
-                )
-            )
-        }.onSuccess {
-            setIsSuccess(true)
-        }.onFailure {
-            showError(it.message ?: "Unknown error")
-        }
-    }
-
-    fun setSelectedDataEntry(newHiveDataEntry: HiveDataEntry) {
+    fun updateSelectedInspection(newHiveInspection: HiveInspection) {
         _state.update {
             state.value.copy(
-                selectedDataEntry = newHiveDataEntry
+                selectedHiveInspection = newHiveInspection
             )
         }
+    }
+
+    fun saveInspection(navController: NavController) {
+        viewModelScope.launch {
+            runCatching {
+                state.value.selectedHive?.let { hive ->
+                    updateHive(
+                        hive.copy(
+                            hiveInspections = hive.hiveInspections.map {
+                                if (it.id == state.value.selectedHiveInspection?.id) {
+                                    state.value.selectedHiveInspection!!
+                                } else {
+                                    it
+                                }
+                            }
+                        )
+                    )
+                }
+            }.onSuccess {
+                showSuccess()
+                navController.popBackStack()
+            }.onFailure {
+                showError(it.message ?: "Error saving hive inspection")
+            }
+        }
+    }
+
+    private fun getDefaultInspection(): HiveInspection {
+        return HiveInspection(
+            hiveId = state.value.selectedHive?.id ?: "",
+            date = LocalDate.now().toString(),
+            hiveConditions = HiveConditions(),
+            hiveHealth = HiveHealth(),
+            feeding = HiveFeeding(),
+            localPhotoUris = emptyList()
+        )
+    }
+
+    fun onTapSettingsButton(navController: NavController) {
+        closeOpenMenus()
+        navController.navigate(Screen.SettingsScreen.route)
+    }
+
+    fun onTapHiveCard(id: String, navController: NavController) {
+        setSelectedHive(id)
+        closeOpenMenus()
+        navController.navigate(Screen.HiveDetailsScreen.route)
+    }
+
+    fun setImageForSelectedHive(uri: Uri?) {
+        setIsLoading(true)
+        viewModelScope.launch {
+            runCatching {
+                state.value.selectedHive?.let { hive ->
+
+                    // delete the current image from the disk if it exists
+                    hive.hiveDetails.image?.let {
+                        removeImageForSelectedHive()
+                    }
+
+                    copyImageToInternalStorage(uri)
+
+                    // update the hive with the new image
+                    updateHive(
+                        hive.copy(
+                            hiveDetails = hive.hiveDetails.copy(
+                                image = uri?.toString() ?: hive.hiveDetails.image
+                            )
+                        )
+                    )
+                }
+            }.onSuccess {
+                showSuccess()
+            }.onFailure {
+                showError(it.message ?: "Unknown error")
+            }
+        }
+    }
+
+    fun removeImageForSelectedHive() {
+        setIsLoading(true)
+        viewModelScope.launch {
+            runCatching {
+                // delete the image from the disk
+                state.value.selectedHive?.hiveDetails?.image?.let { uriString ->
+                    val uri = Uri.parse(uriString)
+                    deleteImage(uri)
+                    // update the hive with the new image
+                }
+
+                state.value.selectedHive?.let { hive ->
+                    updateHive(
+                        hive.copy(
+                            hiveDetails = hive.hiveDetails.copy(
+                                image = null
+                            )
+                        )
+                    )
+                }
+            }.onSuccess {
+                showSuccess()
+            }.onFailure {
+                showError(it.message ?: "Unknown error")
+            }
+        }
+    }
+
+    fun onTapInspectionsButton(navController: NavController) {
+        closeOpenMenus()
+        navController.navigate(Screen.InspectionsScreen.route)
+    }
+
+    fun onTapAddInspectionButton() {
+        closeOpenMenus()
+        // make a toast notification
+        Toast.makeText(app, "New inspection created.", Toast.LENGTH_SHORT).show()
+        createInspection()
+    }
+
+    /**
+     * Creates a new hive inspection for the selected hive.
+     * @see [HiveInspection]
+     */
+    private fun createInspection() {
+        viewModelScope.launch {
+            runCatching {
+                val hive = state.value.selectedHive ?: return@runCatching
+                val hiveInspection = getDefaultInspection()
+                updateHive(
+                    hive.copy(
+                        hiveInspections = hive.hiveInspections + hiveInspection
+                    )
+                )
+            }.onSuccess {
+                getAllHives()
+            }.onFailure {
+                showError(it.message ?: "Unknown error")
+                // Show error message
+                Toast.makeText(app, it.message, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    fun onTapTasksButton(navController: NavController) {
+        closeOpenMenus()
+        navController.navigate(Screen.TasksScreen.route)
+    }
+
+    fun onTapInspectionButton(inspection: HiveInspection, navController: NavController) {
+        updateSelectedInspection(inspection)
+        closeOpenMenus()
+        navController.navigate(Screen.QuickLogScreen.route)
+    }
+
+    fun onTapDeleteInspectionButton(inspection: HiveInspection) {
+        removeHiveDataEntry(inspection)
     }
 }
