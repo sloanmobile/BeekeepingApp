@@ -3,7 +3,7 @@ plugins {
     id 'org.jetbrains.kotlin.android'
     id 'dagger.hilt.android.plugin'
     id 'com.google.devtools.ksp'
-    id 'org.jetbrains.kotlinx.dataframe' version '0.11.1'
+    id 'org.jetbrains.kotlinx.dataframe' version '1727'
 }
 
 kotlin {
@@ -129,7 +129,7 @@ dependencies {
     implementation 'com.github.doyaaaaaken:kotlin-csv-jvm:1.9.2' //for JVM platform
 
     // kotlin dataframe
-    implementation 'org.jetbrains.kotlinx:dataframe:0.11.1'
+    implementation 'org.jetbrains.kotlinx:dataframe:1727'
 
     implementation "com.github.tehras:charts:0.2.4-alpha"
 
