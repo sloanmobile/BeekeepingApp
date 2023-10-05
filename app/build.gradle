@@ -3,6 +3,7 @@ plugins {
     id 'org.jetbrains.kotlin.android'
     id 'dagger.hilt.android.plugin'
     id 'com.google.devtools.ksp'
+    id 'org.jetbrains.kotlinx.dataframe' version '0.11.1'
 }
 
 kotlin {
@@ -54,22 +55,32 @@ android {
     }
     packagingOptions {
         resources {
-            excludes += 'META-INF/INDEX.LIST'
-            excludes += 'META-INF/DEPENDENCIES'
-            excludes += 'META-INF/NOTICE'
-            excludes += 'META-INF/NOTICE.txt'
-            excludes += 'META-INF/LICENSE'
-            excludes += 'META-INF/LICENSE.txt'
-            excludes += 'META-INF/ASL2.0'
-            excludes += 'META-INF/LGPL2.1'
-            excludes += 'git.properties'
+            pickFirsts += [
+                    "META-INF/AL2.0",
+                    "META-INF/LGPL2.1",
+                    "META-INF/ASL-2.0.txt",
+                    "META-INF/LICENSE.md",
+                    "META-INF/NOTICE.md",
+                    "META-INF/LGPL-3.0.txt",
+                    "META-INF/com.android.tools/proguard/coroutines.pro"
+            ]
+            excludes += [
+                    "META-INF/kotlin-jupyter-libraries/libraries.json",
+                    "META-INF/{INDEX.LIST,DEPENDENCIES}",
+                    "META-INF/MANIFEST.MF",
+                    "META-INF/DEPENDENCIES",
+                    "LICENSE.txt",
+                    "{draftv3,draftv4}/schema",
+                    "arrow-git.properties"
+            ]
         }
     }
+
 }
 
 dependencies {
 
-    implementation 'androidx.core:core-ktx:1.10.1'
+    implementation 'androidx.core:core-ktx:1.12.0'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.5.1'
     implementation 'androidx.activity:activity-compose:1.7.2'
     implementation "androidx.compose.ui:ui:$compose_version"
@@ -91,8 +102,8 @@ dependencies {
 
     // Dagger - Hilt
     implementation "com.google.dagger:hilt-android:$hilt_version"
-    ksp  "com.google.dagger:hilt-android-compiler:$hilt_version"
-    ksp  "androidx.hilt:hilt-compiler:1.0.0"
+    ksp "com.google.dagger:hilt-android-compiler:$hilt_version"
+    ksp "androidx.hilt:hilt-compiler:1.0.0"
     implementation 'androidx.hilt:hilt-navigation-compose:1.1.0-alpha01'
 
     // Ktor Client
@@ -118,7 +129,7 @@ dependencies {
     implementation 'com.github.doyaaaaaken:kotlin-csv-jvm:1.9.2' //for JVM platform
 
     // kotlin dataframe
-    implementation 'org.jetbrains.kotlinx:dataframe:1727'
+    implementation 'org.jetbrains.kotlinx:dataframe:0.11.1'
 
     implementation "com.github.tehras:charts:0.2.4-alpha"
 
@@ -129,7 +140,6 @@ dependencies {
     implementation 'io.github.vanpra.compose-material-dialogs:datetime:0.9.0'
 
     // https://github.com/kizitonwose/Calendar
-
     // The compose calendar library
     implementation "com.kizitonwose.calendar:compose:2.4.0-beta01"
 }
