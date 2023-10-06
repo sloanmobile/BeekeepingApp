@@ -51,6 +51,8 @@ import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import com.reedsloan.beekeepingapp.data.local.hive.HiveInspection
 import com.reedsloan.beekeepingapp.presentation.viewmodel.HiveViewModel
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -108,7 +110,8 @@ fun InspectionsScreen(navController: NavController, hiveViewModel: HiveViewModel
 @Composable
 fun InspectionsList(hiveViewModel: HiveViewModel, navController: NavController) {
     val state by hiveViewModel.state.collectAsState()
-    val inspections = state.selectedHive?.hiveInspections ?: return
+    val inspections =
+        state.selectedHive?.hiveInspections?.sortedBy { LocalDate.parse(it.date) } ?: return
     LazyColumn {
         items(inspections.size) { index ->
             InspectionListItem(
