@@ -117,7 +117,7 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
         LazyColumn(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
         ) {
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -192,6 +192,22 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                         contentPadding = PaddingValues(4.dp),
                     )
                 }
+
+                // notes
+                TextField(
+                    value = inspection.notes ?: "",
+                    onValueChange = {
+                        hiveViewModel.updateSelectedInspection(
+                            inspection.copy(
+                                notes = it.trimStart()
+                            )
+                        )
+                    },
+                    label = { Text("Notes") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = false,
+                    maxLines = 12,
+                )
 
                 DataEntryChip(title = "Odor",
                     selectedValue = inspection.hiveConditions.odor,

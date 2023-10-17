@@ -51,8 +51,8 @@ import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import com.reedsloan.beekeepingapp.data.local.hive.HiveInspection
 import com.reedsloan.beekeepingapp.presentation.viewmodel.HiveViewModel
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
+import java.time.LocalDate
+import kotlin.time.Duration.Companion.days
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -153,8 +153,7 @@ fun InspectionListItem(
                     .zIndex(3F)
                     .padding(8.dp)
                     .indication(
-                        interactionSource = dropdownInteractionSource,
-                        indication = rememberRipple()
+                        interactionSource = dropdownInteractionSource, indication = rememberRipple()
                     )
                     .pointerInput(true) {
                         detectTapGestures(
@@ -167,8 +166,7 @@ fun InspectionListItem(
                                 dropdownInteractionSource.emit(PressInteraction.Release(press))
                             },
                         )
-                    }
-                ) {
+                    }) {
                     Icon(Icons.Filled.MoreVert, contentDescription = "More")
                     DropdownMenu(expanded = isContextMenuVisible,
                         offset = pressOffset.value,
@@ -192,12 +190,30 @@ fun InspectionListItem(
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(100.dp)
+                    .padding(16.dp)
             ) {
-                Text(text = inspection.date, style = MaterialTheme.typography.titleLarge)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = inspection.date, style = MaterialTheme.typography.titleLarge)
+                    // how many days ago was this
+                    val daysAgo = (LocalDate.now().toEpochDay() - LocalDate.parse(inspection.date)
+                        .toEpochDay()).days.inWholeDays
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = when {
+                            daysAgo < -1L -> "${-daysAgo} days ago"
+                            daysAgo == -1L -> "Tomorrow"
+                            daysAgo == 0L -> "Today"
+                            daysAgo == 1L -> "Yesterday"
+                            else -> "$daysAgo days ago"
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 Text(
-                    text = inspection.notes,
+                    text = inspection.notes ?: "No notes added.",
                     style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
+                    modifier = Modifier.padding(top = 8.dp)
                 )
             }
         }
