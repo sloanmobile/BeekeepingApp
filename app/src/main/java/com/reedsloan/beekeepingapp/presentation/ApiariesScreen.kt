@@ -7,6 +7,5 @@ import com.reedsloan.beekeepingapp.presentation.viewmodel.HiveViewModel
 
 @Composable
 fun ApiariesScreen(navController: NavHostController, hiveViewModel: HiveViewModel) {
-    Column {
-    }
+
 }
