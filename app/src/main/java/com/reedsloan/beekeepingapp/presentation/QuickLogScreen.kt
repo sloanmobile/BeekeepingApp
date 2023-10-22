@@ -57,7 +57,8 @@ import com.reedsloan.beekeepingapp.data.local.hive.Population
 import com.reedsloan.beekeepingapp.data.local.hive.QueenCells
 import com.reedsloan.beekeepingapp.data.local.hive.QueenMarker
 import com.reedsloan.beekeepingapp.data.local.hive.Temperament
-import com.reedsloan.beekeepingapp.data.local.hive.Weather
+import com.reedsloan.beekeepingapp.data.local.hive.WeatherCondition
+import com.reedsloan.beekeepingapp.data.local.hive.WindSpeed
 import com.reedsloan.beekeepingapp.presentation.common.DataEntryChip
 import com.reedsloan.beekeepingapp.presentation.viewmodel.HiveViewModel
 import java.time.YearMonth
@@ -117,9 +118,22 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
         LazyColumn(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp)
         ) {
             item {
+                // Category for Hive Info title
+                Text(
+                    text = "Hive Info",
+                    style = MaterialTheme.typography.titleLarge,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(vertical = 16.dp).background(
+                        MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                        shape = MaterialTheme.shapes.medium
+                    ).fillMaxWidth()
+                )
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = "Date: ",
@@ -209,6 +223,98 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                     maxLines = 12,
                 )
 
+                // Weather category
+                Text(
+                    text = "Weather",
+                    style = MaterialTheme.typography.titleLarge,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(vertical = 16.dp).background(
+                        MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                        shape = MaterialTheme.shapes.medium
+                    ).fillMaxWidth()
+                )
+
+                // weather
+                DataEntryChip(title = "Conditions",
+                    selectedValue = inspection.hiveConditions.weatherCondition,
+                    enumClass = WeatherCondition::class.java,
+                    onChipSelected = {
+                        hiveViewModel.updateSelectedInspection(
+                            inspection.copy(
+                                hiveConditions = inspection.hiveConditions.copy(
+                                    weatherCondition = it
+                                )
+                            )
+                        )
+                    })
+                Row {
+                    // temperature (text field)
+                    TextField(
+                        value = inspection.hiveConditions.temperatureFahrenheit?.toString() ?: "",
+                        onValueChange = {
+                            hiveViewModel.updateSelectedInspection(
+                                inspection.copy(
+                                    hiveConditions = inspection.hiveConditions.copy(
+                                        temperatureFahrenheit = it.toDoubleOrNull()
+                                    )
+                                )
+                            )
+                        },
+                        label = { Text("Temperature") },
+                        modifier = Modifier.fillMaxWidth().weight(1f).padding(start = 16.dp, end = 8.dp),
+                        singleLine = true,
+                        maxLines = 1,
+                        // set keyboard to number
+                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+                    )
+
+                    // humidity (text field number)
+                    TextField(
+                        value = inspection.hiveConditions.humidity?.toString() ?: "",
+                        onValueChange = {
+                            hiveViewModel.updateSelectedInspection(
+                                inspection.copy(
+                                    hiveConditions = inspection.hiveConditions.copy(
+                                        humidity = it.toDoubleOrNull()
+                                    )
+                                )
+                            )
+                        },
+                        label = { Text("Humidity") },
+                        modifier = Modifier.fillMaxWidth().weight(1f).padding(start = 8.dp, end = 16.dp),
+                        singleLine = true,
+                        maxLines = 1,
+                        // set keyboard to number
+                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+                    )
+                }
+
+                // wind amount
+                DataEntryChip(title = "Wind Speed",
+                    selectedValue = inspection.hiveConditions.windSpeed,
+                    enumClass = WindSpeed::class.java,
+                    onChipSelected = {
+                        hiveViewModel.updateSelectedInspection(
+                            inspection.copy(
+                                hiveConditions = inspection.hiveConditions.copy(
+                                    windSpeed = it
+                                )
+                            )
+                        )
+                    })
+
+                // Hive conditions category
+                Text(
+                    text = "Hive Conditions",
+                    style = MaterialTheme.typography.titleLarge,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(vertical = 16.dp).background(
+                        MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                        shape = MaterialTheme.shapes.medium
+                    ).fillMaxWidth()
+                )
+
+
                 DataEntryChip(title = "Odor",
                     selectedValue = inspection.hiveConditions.odor,
                     enumClass = Odor::class.java,
@@ -237,14 +343,14 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                     })
 
                 // frames and combs
-                DataEntryChip(title = "Frames and Combs",
-                    selectedValue = inspection.hiveConditions.framesAndCombs,
+                DataEntryChip(title = "Frames",
+                    selectedValue = inspection.hiveConditions.frames,
                     enumClass = FramesAndCombs::class.java,
                     onChipSelected = {
                         hiveViewModel.updateSelectedInspection(
                             inspection.copy(
                                 hiveConditions = inspection.hiveConditions.copy(
-                                    framesAndCombs = it
+                                    frames = it
                                 )
                             )
                         )
@@ -361,40 +467,6 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                             )
                         )
                     })
-
-                // weather
-                DataEntryChip(title = "Weather",
-                    selectedValue = inspection.hiveConditions.weather,
-                    enumClass = Weather::class.java,
-                    onChipSelected = {
-                        hiveViewModel.updateSelectedInspection(
-                            inspection.copy(
-                                hiveConditions = inspection.hiveConditions.copy(
-                                    weather = it
-                                )
-                            )
-                        )
-                    })
-
-                // temperature (text field)
-                TextField(
-                    value = inspection.hiveConditions.temperatureFahrenheit?.toString() ?: "",
-                    onValueChange = {
-                        hiveViewModel.updateSelectedInspection(
-                            inspection.copy(
-                                hiveConditions = inspection.hiveConditions.copy(
-                                    temperatureFahrenheit = it.toDoubleOrNull()
-                                )
-                            )
-                        )
-                    },
-                    label = { Text("Temperature") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    maxLines = 1,
-                    // set keyboard to number
-                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                )
             }
         }
     }

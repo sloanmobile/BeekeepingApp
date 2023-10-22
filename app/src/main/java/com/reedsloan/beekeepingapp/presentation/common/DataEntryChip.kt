@@ -1,6 +1,8 @@
 package com.reedsloan.beekeepingapp.presentation.common
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +15,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -35,39 +38,37 @@ fun <T : Enum<T>> DataEntryChip(
     onChipSelected: (T?) -> Unit,
     title: String? = null
 ) {
-    if (title != null) {
-        Text(
-            text = title,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-        )
-    }
-    Row(
+    Column(
+        horizontalAlignment = Alignment.Start, modifier = Modifier
+            .padding(4.dp)
     ) {
-        LazyHorizontalStaggeredGrid(
-            rows = StaggeredGridCells.Adaptive(48.dp),
-            modifier = Modifier
-                .padding(4.dp)
-                .height(48.dp)
-                .fillMaxWidth(),
-            contentPadding = PaddingValues(4.dp),
-            horizontalItemSpacing = 4.dp,
+        TitleForChip(title)
+        Row(
         ) {
-            items(enumClass.enumConstants?.size ?: 0) { index ->
-                val enumValue = enumClass.enumConstants?.get(index)
-                FilterChip(
-                    selected = selectedValue == enumValue,
-                    onClick = {
-                        onChipSelected(enumValue)
-                    },
-                    label = {
-                        val firstPropertyName = enumClass.declaredFields.first().name
-                        val field = enumValue!!.javaClass.getDeclaredField(firstPropertyName)
-                        field.isAccessible = true
-                        val displayValue = field.get(enumValue) as String
-                        Text(text = displayValue)
-                    }
-                )
+            LazyHorizontalStaggeredGrid(
+                rows = StaggeredGridCells.Adaptive(48.dp),
+                modifier = Modifier
+                    .height(48.dp)
+                    .fillMaxWidth(),
+                contentPadding = PaddingValues(4.dp),
+                horizontalItemSpacing = 4.dp,
+            ) {
+                items(enumClass.enumConstants?.size ?: 0) { index ->
+                    val enumValue = enumClass.enumConstants?.get(index)
+                    FilterChip(
+                        selected = selectedValue == enumValue,
+                        onClick = {
+                            onChipSelected(enumValue)
+                        },
+                        label = {
+                            val firstPropertyName = enumClass.declaredFields.first().name
+                            val field = enumValue!!.javaClass.getDeclaredField(firstPropertyName)
+                            field.isAccessible = true
+                            val displayValue = field.get(enumValue) as String
+                            Text(text = displayValue)
+                        }
+                    )
+                }
             }
         }
     }
@@ -89,36 +90,42 @@ fun DataEntryChip(
     onChipSelected: (String?) -> Unit,
     title: String? = null
 ) {
+    Column(horizontalAlignment = Alignment.Start) {
+        TitleForChip(title)
+        Row(
+        ) {
+            LazyHorizontalStaggeredGrid(
+                rows = StaggeredGridCells.Adaptive(48.dp),
+                modifier = Modifier
+                    .padding(4.dp)
+                    .height(48.dp)
+                    .fillMaxWidth(),
+                contentPadding = PaddingValues(4.dp),
+                horizontalItemSpacing = 4.dp,
+            ) {
+                items(stringValues) { value ->
+                    FilterChip(
+                        selected = selectedValue == value,
+                        onClick = {
+                            onChipSelected(value)
+                        },
+                        label = {
+                            Text(text = value)
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TitleForChip(title: String?) {
     if (title != null) {
         Text(
             text = title,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
+            fontSize = 20.sp,
         )
-    }
-    Row(
-    ) {
-        LazyHorizontalStaggeredGrid(
-            rows = StaggeredGridCells.Adaptive(48.dp),
-            modifier = Modifier
-                .padding(4.dp)
-                .height(48.dp)
-                .fillMaxWidth(),
-            contentPadding = PaddingValues(4.dp),
-            horizontalItemSpacing = 4.dp,
-        ) {
-            items(stringValues) { value ->
-                FilterChip(
-                    selected = selectedValue == value,
-                    onClick = {
-                        onChipSelected(value)
-                    },
-                    label = {
-                        Text(text = value)
-                    }
-                )
-            }
-        }
     }
 }
 
@@ -138,39 +145,36 @@ fun MultiDataEntryChip(
     onChipSelected: (List<String>) -> Unit,
     title: String? = null
 ) {
-    if (title != null) {
-        Text(
-            text = title,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-        )
-    }
-    Row(
-    ) {
-        LazyHorizontalStaggeredGrid(
-            rows = StaggeredGridCells.Adaptive(48.dp),
-            modifier = Modifier
-                .padding(4.dp)
-                .height(48.dp)
-                .fillMaxWidth(),
-            contentPadding = PaddingValues(4.dp),
-            horizontalItemSpacing = 4.dp,
+    Column(horizontalAlignment = Alignment.Start) {
+
+        TitleForChip(title)
+        Row(
         ) {
-            items(stringValues) { value ->
-                FilterChip(
-                    selected = selectedValues.contains(value),
-                    onClick = {
-                        val updatedSelection = if (selectedValues.contains(value)) {
-                            selectedValues.filter { it != value }
-                        } else {
-                            selectedValues + value
+            LazyHorizontalStaggeredGrid(
+                rows = StaggeredGridCells.Adaptive(48.dp),
+                modifier = Modifier
+                    .padding(4.dp)
+                    .height(48.dp)
+                    .fillMaxWidth(),
+                contentPadding = PaddingValues(4.dp),
+                horizontalItemSpacing = 4.dp,
+            ) {
+                items(stringValues) { value ->
+                    FilterChip(
+                        selected = selectedValues.contains(value),
+                        onClick = {
+                            val updatedSelection = if (selectedValues.contains(value)) {
+                                selectedValues.filter { it != value }
+                            } else {
+                                selectedValues + value
+                            }
+                            onChipSelected(updatedSelection)
+                        },
+                        label = {
+                            Text(text = value)
                         }
-                        onChipSelected(updatedSelection)
-                    },
-                    label = {
-                        Text(text = value)
-                    }
-                )
+                    )
+                }
             }
         }
     }
@@ -192,13 +196,7 @@ fun <T : Enum<T>> DataEntryChip(
     onChipSelected: (List<T?>) -> Unit,
     title: String? = null
 ) {
-    if (title != null) {
-        Text(
-            text = title,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-        )
-    }
+    TitleForChip(title = title)
     Row(
     ) {
         LazyHorizontalStaggeredGrid(
@@ -234,6 +232,7 @@ fun <T : Enum<T>> DataEntryChip(
         }
     }
 }
+
 /**
  * Composable function for displaying a row of selectable filter chips for data entry.
  *
