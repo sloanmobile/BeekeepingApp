@@ -653,7 +653,8 @@ class HiveViewModel @Inject constructor(
             hiveConditions = HiveConditions(),
             hiveHealth = HiveHealth(),
             feeding = HiveFeeding(),
-            localPhotoUris = emptyList()
+            localPhotoUris = emptyList(),
+            hiveTreatments = emptyList(),
         )
     }
 

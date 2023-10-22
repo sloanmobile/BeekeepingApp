@@ -9,6 +9,7 @@ data class HiveInspection(
     val date: String,
     val hiveConditions: HiveConditions,
     val hiveHealth: HiveHealth,
+    val hiveTreatments: List<Treatment?>,
     val feeding: HiveFeeding,
     val localPhotoUris: List<String> = emptyList(),
     val notes: String? = null,

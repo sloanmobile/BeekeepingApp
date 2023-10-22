@@ -249,44 +249,40 @@ fun <T : Enum<T>> MultiDataEntryChip(
     onChipSelected: (List<T?>) -> Unit,
     title: String? = null
 ) {
-    if (title != null) {
-        Text(
-            text = title,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-        )
-    }
-    Row(
-    ) {
-        LazyHorizontalStaggeredGrid(
-            rows = StaggeredGridCells.Adaptive(48.dp),
-            modifier = Modifier
-                .padding(4.dp)
-                .height(48.dp)
-                .fillMaxWidth(),
-            contentPadding = PaddingValues(4.dp),
-            horizontalItemSpacing = 4.dp,
+    Column(horizontalAlignment = Alignment.Start) {
+        TitleForChip(title = title)
+        Row(
         ) {
-            items(enumClass.enumConstants?.size ?: 0) { index ->
-                val enumValue = enumClass.enumConstants?.get(index)
-                FilterChip(
-                    selected = selectedValues.contains(enumValue),
-                    onClick = {
-                        val updatedSelection = if (selectedValues.contains(enumValue)) {
-                            selectedValues.filter { it != enumValue }
-                        } else {
-                            selectedValues + enumValue
+            LazyHorizontalStaggeredGrid(
+                rows = StaggeredGridCells.Adaptive(48.dp),
+                modifier = Modifier
+                    .padding(4.dp)
+                    .height(48.dp)
+                    .fillMaxWidth(),
+                contentPadding = PaddingValues(4.dp),
+                horizontalItemSpacing = 4.dp,
+            ) {
+                items(enumClass.enumConstants?.size ?: 0) { index ->
+                    val enumValue = enumClass.enumConstants?.get(index)
+                    FilterChip(
+                        selected = selectedValues.contains(enumValue),
+                        onClick = {
+                            val updatedSelection = if (selectedValues.contains(enumValue)) {
+                                selectedValues.filter { it != enumValue }
+                            } else {
+                                selectedValues + enumValue
+                            }
+                            onChipSelected(updatedSelection)
+                        },
+                        label = {
+                            val firstPropertyName = enumClass.declaredFields.first().name
+                            val field = enumValue!!.javaClass.getDeclaredField(firstPropertyName)
+                            field.isAccessible = true
+                            val displayValue = field.get(enumValue) as String
+                            Text(text = displayValue)
                         }
-                        onChipSelected(updatedSelection)
-                    },
-                    label = {
-                        val firstPropertyName = enumClass.declaredFields.first().name
-                        val field = enumValue!!.javaClass.getDeclaredField(firstPropertyName)
-                        field.isAccessible = true
-                        val displayValue = field.get(enumValue) as String
-                        Text(text = displayValue)
-                    }
-                )
+                    )
+                }
             }
         }
     }

@@ -51,15 +51,20 @@ import com.reedsloan.beekeepingapp.data.local.hive.BroodStage
 import com.reedsloan.beekeepingapp.data.local.hive.EquipmentCondition
 import com.reedsloan.beekeepingapp.data.local.hive.FoundationType
 import com.reedsloan.beekeepingapp.data.local.hive.FramesAndCombs
+import com.reedsloan.beekeepingapp.data.local.hive.HiveDisease
+import com.reedsloan.beekeepingapp.data.local.hive.HiveTreatment
+import com.reedsloan.beekeepingapp.data.local.hive.IPM
 import com.reedsloan.beekeepingapp.data.local.hive.LayingPattern
 import com.reedsloan.beekeepingapp.data.local.hive.Odor
 import com.reedsloan.beekeepingapp.data.local.hive.Population
 import com.reedsloan.beekeepingapp.data.local.hive.QueenCells
 import com.reedsloan.beekeepingapp.data.local.hive.QueenMarker
 import com.reedsloan.beekeepingapp.data.local.hive.Temperament
+import com.reedsloan.beekeepingapp.data.local.hive.Treatment
 import com.reedsloan.beekeepingapp.data.local.hive.WeatherCondition
 import com.reedsloan.beekeepingapp.data.local.hive.WindSpeed
 import com.reedsloan.beekeepingapp.presentation.common.DataEntryChip
+import com.reedsloan.beekeepingapp.presentation.common.MultiDataEntryChip
 import com.reedsloan.beekeepingapp.presentation.viewmodel.HiveViewModel
 import java.time.YearMonth
 
@@ -128,10 +133,13 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                     text = "Hive Info",
                     style = MaterialTheme.typography.titleLarge,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(vertical = 16.dp).background(
-                        MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                        shape = MaterialTheme.shapes.medium
-                    ).fillMaxWidth()
+                    modifier = Modifier
+                        .padding(vertical = 16.dp)
+                        .background(
+                            MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                            shape = MaterialTheme.shapes.medium
+                        )
+                        .fillMaxWidth()
                 )
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -228,10 +236,13 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                     text = "Weather",
                     style = MaterialTheme.typography.titleLarge,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(vertical = 16.dp).background(
-                        MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                        shape = MaterialTheme.shapes.medium
-                    ).fillMaxWidth()
+                    modifier = Modifier
+                        .padding(vertical = 16.dp)
+                        .background(
+                            MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                            shape = MaterialTheme.shapes.medium
+                        )
+                        .fillMaxWidth()
                 )
 
                 // weather
@@ -261,7 +272,10 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                             )
                         },
                         label = { Text("Temperature") },
-                        modifier = Modifier.fillMaxWidth().weight(1f).padding(start = 16.dp, end = 8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .padding(start = 16.dp, end = 8.dp),
                         singleLine = true,
                         maxLines = 1,
                         // set keyboard to number
@@ -281,7 +295,10 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                             )
                         },
                         label = { Text("Humidity") },
-                        modifier = Modifier.fillMaxWidth().weight(1f).padding(start = 8.dp, end = 16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .padding(start = 8.dp, end = 16.dp),
                         singleLine = true,
                         maxLines = 1,
                         // set keyboard to number
@@ -308,10 +325,13 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                     text = "Hive Conditions",
                     style = MaterialTheme.typography.titleLarge,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(vertical = 16.dp).background(
-                        MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                        shape = MaterialTheme.shapes.medium
-                    ).fillMaxWidth()
+                    modifier = Modifier
+                        .padding(vertical = 16.dp)
+                        .background(
+                            MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                            shape = MaterialTheme.shapes.medium
+                        )
+                        .fillMaxWidth()
                 )
 
 
@@ -467,6 +487,51 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                             )
                         )
                     })
+
+
+                // Diseases and treatments category
+                Text(
+                    text = "Diseases and Treatments",
+                    style = MaterialTheme.typography.titleLarge,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .padding(vertical = 16.dp)
+                        .background(
+                            MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                            shape = MaterialTheme.shapes.medium
+                        )
+                        .fillMaxWidth()
+                )
+
+                // diseases (select many)
+                MultiDataEntryChip(
+                    title = "Diseases (select many)",
+                    enumClass = HiveDisease::class.java,
+                    selectedValues = inspection.hiveHealth.diseases,
+                    onChipSelected = {
+                        hiveViewModel.updateSelectedInspection(
+                            inspection.copy(
+                                hiveHealth = inspection.hiveHealth.copy(
+                                    diseases = it
+                                )
+                            )
+                        )
+                    })
+
+
+                // treatments (select many)
+                MultiDataEntryChip(
+                    title = "Treatments (select many)",
+                    enumClass = Treatment::class.java,
+                    selectedValues = inspection.hiveTreatments,
+                    onChipSelected = {
+                        hiveViewModel.updateSelectedInspection(
+                            inspection.copy(
+                                hiveTreatments = it
+                            )
+                        )
+                    },
+                )
             }
         }
     }

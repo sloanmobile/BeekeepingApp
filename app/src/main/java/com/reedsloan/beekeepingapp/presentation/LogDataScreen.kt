@@ -134,7 +134,8 @@ fun LogDataScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                                 hiveConditions = HiveConditions(),
                                 hiveHealth = HiveHealth(),
                                 feeding = HiveFeeding(),
-                                localPhotoUris = emptyList()
+                                localPhotoUris = emptyList(),
+                                hiveTreatments = emptyList(),
                             )
                             hiveViewModel.updateSelectedInspection(newHiveInspection)
                         })
