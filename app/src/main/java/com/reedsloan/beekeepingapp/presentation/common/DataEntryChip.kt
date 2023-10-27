@@ -1,13 +1,14 @@
 package com.reedsloan.beekeepingapp.presentation.common
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.staggeredgrid.LazyHorizontalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
@@ -17,7 +18,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -36,13 +36,14 @@ fun <T : Enum<T>> DataEntryChip(
     enumClass: Class<T>,
     selectedValue: T?,
     onChipSelected: (T?) -> Unit,
-    title: String? = null
+    title: String? = null,
+    icon: @Composable (() -> Unit)? = null
 ) {
     Column(
         horizontalAlignment = Alignment.Start, modifier = Modifier
             .padding(4.dp)
     ) {
-        TitleForChip(title)
+        TitleForChip(title, icon)
         Row(
         ) {
             LazyHorizontalStaggeredGrid(
@@ -88,10 +89,11 @@ fun DataEntryChip(
     stringValues: List<String>,
     selectedValue: String?,
     onChipSelected: (String?) -> Unit,
-    title: String? = null
+    title: String? = null,
+    icon: @Composable (() -> Unit)? = null
 ) {
     Column(horizontalAlignment = Alignment.Start) {
-        TitleForChip(title)
+        TitleForChip(title, icon)
         Row(
         ) {
             LazyHorizontalStaggeredGrid(
@@ -120,12 +122,16 @@ fun DataEntryChip(
 }
 
 @Composable
-fun TitleForChip(title: String?) {
+fun TitleForChip(title: String?, icon: @Composable() (() -> Unit)?) {
     if (title != null) {
-        Text(
-            text = title,
-            fontSize = 20.sp,
-        )
+        Row(modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp)) {
+            icon?.invoke()
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = title,
+                fontSize = 20.sp,
+            )
+        }
     }
 }
 
@@ -143,11 +149,12 @@ fun MultiDataEntryChip(
     stringValues: List<String>,
     selectedValues: List<String>,
     onChipSelected: (List<String>) -> Unit,
-    title: String? = null
+    title: String? = null,
+    icon: @Composable (() -> Unit)? = null
 ) {
     Column(horizontalAlignment = Alignment.Start) {
 
-        TitleForChip(title)
+        TitleForChip(title, icon)
         Row(
         ) {
             LazyHorizontalStaggeredGrid(
@@ -194,9 +201,10 @@ fun <T : Enum<T>> DataEntryChip(
     enumClass: Class<T>,
     selectedValues: List<T>,
     onChipSelected: (List<T?>) -> Unit,
-    title: String? = null
+    title: String? = null,
+    icon: @Composable (() -> Unit)? = null
 ) {
-    TitleForChip(title = title)
+    TitleForChip(title = title, icon = icon)
     Row(
     ) {
         LazyHorizontalStaggeredGrid(
@@ -247,10 +255,11 @@ fun <T : Enum<T>> MultiDataEntryChip(
     enumClass: Class<T>,
     selectedValues: List<T?>,
     onChipSelected: (List<T?>) -> Unit,
-    title: String? = null
+    title: String? = null,
+    icon: @Composable (() -> Unit)? = null
 ) {
     Column(horizontalAlignment = Alignment.Start) {
-        TitleForChip(title = title)
+        TitleForChip(title = title, icon = icon)
         Row(
         ) {
             LazyHorizontalStaggeredGrid(

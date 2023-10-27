@@ -18,11 +18,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Air
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Thermostat
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -48,6 +51,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
@@ -224,6 +228,7 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                 }
 
                 HiveLogSection(title = "Weather") {
+                    HorizontalDivider()
                     // weather
                     DataEntryChip(title = "Conditions",
                         selectedValue = inspection.hiveConditions.weatherCondition,
@@ -236,8 +241,23 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                                     )
                                 )
                             )
-                        })
-                    Row {
+                        },
+                        icon = {
+                            Icon(Icons.Default.Cloud, contentDescription = "Cloud")
+                        }
+                    )
+                    HorizontalDivider()
+                    Column {
+
+                    Row(modifier = Modifier.padding(vertical = 8.dp)) {
+                        Icon(Icons.Default.Thermostat, contentDescription = "Thermometer")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Temperature and Humidity",
+                            fontSize = 20.sp
+                        )
+                    }
+                    Row(Modifier.padding(horizontal = 8.dp)) {
                         // temperature (text field)
                         OutlinedTextField(
                             value = inspection.hiveConditions.temperatureFahrenheit?.toString()
@@ -259,13 +279,14 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                             label = { Text("Temperature") },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .weight(1f)
-                                .padding(start = 16.dp, end = 8.dp),
+                                .weight(1f),
                             singleLine = true,
                             maxLines = 1,
                             // set keyboard to number
                             keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
                         )
+
+                        Spacer(modifier = Modifier.width(8.dp))
 
                         // humidity (text field number)
                         OutlinedTextField(
@@ -286,14 +307,14 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                             label = { Text("Humidity") },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .weight(1f)
-                                .padding(start = 8.dp, end = 16.dp),
+                                .weight(1f),
                             singleLine = true,
                             maxLines = 1,
                             // set keyboard to number
                             keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
                         )
-                    }
+                    }}
+                    HorizontalDivider()
 
                     // wind amount
                     DataEntryChip(title = "Wind Speed",
@@ -307,7 +328,13 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                                     )
                                 )
                             )
-                        })
+                        },
+                        icon = {
+                            Icon(Icons.Default.Air, contentDescription = "Edit Hive Details")
+                        }
+                    )
+                    HorizontalDivider()
+
                 }
 
                 HiveLogSection(title = "Hive Conditions") {

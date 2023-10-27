@@ -799,4 +799,8 @@ class HiveViewModel @Inject constructor(
     fun onTapDeleteInspectionButton(inspection: HiveInspection) {
         removeHiveDataEntry(inspection)
     }
+
+    fun onTapManageHoneyButton(navController: NavController) {
+        TODO()
+    }
 }
