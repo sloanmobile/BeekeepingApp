@@ -80,7 +80,7 @@ class MainActivity : ComponentActivity() {
                                     LogDataScreen(navController, hiveViewModel)
                                 }
                                 composable(
-                                    route = Screen.QuickLogScreen.route,
+                                    route = Screen.LogInspectionScreen.route,
                                 ) {
                                     QuickLogScreen(navController, hiveViewModel)
                                 }

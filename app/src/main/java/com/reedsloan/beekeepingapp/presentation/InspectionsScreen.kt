@@ -153,7 +153,8 @@ fun InspectionListItem(
                     .zIndex(3F)
                     .padding(8.dp)
                     .indication(
-                        interactionSource = dropdownInteractionSource, indication = rememberRipple()
+                        interactionSource = dropdownInteractionSource,
+                        indication = rememberRipple()
                     )
                     .pointerInput(true) {
                         detectTapGestures(
@@ -212,7 +213,10 @@ fun InspectionListItem(
                 }
                 Text(
                     text = inspection.notes ?: "No notes added.",
-                    style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
+                    style = MaterialTheme
+                        .typography
+                        .bodyMedium
+                        .copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
                     modifier = Modifier.padding(top = 8.dp)
                 )
             }

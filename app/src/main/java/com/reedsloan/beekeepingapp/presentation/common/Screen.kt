@@ -13,7 +13,7 @@ enum class Screen(val route: String, val displayText: String, val icon: ImageVec
     SettingsScreen("settings_screen", "Settings", Icons.Rounded.Settings),
     SplashScreen("splash_screen", "Splash", Icons.Rounded.Home, false),
     LogDataScreen("log_data_screen", "Log Data", Icons.Rounded.Hive, false),
-    QuickLogScreen("quick_log_screen", "Quick Log", Icons.Rounded.Hive, false),
+    LogInspectionScreen("log_inspection_screen", "Log Inspection", Icons.Rounded.Hive, false),
     HiveDetailsScreen("hive_details_screen", "Hive Details", Icons.Rounded.Hive, false),
     InspectionsScreen("inspection_screen", "Inspections", Icons.Rounded.Hive, false),
     TasksScreen("tasks_screen", "Tasks", Icons.Rounded.Hive, false),
