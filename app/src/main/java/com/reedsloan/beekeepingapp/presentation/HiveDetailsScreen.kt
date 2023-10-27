@@ -61,12 +61,14 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.reedsloan.beekeepingapp.R
 import com.reedsloan.beekeepingapp.presentation.common.PermissionDialog
 import com.reedsloan.beekeepingapp.presentation.viewmodel.HiveViewModel
 
@@ -419,6 +421,13 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
                     })
 
                 Spacer(modifier = Modifier.height(16.dp))
+                // Manage honey action
+                HiveDetailsAction(title = "Manage Honey",
+                    description = "View and edit honey",
+                    icon = R.drawable.ic_honey,
+                    onClick = {
+                        hiveViewModel.onTapManageHoneyButton(navController)
+                    })
             }
         }
     }
@@ -454,6 +463,45 @@ fun HiveDetailsAction(title: String, description: String, icon: ImageVector, onC
             }
             Icon(
                 imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(56.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HiveDetailsAction(title: String, description: String, icon: Int, onClick: () -> Unit) {
+    ElevatedCard(
+        onClick = onClick,
+        modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .height(112.dp)
+            .fillMaxWidth()
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(text = title, style = MaterialTheme.typography.titleLarge)
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodyMedium
+                        .copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
+                )
+            }
+            Icon(
+                painter = painterResource(id = icon),
                 contentDescription = null,
                 modifier = Modifier
                     .size(56.dp),
