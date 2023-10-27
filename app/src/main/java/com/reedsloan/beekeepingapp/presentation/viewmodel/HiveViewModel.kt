@@ -653,7 +653,9 @@ class HiveViewModel @Inject constructor(
     ) {
         // do nothing if the user deletes a decimal or adds a second decimal
         // this is a hacky way to prevent the user from entering a decimal
-        if (updatedString.contains("..") || !updatedString.contains(".")) {
+        if ((updatedString.contains("..") || !updatedString.contains("."))
+            && previousString != ""
+        ) {
             return
         }
 
