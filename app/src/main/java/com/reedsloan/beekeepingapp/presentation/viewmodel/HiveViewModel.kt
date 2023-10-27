@@ -646,6 +646,26 @@ class HiveViewModel @Inject constructor(
         }
     }
 
+    fun onDoubleValueChange(
+        previousString: String,
+        updatedString: String,
+        function: (Double) -> Unit
+    ) {
+        // do nothing if the user deletes a decimal or adds a second decimal
+        // this is a hacky way to prevent the user from entering a decimal
+        if (updatedString.contains("..") || !updatedString.contains(".")) {
+            return
+        }
+
+        if (updatedString.toDoubleOrNull() == null) {
+            function(0.0)
+        } else if (previousString.toDoubleOrNull() == 0.0) {
+            function(updatedString.first().toString().toDouble())
+        } else {
+            function(updatedString.toDouble())
+        }
+    }
+
     private fun getDefaultInspection(): HiveInspection {
         return HiveInspection(
             hiveId = state.value.selectedHive?.id ?: "",
@@ -771,7 +791,7 @@ class HiveViewModel @Inject constructor(
     fun onTapInspectionButton(inspection: HiveInspection, navController: NavController) {
         updateSelectedInspection(inspection)
         closeOpenMenus()
-        navController.navigate(Screen.QuickLogScreen.route)
+        navController.navigate(Screen.LogInspectionScreen.route)
     }
 
     fun onTapDeleteInspectionButton(inspection: HiveInspection) {
