@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.rounded.Hive
@@ -427,6 +428,15 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
                     icon = R.drawable.ic_honey,
                     onClick = {
                         hiveViewModel.onTapManageHoneyButton(navController)
+                    })
+
+                Spacer(modifier = Modifier.height(16.dp))
+                // Export to CSV action
+                HiveDetailsAction(title = "Export to CSV",
+                    description = "Export hive data to CSV",
+                    icon = Icons.Default.IosShare,
+                    onClick = {
+                        hiveViewModel.onTapExportToCsvButton()
                     })
             }
         }

@@ -71,6 +71,7 @@ import com.reedsloan.beekeepingapp.data.local.hive.Treatment
 import com.reedsloan.beekeepingapp.data.local.hive.WeatherCondition
 import com.reedsloan.beekeepingapp.data.local.hive.WindSpeed
 import com.reedsloan.beekeepingapp.presentation.common.DataEntryChip
+import com.reedsloan.beekeepingapp.presentation.common.Divider
 import com.reedsloan.beekeepingapp.presentation.common.MultiDataEntryChip
 import com.reedsloan.beekeepingapp.presentation.viewmodel.HiveViewModel
 import java.time.YearMonth
@@ -93,7 +94,7 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
         firstDayOfWeek = firstDayOfWeek
     )
 
-    var showDatePicker by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(true) }
     val inspection = state.selectedHiveInspection ?: return
 
     Column {
@@ -136,82 +137,42 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
         ) {
             item {
                 HiveLogSection(title = "Hive Info") {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "Date: ",
-                            style = MaterialTheme.typography.titleLarge,
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
-                            text = inspection.date,
-                            style = MaterialTheme.typography.titleLarge,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.width(16.dp))
-                        ElevatedButton(
-                            onClick = {
-                                showDatePicker = !showDatePicker
-                            },
-                            contentPadding = PaddingValues(16.dp),
-                            shape = MaterialTheme.shapes.medium
-                        ) {
-                            Icon(Icons.Filled.CalendarMonth, contentDescription = null)
-                        }
-                    }
+                    HorizontalDivider()
+                    HorizontalCalendar(
+                        state = calendarState,
+                        dayContent = { calendarDay ->
+                            val currentHiveDataEntries =
+                                state.selectedHive?.hiveInspections ?: emptyList()
 
-                    val context = LocalContext.current
-                    if (showDatePicker) {
-                        HorizontalCalendar(
-                            state = calendarState,
-                            dayContent = { calendarDay ->
-                                val currentHiveDataEntries =
-                                    state.selectedHive?.hiveInspections ?: emptyList()
+                            val isSelected = calendarDay.date.toString() == inspection.date
 
-                                val isSelected = calendarDay.date.toString() == inspection.date
+                            val hasDataEntry =
+                                currentHiveDataEntries.filter { it.id != inspection.id }.any {
+                                    it.date == calendarDay.date.toString()
+                                }
 
-                                val hasDataEntry =
-                                    currentHiveDataEntries.filter { it.id != inspection.id }.any {
-                                            it.date == calendarDay.date.toString()
-                                        }
-
-                                Day(day = calendarDay,
-                                    isSelected = isSelected,
-                                    hasDataEntry = hasDataEntry,
-                                    onClick = { day ->
-                                        // update the selected data entry
-                                        currentHiveDataEntries.firstOrNull { it.date == day.date.toString() }
-                                            .let { existingDataEntry ->
-                                                if (existingDataEntry == null) {
-                                                    hiveViewModel.updateSelectedInspection(
-                                                        inspection.copy(
-                                                            date = day.date.toString()
-                                                        )
-                                                    )
-                                                    showDatePicker = false
-                                                } else {
-                                                    Toast.makeText(
-                                                        context,
-                                                        "Data entry already exists for this date",
-                                                        Toast.LENGTH_SHORT
-                                                    ).show()
-                                                }
-                                            }
-
-                                    })
-                            },
-                            monthHeader = { Month(it) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp)
-                                .background(
-                                    MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                                    shape = MaterialTheme.shapes.medium
-                                ),
-                            contentPadding = PaddingValues(4.dp),
-                        )
-                    }
+                            Day(day = calendarDay,
+                                isSelected = isSelected,
+                                hasDataEntry = hasDataEntry,
+                                onClick = { day ->
+                                    // update the selected data entry
+                                    hiveViewModel.updateSelectedInspection(
+                                        inspection.copy(
+                                            date = day.date.toString()
+                                        )
+                                    )
+                                })
+                        },
+                        monthHeader = { Month(it) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                                shape = MaterialTheme.shapes.medium
+                            ),
+                    )
                     // notes
-                    BasicTextField(
+                    OutlinedTextField(
                         value = inspection.notes ?: "",
                         onValueChange = {
                             hiveViewModel.updateSelectedInspection(
@@ -220,17 +181,20 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                                 )
                             )
                         },
-//                    label = { Text("Notes") },
-                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Inspection notes..." )},
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(128.dp)
+                            .padding(horizontal = 8.dp),
                         singleLine = false,
                         maxLines = 12,
                     )
                 }
 
                 HiveLogSection(title = "Weather") {
-                    HorizontalDivider()
                     // weather
-                    DataEntryChip(title = "Conditions",
+                    DataEntryChip(
+                        title = "Conditions",
                         selectedValue = inspection.hiveConditions.weatherCondition,
                         enumClass = WeatherCondition::class.java,
                         onChipSelected = {
@@ -244,76 +208,80 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                         },
                         icon = {
                             Icon(Icons.Default.Cloud, contentDescription = "Cloud")
-                        }
+                        },
+                        // show the divider on top
+                        divider = Divider(top = true, bottom = true)
                     )
-                    HorizontalDivider()
                     Column {
 
-                    Row(modifier = Modifier.padding(vertical = 8.dp)) {
-                        Icon(Icons.Default.Thermostat, contentDescription = "Thermometer")
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Temperature and Humidity",
-                            fontSize = 20.sp
-                        )
+                        Row(modifier = Modifier.padding(vertical = 8.dp)) {
+                            Icon(Icons.Default.Thermostat, contentDescription = "Thermometer")
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Temperature and Humidity",
+                                fontSize = 20.sp
+                            )
+                        }
+                        Row(Modifier.padding(horizontal = 8.dp)) {
+                            // temperature (text field)
+                            OutlinedTextField(
+                                value = inspection.hiveConditions.temperatureFahrenheit?.toString()
+                                    ?: "",
+                                onValueChange = {
+                                    hiveViewModel.onDoubleValueChange(
+                                        inspection.hiveConditions.temperatureFahrenheit?.toString()
+                                            ?: "", it
+                                    ) { result ->
+                                        hiveViewModel.updateSelectedInspection(
+                                            inspection.copy(
+                                                hiveConditions = inspection.hiveConditions.copy(
+                                                    temperatureFahrenheit = result
+                                                )
+                                            )
+                                        )
+                                    }
+                                },
+                                label = { Text("Temperature") },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f),
+                                singleLine = true,
+                                maxLines = 1,
+                                // set keyboard to number
+                                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+                            )
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            // humidity (text field number)
+                            OutlinedTextField(
+                                value = inspection.hiveConditions.humidity?.toString() ?: "",
+                                onValueChange = {
+                                    hiveViewModel.onDoubleValueChange(
+                                        inspection.hiveConditions.humidity?.toString() ?: "", it
+                                    ) { result ->
+                                        hiveViewModel.updateSelectedInspection(
+                                            inspection.copy(
+                                                hiveConditions = inspection.hiveConditions.copy(
+                                                    humidity = result
+                                                )
+                                            )
+                                        )
+                                    }
+                                },
+                                label = { Text("Humidity") },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f),
+                                singleLine = true,
+                                maxLines = 1,
+                                // set keyboard to number
+                                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+                            )
+                        }
                     }
-                    Row(Modifier.padding(horizontal = 8.dp)) {
-                        // temperature (text field)
-                        OutlinedTextField(
-                            value = inspection.hiveConditions.temperatureFahrenheit?.toString()
-                                ?: "",
-                            onValueChange = {
-                                hiveViewModel.onDoubleValueChange(
-                                    inspection.hiveConditions.temperatureFahrenheit?.toString()
-                                        ?: "", it
-                                ) { result ->
-                                    hiveViewModel.updateSelectedInspection(
-                                        inspection.copy(
-                                            hiveConditions = inspection.hiveConditions.copy(
-                                                temperatureFahrenheit = result
-                                            )
-                                        )
-                                    )
-                                }
-                            },
-                            label = { Text("Temperature") },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f),
-                            singleLine = true,
-                            maxLines = 1,
-                            // set keyboard to number
-                            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                        )
 
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        // humidity (text field number)
-                        OutlinedTextField(
-                            value = inspection.hiveConditions.humidity?.toString() ?: "",
-                            onValueChange = {
-                                hiveViewModel.onDoubleValueChange(
-                                    inspection.hiveConditions.humidity?.toString() ?: "", it
-                                ) { result ->
-                                    hiveViewModel.updateSelectedInspection(
-                                        inspection.copy(
-                                            hiveConditions = inspection.hiveConditions.copy(
-                                                humidity = result
-                                            )
-                                        )
-                                    )
-                                }
-                            },
-                            label = { Text("Humidity") },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f),
-                            singleLine = true,
-                            maxLines = 1,
-                            // set keyboard to number
-                            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                        )
-                    }}
+                    // divider here since we there is no DataEntryChip for wind temperature and humidity
                     HorizontalDivider()
 
                     // wind amount
@@ -331,15 +299,17 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                         },
                         icon = {
                             Icon(Icons.Default.Air, contentDescription = "Edit Hive Details")
-                        }
+                        },
                     )
-                    HorizontalDivider()
+
 
                 }
 
                 HiveLogSection(title = "Hive Conditions") {
 
-                    DataEntryChip(title = "Odor",
+
+                    DataEntryChip(
+                        title = "Odor",
                         selectedValue = inspection.hiveConditions.odor,
                         enumClass = Odor::class.java,
                         onChipSelected = {
@@ -350,7 +320,10 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                                     )
                                 )
                             )
-                        })
+                        },
+                        // show the divider on top
+                        divider = Divider(top = true, bottom = true)
+                    )
 
                     // equipment condition
                     DataEntryChip(title = "Equipment Condition",
@@ -496,7 +469,8 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                 // Diseases and treatments category
                 HiveLogSection(title = "Diseases and Treatments") {
                     // diseases (select many)
-                    MultiDataEntryChip(title = "Diseases (select many)",
+                    MultiDataEntryChip(
+                        title = "Diseases (select many)",
                         enumClass = HiveDisease::class.java,
                         selectedValues = inspection.hiveHealth.diseases,
                         onChipSelected = {
@@ -507,7 +481,9 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                                     )
                                 )
                             )
-                        })
+                        },
+                        divider = Divider(top = true, bottom = true)
+                    )
 
 
                     // treatments (select many)
