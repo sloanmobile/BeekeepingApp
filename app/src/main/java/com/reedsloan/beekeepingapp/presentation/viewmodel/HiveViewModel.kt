@@ -447,8 +447,16 @@ class HiveViewModel @Inject constructor(
             runCatching {
                 hiveRepository.exportToCsv()
             }.onSuccess {
+                // make a toast
+                Toast.makeText(
+                    app, "CSV file saved to $it", Toast.LENGTH_SHORT
+                ).show()
                 showSuccess()
             }.onFailure {
+                // make a toast
+                Toast.makeText(
+                    app, "Error exporting to CSV", Toast.LENGTH_SHORT
+                ).show()
                 showError(it.message ?: "Unknown error")
             }
         }
@@ -802,5 +810,9 @@ class HiveViewModel @Inject constructor(
 
     fun onTapManageHoneyButton(navController: NavController) {
         TODO()
+    }
+
+    fun onTapExportToCsvButton() {
+        exportToCsv()
     }
 }

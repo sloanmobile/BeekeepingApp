@@ -1,13 +1,40 @@
 package com.reedsloan.beekeepingapp.data.repo.local.hive_repo
 
 import android.app.Application
+import android.os.Environment
+import android.util.Log
 import com.reedsloan.beekeepingapp.data.UserPreferences
+import com.reedsloan.beekeepingapp.data.local.hive.BroodStage
+import com.reedsloan.beekeepingapp.data.local.hive.EquipmentCondition
+import com.reedsloan.beekeepingapp.data.local.hive.FoundationType
+import com.reedsloan.beekeepingapp.data.local.hive.FramesAndCombs
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
+import com.reedsloan.beekeepingapp.data.local.hive.HiveCondition
+import com.reedsloan.beekeepingapp.data.local.hive.LayingPattern
+import com.reedsloan.beekeepingapp.data.local.hive.Odor
+import com.reedsloan.beekeepingapp.data.local.hive.Population
+import com.reedsloan.beekeepingapp.data.local.hive.QueenCells
+import com.reedsloan.beekeepingapp.data.local.hive.QueenMarker
+import com.reedsloan.beekeepingapp.data.local.hive.Temperament
+import com.reedsloan.beekeepingapp.data.local.hive.WeatherCondition
+import com.reedsloan.beekeepingapp.data.local.hive.WindSpeed
 import com.reedsloan.beekeepingapp.data.mapper.toHive
 import com.reedsloan.beekeepingapp.data.mapper.toHiveEntity
 import com.reedsloan.beekeepingapp.data.mapper.toUserPreferences
 import com.reedsloan.beekeepingapp.data.mapper.toUserPreferencesEntity
 import com.reedsloan.beekeepingapp.domain.repo.HiveRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.apache.commons.csv.CSVFormat
+import org.jetbrains.kotlinx.dataframe.DataFrame
+import org.jetbrains.kotlinx.dataframe.api.add
+import org.jetbrains.kotlinx.dataframe.api.dataFrameOf
+import org.jetbrains.kotlinx.dataframe.api.emptyDataFrame
+import org.jetbrains.kotlinx.dataframe.api.rows
+import org.jetbrains.kotlinx.dataframe.api.toColumn
+import org.jetbrains.kotlinx.dataframe.io.toCsv
+import org.jetbrains.kotlinx.dataframe.io.writeCSV
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -45,116 +72,81 @@ class HiveRepositoryImpl @Inject constructor(db: HiveDatabase, private val app: 
      * CSV file is saved to the app's cache directory.
      * @return The path to the CSV file
      */
-    override suspend fun exportToCsv(): String {
-//        val hives = getAllHives()
-//        val df = DataFrame.Empty
-//
-//        // HiveInfo
-//        // id column
-//        val idColumn = df.add("id") { hives.map { it.hiveInfo.id } }
-//        // name column
-//        val nameColumn = df.add("name") { hives.map { it.hiveInfo.name } }
-//        // location column
-//        val locationColumn = df.add("location") { hives.map { it.hiveInfo.location } }
-//        // notes column
-//        val notesColumn = df.add("notes") { hives.map { it.hiveInfo.notes } }
-//        // image column
-//        val imageColumn = df.add("image") { hives.map { it.hiveInfo.image } }
-//        // date column
-//        val timestampColumn = df.add("timestamp") { hives.map { it.hiveInfo.timestamp } }
-//        // weather column
-//        val weatherColumn = df.add("weather") { hives.map { it.hiveInfo.weather } }
-//        // temperatureFahrenheit column
-//        val temperatureFahrenheitColumn =
-//            df.add("temperatureFahrenheit") { hives.map { it.hiveInfo.temperatureFahrenheit } }
-//
-//        // HiveConditions
-//        // odor column
-//        val odorColumn = df.add("odor") { hives.map { it.hiveConditions.odor?.displayValue ?: ""} }
-//        // equipment condition column
-//        val equipmentConditionColumn =
-//            df.add("equipmentCondition") { hives.map { it.hiveConditions.equipmentCondition?.displayValue
-//                ?: "" } }
-//        // hive condition column
-//        val hiveConditionColumn =
-//            df.add("hiveCondition") { hives.map { it.hiveConditions.hiveCondition?.displayValue ?: "" } }
-//        // frames and combs column
-//        val framesAndCombsColumn =
-//            df.add("framesAndCombs") { hives.map { it.hiveConditions.framesAndCombs?.displayValue ?: "" } }
-//        // foundation type column
-//        val foundationTypeColumn =
-//            df.add("foundationType") { hives.map { it.hiveConditions.foundationType?.displayValue ?: "" } }
-//        // temperament column
-//        val temperamentColumn =
-//            df.add("temperament") { hives.map { it.hiveConditions.temperament?.displayValue ?: "" } }
-//        // population column
-//        val populationColumn =
-//            df.add("population") { hives.map { it.hiveConditions.population?.displayValue ?: "" } }
-//        // queen cells column
-//        val queenCellsColumn =
-//            df.add("queenCells") { hives.map { it.hiveConditions.queenCells?.displayValue ?: "" } }
-//        // queen spotted column
-//        val queenSpottedColumn =
-//            df.add("queenSpotted") { hives.map { it.hiveConditions.queenSpotted } }
-//        // queen marker column
-//        val queenMarkerColumn =
-//            df.add("queenMarker") { hives.map { it.hiveConditions.queenMarker } }
-//        // laying pattern column
-//        val layingPatternColumn =
-//            df.add("layingPattern") { hives.map { it.hiveConditions.layingPattern?.displayValue ?: "" } }
-//        // brood stage column
-//        val broodStageColumn =
-//            df.add("broodStage") { hives.map { it.hiveConditions.broodStage?.displayValue ?: "" } }
-//
-//        // HiveHealth
-//        // diseases column
-//        val diseasesColumn =
-//            df.add("diseases") { hives.map { hive -> hive.hiveHealth.diseases.map { it.displayValue } } }
-//        // treatments column
-//        val treatmentsColumn =
-//            df.add("treatments") { hives.map { hive -> hive.hiveHealth.treatments.map { it.treatment.displayValue } } }
-//        // treatment dates column
-//        val treatmentDatesColumn =
-//            df.add("treatmentDates") { hives.map { hive -> hive.hiveHealth.treatments.map { it.dateApplied } } }
-//        // treatment date removed column
-//        val treatmentDateRemovedColumn =
-//            df.add("treatmentDateRemoved") { hives.map { hive -> hive.hiveHealth.treatments.map { it.dateRemoved } } }
-//        // treatment notes column
-//        val treatmentNotesColumn =
-//            df.add("treatmentNotes") { hives.map { hive -> hive.hiveHealth.treatments.map { it.treatmentNotes } } }
-//        // ipm column
-//        val treatmentIpmColumn =
-//            df.add("treatmentIpm") { hives.map { hive -> hive.hiveHealth.treatments.map { it.ipm } } }
-//
-//        // HiveFeeding
-//        // honey stores column
-//        val honeyStoresColumn =
-//            df.add("honeyStores") { hives.map { it.feeding.honeyStores?.displayValue ?: "" } }
-//        // pollen column
-//        val pollenColumn = df.add("pollen") { hives.map { it.feeding.pollen?.displayValue ?: "" } }
-//        // honey b healthy column
-//        val honeyBHealthyColumn = df.add("honeyBHealthy") { hives.map { it.feeding.honeyBHealthy } }
-//        // mega bee column
-//        val megaBeeColumn = df.add("megaBee") { hives.map { it.feeding.megaBee } }
-//        // vitaFeedGold column
-//        val vitaFeedGoldColumn = df.add("vitaFeedGold") { hives.map { it.feeding.vitaFeedGold } }
-//        // sugar syrup column
-//        val sugarSyrupColumn = df.add("sugarSyrup") { hives.map { it.feeding.sugarSyrup } }
-//
-//        // HiveNotes
-//        // notes column
-//        val hiveNotesColumn = df.add("notes") { hives.map { it.hiveNotes.notes } }
-//
-//        // create temp file
-//        withContext(Dispatchers.IO) {
-//            File.createTempFile("hive_export", ".csv", app.cacheDir)
-//        }.apply {
-//            // write to file
-//            df.writeCSV(this)
-//            // return path
-//            return this.absolutePath
-//        }
-        return ""
+    override suspend fun exportToCsv(): Result<String> {
+        val hives = getAllHives()
+        val allHiveInspections = hives.map { it.hiveInspections }
+        return runCatching {
+            allHiveInspections.forEachIndexed { index, inspection ->
+                val df = dataFrameOf(
+                    "Date",
+                    "Notes",
+                    "Odor",
+                    "Equipment Condition",
+                    "Hive Condition",
+                    "Frames",
+                    "Foundation Type",
+                    "Temperament",
+                    "Population",
+                    "Queen Cells",
+                    "Queen Spotted",
+                    "Queen Marker",
+                    "Laying Pattern",
+                    "Brood Stage",
+                    "Weather Condition",
+                    "Humidity",
+                    "Wind Speed",
+                    "Temperature Fahrenheit",
+                    "Diseases",
+                    "Treatments"
+                )(
+                    inspection.map { it.date }.toColumn(),
+                    inspection.map { it.notes }.toColumn(),
+                    inspection.map { it.hiveConditions.odor?.displayValue }.toColumn(),
+                    inspection.map { it.hiveConditions.equipmentCondition?.displayValue }
+                        .toColumn(),
+                    inspection.map { it.hiveConditions.hiveCondition?.displayValue }.toColumn(),
+                    inspection.map { it.hiveConditions.frames?.displayValue }.toColumn(),
+                    inspection.map { it.hiveConditions.foundationType?.displayValue }.toColumn(),
+                    inspection.map { it.hiveConditions.temperament?.displayValue }.toColumn(),
+                    inspection.map { it.hiveConditions.population?.displayValue }.toColumn(),
+                    inspection.map { it.hiveConditions.queenCells?.displayValue }.toColumn(),
+                    inspection.map { it.hiveConditions.queenSpotted.toString() }.toColumn(),
+                    inspection.map { it.hiveConditions.queenMarker?.displayValue }.toColumn(),
+                    inspection.map { it.hiveConditions.layingPattern?.displayValue }.toColumn(),
+                    inspection.map { it.hiveConditions.broodStage?.displayValue.toString() }
+                        .toColumn(),
+                    inspection.map { it.hiveConditions.weatherCondition?.displayValue }.toColumn(),
+                    inspection.map { it.hiveConditions.humidity.toString() }.toColumn(),
+                    inspection.map { it.hiveConditions.windSpeed?.displayValue }.toColumn(),
+                    inspection.map { it.hiveConditions.temperatureFahrenheit.toString() }
+                        .toColumn(),
+                    inspection.map { hiveInspection -> hiveInspection.hiveHealth.diseases.map { it?.displayValue } }
+                        .toColumn(),
+                    inspection.map { hiveInspection -> hiveInspection.hiveHealth.treatments.map { it.treatment.displayValue } }
+                        .toColumn(),
+                )
+                // Log saving to CSV
+                Log.d(this::class.simpleName, "exportToCsv: $df")
+
+                // create temp file
+                withContext(Dispatchers.IO) {
+                    val downloadsDir: File =
+                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                    val hive = hives[index]
+
+                    File(
+                        downloadsDir,
+                        "${hive.hiveDetails.name}_inspections_export_${hive.hiveInspections.first().date}_until_${hive.hiveInspections.last().date}.csv"
+                    )
+                }.apply {
+                    // write to file
+                    df.writeCSV(this)
+                    // return path
+                    return Result.success(this.absolutePath)
+                }
+            }
+            return Result.failure(Exception("No hives to export"))
+        }
     }
 
 
