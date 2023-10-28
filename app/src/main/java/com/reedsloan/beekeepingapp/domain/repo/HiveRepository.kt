@@ -10,7 +10,7 @@ interface HiveRepository {
     suspend fun updateHive(hive: Hive)
     suspend fun deleteHive(hiveId: String)
     suspend fun deleteAllHives()
-    suspend fun exportToCsv(): Result<String>
+    suspend fun exportToCsv()
 
     suspend fun getUserPreferences(): UserPreferences
     suspend fun updateUserPreferences(userPreferences: UserPreferences)

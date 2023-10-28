@@ -7,6 +7,7 @@ import android.content.res.Resources.NotFoundException
 import android.graphics.Bitmap
 import android.icu.text.DateFormat
 import android.net.Uri
+import android.system.ErrnoException
 import android.util.Log
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
@@ -28,6 +29,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.time.*
 import java.time.format.DateTimeFormatter
@@ -447,17 +449,24 @@ class HiveViewModel @Inject constructor(
             runCatching {
                 hiveRepository.exportToCsv()
             }.onSuccess {
-                // make a toast
                 Toast.makeText(
-                    app, "CSV file saved to $it", Toast.LENGTH_SHORT
+                    app, "CSV file(s) saved to the downloads folder.", Toast.LENGTH_SHORT
                 ).show()
-                showSuccess()
             }.onFailure {
-                // make a toast
-                Toast.makeText(
-                    app, "Error exporting to CSV", Toast.LENGTH_SHORT
-                ).show()
-                showError(it.message ?: "Unknown error")
+                Log.e(this::class.simpleName, "Error exporting to CSV: ${it.stackTraceToString()}")
+                Log.e(this::class.simpleName, "${it.cause}")
+                when(it.cause) {
+                    is ErrnoException -> {
+                        Toast.makeText(
+                            app, "Please empty your devices trash.", Toast.LENGTH_LONG
+                        ).show()
+                    }
+                    else -> {
+                        Toast.makeText(
+                            app, "Error exporting to CSV", Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
             }
         }
     }
