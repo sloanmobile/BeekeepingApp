@@ -447,7 +447,7 @@ class HiveViewModel @Inject constructor(
         viewModelScope.launch {
             setIsLoading(true)
             runCatching {
-                hiveRepository.exportToCsv()
+                hiveRepository.exportToCsv(state.value.selectedHive!!)
             }.onSuccess {
                 Toast.makeText(
                     app, "CSV file(s) saved to the downloads folder.", Toast.LENGTH_SHORT

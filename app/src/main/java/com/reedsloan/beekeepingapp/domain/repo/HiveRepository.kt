@@ -1,5 +1,6 @@
 package com.reedsloan.beekeepingapp.domain.repo
 
+import com.reedsloan.beekeepingapp.data.Message
 import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
 
@@ -10,7 +11,7 @@ interface HiveRepository {
     suspend fun updateHive(hive: Hive)
     suspend fun deleteHive(hiveId: String)
     suspend fun deleteAllHives()
-    suspend fun exportToCsv()
+    suspend fun exportToCsv(hive: Hive): Result<Message>
 
     suspend fun getUserPreferences(): UserPreferences
     suspend fun updateUserPreferences(userPreferences: UserPreferences)

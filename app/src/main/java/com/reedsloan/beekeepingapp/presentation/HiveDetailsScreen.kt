@@ -162,10 +162,6 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
                                 isSheetOpen = false
                             }
                         }
-
-                    val hiveName =
-                        remember { mutableStateOf(TextFieldValue(hive.hiveDetails.name)) }
-
                     Column(
                         Modifier.padding(horizontal = 16.dp)
                     ) {
@@ -423,7 +419,8 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
 
                 Spacer(modifier = Modifier.height(16.dp))
                 // Manage honey action
-                HiveDetailsAction(title = "Manage Honey",
+                HiveDetailsAction(
+                    title = "Manage Honey",
                     description = "View and edit honey",
                     icon = R.drawable.ic_honey,
                     onClick = {
