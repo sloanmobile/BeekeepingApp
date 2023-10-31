@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.presentation
+package com.reedsloan.beekeepingapp.presentation.hives_screen
 
 import android.app.Activity
 import android.content.Intent
@@ -55,7 +55,6 @@ import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
-import com.reedsloan.beekeepingapp.presentation.viewmodel.HiveViewModel
 
 fun Activity.openAppSettings() {
     Intent(
@@ -65,7 +64,7 @@ fun Activity.openAppSettings() {
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun HomeScreen(navController: NavController, hiveViewModel: HiveViewModel) {
+fun HivesScreen(navController: NavController, hiveViewModel: HiveViewModel) {
     val hives by hiveViewModel.hives.collectAsState()
 
     Column(Modifier.fillMaxSize()) {

@@ -12,8 +12,6 @@ enum class Screen(val route: String, val displayText: String, val icon: ImageVec
     ApiariesScreen("apiaries_screen", "Apiaries", Icons.Rounded.Hive, false),
     HivesScreen("hives_screen", "Hives", Icons.Rounded.Hive, false),
     SettingsScreen("settings_screen", "Settings", Icons.Rounded.Settings),
-    SplashScreen("splash_screen", "Splash", Icons.Rounded.Home, false),
-    LogDataScreen("log_data_screen", "Log Data", Icons.Rounded.Hive, false),
     LogInspectionScreen("log_inspection_screen", "Log Inspection", Icons.Rounded.Hive, false),
     HiveDetailsScreen("hive_details_screen", "Hive Details", Icons.Rounded.Hive, false),
     InspectionsScreen("inspection_screen", "Inspections", Icons.Rounded.Hive, false),

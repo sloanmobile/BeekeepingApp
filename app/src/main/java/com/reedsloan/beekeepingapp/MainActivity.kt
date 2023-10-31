@@ -26,18 +26,17 @@ import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.auth.api.identity.Identity
 import com.reedsloan.beekeepingapp.presentation.ApiariesScreen
 import com.reedsloan.beekeepingapp.presentation.HiveDetailsScreen
-import com.reedsloan.beekeepingapp.presentation.HomeScreen
 import com.reedsloan.beekeepingapp.presentation.InspectionsScreen
-import com.reedsloan.beekeepingapp.presentation.LogDataScreen
-import com.reedsloan.beekeepingapp.presentation.QuickLogScreen
-import com.reedsloan.beekeepingapp.presentation.common.Screen
+import com.reedsloan.beekeepingapp.presentation.LogInspectionScreen
 import com.reedsloan.beekeepingapp.presentation.SettingsScreen
 import com.reedsloan.beekeepingapp.presentation.WorkInProgressOverlayText
+import com.reedsloan.beekeepingapp.presentation.common.Screen
+import com.reedsloan.beekeepingapp.presentation.hives_screen.HiveViewModel
+import com.reedsloan.beekeepingapp.presentation.hives_screen.HivesScreen
 import com.reedsloan.beekeepingapp.presentation.sign_in.GoogleAuthUiClient
 import com.reedsloan.beekeepingapp.presentation.sign_in.SignInScreen
 import com.reedsloan.beekeepingapp.presentation.sign_in.SignInViewModel
 import com.reedsloan.beekeepingapp.presentation.ui.theme.AppTheme
-import com.reedsloan.beekeepingapp.presentation.viewmodel.HiveViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -83,13 +82,13 @@ class MainActivity : ComponentActivity() {
                         ) {
                             NavHost(
                                 navController = navController,
-                                startDestination = Screen.HomeScreen.route,
+                                startDestination = Screen.SignInScreen.route,
                             ) {
                                 composable(
                                     route = Screen.SignInScreen.route
                                 ) {
-                                    val viewModel = hiltViewModel<SignInViewModel>()
-                                    val state by viewModel.state.collectAsState()
+                                    val signInViewModel = hiltViewModel<SignInViewModel>()
+                                    val state by signInViewModel.state.collectAsState()
 
                                     val launcher = rememberLauncherForActivityResult(
                                         contract = ActivityResultContracts
@@ -101,7 +100,7 @@ class MainActivity : ComponentActivity() {
                                                         googleAuthUiClient.signInWithIntent(
                                                             intent = result.data!!
                                                         )
-                                                    viewModel.onSignInResult(signInResult)
+                                                    signInViewModel.onSignInResult(signInResult)
                                                 }
                                             }
                                         }
@@ -109,7 +108,7 @@ class MainActivity : ComponentActivity() {
 
                                     LaunchedEffect(key1 = state.isSignInSuccessful) {
                                         if (state.isSignInSuccessful) {
-                                            navController.navigate(Screen.HomeScreen.route) {
+                                            navController.navigate(Screen.HivesScreen.route) {
                                                 popUpTo(Screen.SignInScreen.route) {
                                                     inclusive = true
                                                 }
@@ -118,6 +117,8 @@ class MainActivity : ComponentActivity() {
                                     }
 
                                     SignInScreen(state = state) {
+                                        signInViewModel.onSignInClick()
+
                                         lifecycleScope.launch {
                                             googleAuthUiClient.signIn().onSuccess { intentSender ->
                                                 launcher.launch(
@@ -129,19 +130,9 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
                                 composable(
-                                    route = Screen.HomeScreen.route
+                                    route = Screen.HivesScreen.route
                                 ) {
-                                    HomeScreen(navController, hiveViewModel)
-                                }
-                                composable(
-                                    route = Screen.LogDataScreen.route,
-                                ) {
-                                    LogDataScreen(navController, hiveViewModel)
-                                }
-                                composable(
-                                    route = Screen.LogInspectionScreen.route,
-                                ) {
-                                    QuickLogScreen(navController, hiveViewModel)
+                                    HivesScreen(navController, hiveViewModel)
                                 }
                                 composable(
                                     route = Screen.SettingsScreen.route
@@ -162,6 +153,11 @@ class MainActivity : ComponentActivity() {
                                     route = Screen.InspectionsScreen.route
                                 ) {
                                     InspectionsScreen(navController, hiveViewModel)
+                                }
+                                composable(
+                                    route = Screen.LogInspectionScreen.route
+                                ) {
+                                    LogInspectionScreen(navController, hiveViewModel)
                                 }
                             }
                         }

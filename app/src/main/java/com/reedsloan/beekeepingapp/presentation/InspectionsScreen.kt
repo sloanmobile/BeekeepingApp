@@ -50,7 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import com.reedsloan.beekeepingapp.data.local.hive.HiveInspection
-import com.reedsloan.beekeepingapp.presentation.viewmodel.HiveViewModel
+import com.reedsloan.beekeepingapp.presentation.hives_screen.HiveViewModel
 import java.time.LocalDate
 import kotlin.time.Duration.Companion.days
 
