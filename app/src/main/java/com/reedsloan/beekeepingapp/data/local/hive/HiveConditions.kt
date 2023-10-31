@@ -18,4 +18,5 @@ data class HiveConditions (
     val humidity: Double? = null,
     val windSpeed: WindSpeed? = null,
     val temperatureFahrenheit: Double? = null,
+    val bloomingNow: String? = null,
 )

@@ -41,8 +41,6 @@ import javax.inject.Inject
 class HiveViewModel @Inject constructor(
     private val app: Application,
     private val hiveRepository: HiveRepository,
-    private val auth: FirebaseAuth,
-
 ) : ViewModel() {
     private val _state = MutableStateFlow(HiveScreenState())
     val state = _state.asStateFlow()

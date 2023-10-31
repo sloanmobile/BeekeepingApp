@@ -191,7 +191,7 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                     )
                 }
 
-                HiveLogSection(title = "Weather") {
+                HiveLogSection(title = "Environment") {
                     // weather
                     DataEntryChip(
                         title = "Conditions",
@@ -281,9 +281,6 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                         }
                     }
 
-                    // divider here since we there is no DataEntryChip for wind temperature and humidity
-                    HorizontalDivider()
-
                     // wind amount
                     DataEntryChip(title = "Wind Speed",
                         selectedValue = inspection.hiveConditions.windSpeed,
@@ -300,8 +297,28 @@ fun QuickLogScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                         icon = {
                             Icon(Icons.Default.Air, contentDescription = "Edit Hive Details")
                         },
+                        divider = Divider(top = true, bottom = true)
                     )
-
+                    // What's blooming now
+                    OutlinedTextField(
+                        value = inspection.hiveConditions.bloomingNow ?: "",
+                        onValueChange = {
+                            hiveViewModel.updateSelectedInspection(
+                                inspection.copy(
+                                    hiveConditions = inspection.hiveConditions.copy(
+                                        bloomingNow = it.trimStart()
+                                    )
+                                )
+                            )
+                        },
+                        label = { Text("What's blooming now?") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp),
+                        singleLine = false,
+                        maxLines = 4,
+                    )
+                    HorizontalDivider()
 
                 }
 
