@@ -16,6 +16,7 @@ import androidx.core.content.FileProvider.getUriForFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import com.google.firebase.auth.FirebaseAuth
 import com.reedsloan.beekeepingapp.data.TimeFormat
 import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.TemperatureMeasurement
@@ -38,10 +39,15 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HiveViewModel @Inject constructor(
-    private val app: Application, private val hiveRepository: HiveRepository
+    private val app: Application,
+    private val hiveRepository: HiveRepository,
+    private val auth: FirebaseAuth,
+
 ) : ViewModel() {
     private val _state = MutableStateFlow(HiveScreenState())
     val state = _state.asStateFlow()
+
+
 
     private val _hives = MutableStateFlow<List<Hive>>(emptyList())
     val hives = _hives.asStateFlow()

@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.data.local
+package com.reedsloan.beekeepingapp.data.repo.local.hive_repo
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.data.mapper
+package com.reedsloan.beekeepingapp.data.repo.local.hive_repo
 
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
 import com.reedsloan.beekeepingapp.data.repo.local.hive_repo.HiveEntity

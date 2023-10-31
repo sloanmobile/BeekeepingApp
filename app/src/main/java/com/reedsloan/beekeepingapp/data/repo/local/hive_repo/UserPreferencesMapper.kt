@@ -1,7 +1,7 @@
-package com.reedsloan.beekeepingapp.data.mapper
+package com.reedsloan.beekeepingapp.data.repo.local.hive_repo
 
 import com.reedsloan.beekeepingapp.data.UserPreferences
-import com.reedsloan.beekeepingapp.data.local.UserPreferencesEntity
+import com.reedsloan.beekeepingapp.data.repo.local.hive_repo.UserPreferencesEntity
 
 fun UserPreferencesEntity.toUserPreferences(): UserPreferences {
     return this.userPreferences
