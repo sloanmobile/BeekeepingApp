@@ -63,7 +63,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.core.app.ActivityCompat
@@ -71,7 +70,9 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.reedsloan.beekeepingapp.R
 import com.reedsloan.beekeepingapp.presentation.common.PermissionDialog
-import com.reedsloan.beekeepingapp.presentation.viewmodel.HiveViewModel
+import com.reedsloan.beekeepingapp.presentation.hives_screen.DeleteConfirmationDialog
+import com.reedsloan.beekeepingapp.presentation.hives_screen.openAppSettings
+import com.reedsloan.beekeepingapp.presentation.hives_screen.HiveViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable

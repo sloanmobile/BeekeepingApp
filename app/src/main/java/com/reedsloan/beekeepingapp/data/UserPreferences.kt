@@ -7,5 +7,6 @@ data class UserPreferences(
     val timeFormat: TimeFormat = TimeFormat.TWELVE_HOUR,
     // This list is used to determine which permissions have
     // been requested for the first time to show the permission dialog
-    val requestedPermissions : List<String> = listOf()
+    val requestedPermissions : List<String> = listOf(),
+    val showSignUpWithGoogleButton: Boolean = true,
 )

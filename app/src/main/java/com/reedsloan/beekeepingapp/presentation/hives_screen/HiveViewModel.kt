@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.presentation.viewmodel
+package com.reedsloan.beekeepingapp.presentation.hives_screen
 
 import android.app.Activity
 import android.app.Application
@@ -16,7 +16,6 @@ import androidx.core.content.FileProvider.getUriForFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
-import com.google.firebase.auth.FirebaseAuth
 import com.reedsloan.beekeepingapp.data.TimeFormat
 import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.TemperatureMeasurement
@@ -24,13 +23,12 @@ import com.reedsloan.beekeepingapp.data.local.hive.*
 import com.reedsloan.beekeepingapp.domain.repo.HiveRepository
 import com.reedsloan.beekeepingapp.presentation.common.data.PermissionRequest
 import com.reedsloan.beekeepingapp.presentation.HiveScreenState
-import com.reedsloan.beekeepingapp.presentation.MenuState
+import com.reedsloan.beekeepingapp.presentation.common.MenuState
 import com.reedsloan.beekeepingapp.presentation.common.Screen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.io.File
-import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.time.*
 import java.time.format.DateTimeFormatter

@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.presentation
+package com.reedsloan.beekeepingapp.presentation.common
 
 enum class MenuState {
     CLOSED,

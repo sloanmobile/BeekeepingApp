@@ -4,6 +4,7 @@ import com.reedsloan.beekeepingapp.BuildConfig
 import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
 import com.reedsloan.beekeepingapp.data.local.hive.HiveInspection
+import com.reedsloan.beekeepingapp.presentation.common.MenuState
 import com.reedsloan.beekeepingapp.presentation.common.Screen
 
 data class HiveScreenState(
