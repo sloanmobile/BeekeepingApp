@@ -6,7 +6,6 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -36,7 +35,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -56,9 +54,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.google.firebase.appdistribution.ktx.appDistribution
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.ktx.Firebase
 import com.reedsloan.beekeepingapp.presentation.ApiariesScreen
 import com.reedsloan.beekeepingapp.presentation.HiveDetailsScreen
 import com.reedsloan.beekeepingapp.presentation.InspectionsScreen
@@ -84,6 +80,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var googleAuthUiClient: GoogleAuthUiClient
+
+    @Inject
+    lateinit var firebaseAuth: FirebaseAuth
 
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -113,8 +112,7 @@ class MainActivity : ComponentActivity() {
 
                     // Delete hive dialog
                     Box(Modifier.fillMaxSize()) {
-                        if (state.showDeleteHiveDialog) DeleteConfirmationDialog(
-                            onDismiss = { hiveViewModel.dismissDeleteHiveDialog() },
+                        if (state.showDeleteHiveDialog) DeleteConfirmationDialog(onDismiss = { hiveViewModel.dismissDeleteHiveDialog() },
                             onClick = {
                                 hiveViewModel.onTapDeleteHiveConfirmationButton(state.selectedHive!!.id)
                                 hiveViewModel.dismissDeleteHiveDialog()
@@ -128,8 +126,7 @@ class MainActivity : ComponentActivity() {
                             PermissionDialog(
                                 permissionRequest = permissionRequest,
                                 isPermanentlyDeclined = hiveViewModel.isPermissionPermanentlyDeclined(
-                                    activity,
-                                    permissionRequest.permission
+                                    activity, permissionRequest.permission
                                 ),
                                 onDismiss = { hiveViewModel.dismissDialog() },
                                 onConfirm = {
@@ -204,8 +201,7 @@ class MainActivity : ComponentActivity() {
                                             ConstraintLayout(Modifier.fillMaxSize()) {
                                                 val (icon, text) = createRefs()
 
-                                                Icon(
-                                                    Icons.Filled.PhotoCamera,
+                                                Icon(Icons.Filled.PhotoCamera,
                                                     contentDescription = null,
                                                     modifier = Modifier.constrainAs(icon) {
                                                         start.linkTo(parent.start)
@@ -258,8 +254,7 @@ class MainActivity : ComponentActivity() {
                                         ) {
                                             ConstraintLayout(Modifier.fillMaxSize()) {
                                                 val (icon, text) = createRefs()
-                                                Icon(
-                                                    Icons.Filled.Image,
+                                                Icon(Icons.Filled.Image,
                                                     contentDescription = null,
                                                     modifier = Modifier.constrainAs(icon) {
                                                         start.linkTo(parent.start)
@@ -298,8 +293,7 @@ class MainActivity : ComponentActivity() {
                                                 ConstraintLayout(Modifier.fillMaxSize()) {
                                                     val (icon, text) = createRefs()
 
-                                                    Icon(
-                                                        Icons.Filled.Delete,
+                                                    Icon(Icons.Filled.Delete,
                                                         contentDescription = null,
                                                         modifier = Modifier.constrainAs(icon) {
                                                             start.linkTo(parent.start)
@@ -345,7 +339,8 @@ class MainActivity : ComponentActivity() {
                                     }
                                 })
                             }
-                        }}
+                        }
+                    }
 
 
                     val isDebugBuild by remember { mutableStateOf(BuildConfig.DEBUG) }
@@ -355,11 +350,18 @@ class MainActivity : ComponentActivity() {
                     }
 
                     val navController = rememberNavController()
+                    val signedInUser by remember {
+                        mutableStateOf(
+                            firebaseAuth.currentUser
+                        )
+                    }
 
-                    val currentUser = googleAuthUiClient.getSignedInUser()
+                    val signInViewModel = hiltViewModel<SignInViewModel>()
 
-                    if (currentUser != null) {
-                        hiveViewModel.onSignInSuccess()
+                    LaunchedEffect(key1 = firebaseAuth.currentUser) {
+                        if (firebaseAuth.currentUser != null) {
+                            hiveViewModel.onSignInSuccess()
+                        }
                     }
 
                     Column(
@@ -375,34 +377,30 @@ class MainActivity : ComponentActivity() {
                         }
 
                         Column(
-                            modifier = Modifier
-                                .fillMaxSize()
+                            modifier = Modifier.fillMaxSize()
                         ) {
                             NavHost(
                                 navController = navController,
-                                startDestination = if (currentUser != null) Screen.HivesScreen.route else Screen.SignInScreen.route,
+                                startDestination = if (signedInUser != null) Screen.HivesScreen.route else Screen.SignInScreen.route,
                             ) {
                                 composable(
                                     route = Screen.SignInScreen.route
                                 ) {
-                                    val signInViewModel = hiltViewModel<SignInViewModel>()
                                     val signInState by signInViewModel.state.collectAsState()
 
-                                    val launcher = rememberLauncherForActivityResult(
-                                        contract = ActivityResultContracts
-                                            .StartIntentSenderForResult(),
-                                        onResult = { result ->
-                                            if (result.resultCode == RESULT_OK) {
-                                                lifecycleScope.launch {
-                                                    val signInResult =
-                                                        googleAuthUiClient.signInWithIntent(
-                                                            intent = result.data!!
-                                                        )
-                                                    signInViewModel.onSignInResult(signInResult)
+                                    val launcher =
+                                        rememberLauncherForActivityResult(contract = ActivityResultContracts.StartIntentSenderForResult(),
+                                            onResult = { result ->
+                                                if (result.resultCode == RESULT_OK) {
+                                                    lifecycleScope.launch {
+                                                        val signInResult =
+                                                            googleAuthUiClient.signInWithIntent(
+                                                                intent = result.data!!
+                                                            )
+                                                        signInViewModel.onSignInResult(signInResult)
+                                                    }
                                                 }
-                                            }
-                                        }
-                                    )
+                                            })
 
                                     // Sign in from previous session
                                     LaunchedEffect(key1 = signInState.isSignInSuccessful) {
@@ -412,20 +410,6 @@ class MainActivity : ComponentActivity() {
                                                     inclusive = true
                                                 }
                                             }
-                                            // sync of data from the remote now that we're signed in
-                                            hiveViewModel.onSignInSuccess()
-                                        }
-                                    }
-
-                                    LaunchedEffect(key1 = signInState.isSignInSuccessful) {
-                                        if (signInState.isSignInSuccessful) {
-                                            navController.navigate(Screen.HivesScreen.route) {
-                                                popUpTo(Screen.SignInScreen.route) {
-                                                    inclusive = true
-                                                }
-                                            }
-                                            // sync of data from the remote now that we're signed in
-                                            hiveViewModel.onSignInSuccess()
                                         }
                                     }
 
@@ -445,7 +429,7 @@ class MainActivity : ComponentActivity() {
                                 composable(
                                     route = Screen.HivesScreen.route
                                 ) {
-                                    HivesScreen(navController, hiveViewModel)
+                                    HivesScreen(navController, hiveViewModel, signInViewModel)
                                 }
                                 composable(
                                     route = Screen.SettingsScreen.route

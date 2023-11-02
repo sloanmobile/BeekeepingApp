@@ -4,8 +4,11 @@ import android.app.Application
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
+import com.google.firebase.auth.FirebaseAuth
 import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.domain.repo.HiveRepository
+import com.reedsloan.beekeepingapp.presentation.common.Screen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -16,6 +19,7 @@ import javax.inject.Inject
 class SignInViewModel @Inject constructor(
     private val app: Application,
     private val hiveRepository: HiveRepository,
+    private val firebaseAuth: FirebaseAuth
 ) : ViewModel() {
     private val _state = MutableStateFlow(SignInState())
     val state = _state
@@ -28,6 +32,16 @@ class SignInViewModel @Inject constructor(
 
     fun onSignInClick() {
         _state.update { it.copy(isLoading = true) }
+    }
+
+    fun signOut(navController: NavController) {
+        firebaseAuth.signOut()
+        // reset state
+        resetState()
+
+        // pop back stack to prevent user from navigating back to the home screen
+        navController.popBackStack()
+        navController.navigate(Screen.SignInScreen.route)
     }
 
     fun onSignInResult(signInResult: Result<SignInResult>) {
@@ -48,9 +62,12 @@ class SignInViewModel @Inject constructor(
         updateUserPreferences(state.value.userPreferences)
     }
 
-    fun resetState() {
+    private fun resetState() {
         _state.update {
-            SignInState()
+            SignInState(
+                // We need to keep this value when resetting the state
+                userPreferences = state.value.userPreferences
+            )
         }
     }
 

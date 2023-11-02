@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -34,12 +33,14 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
@@ -73,6 +74,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
 import com.reedsloan.beekeepingapp.presentation.ContextMenuItem
+import com.reedsloan.beekeepingapp.presentation.sign_in.SignInViewModel
 
 fun Activity.openAppSettings() {
     Intent(
@@ -82,8 +84,9 @@ fun Activity.openAppSettings() {
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun HivesScreen(navController: NavController, hiveViewModel: HiveViewModel) {
+fun HivesScreen(navController: NavController, hiveViewModel: HiveViewModel, signInViewModel: SignInViewModel) {
     val hives by hiveViewModel.hives.collectAsState()
+    val state by hiveViewModel.state.collectAsState()
     Column(Modifier.fillMaxSize()) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxSize()
@@ -124,12 +127,12 @@ fun HivesScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                         }) {
                         DropdownMenuItem(onClick = {
                             isContextMenuVisible = false
+                            signInViewModel.signOut(navController)
                         }, text = {
-                            Text(text = "Delete")
+                            Text(text = "Sign out")
                         }, leadingIcon = {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                            Icon(Icons.Default.Logout, contentDescription = "Sign Out")
                         })
-
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -139,12 +142,24 @@ fun HivesScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                 ),
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-            LazyVerticalGrid(columns = GridCells.Fixed(1), modifier = Modifier.fillMaxWidth()) {
-                items(hives) { hive ->
-                    HiveCard(
-                        hive = hive, navController = navController, hiveViewModel = hiveViewModel
-                    )
+            if (hives.isEmpty() && state.isLoading) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                Spacer(modifier = Modifier.height(16.dp))
+                LazyVerticalGrid(columns = GridCells.Fixed(1), modifier = Modifier.fillMaxWidth()) {
+                    items(hives) { hive ->
+                        HiveCard(
+                            hive = hive,
+                            navController = navController,
+                            hiveViewModel = hiveViewModel
+                        )
+                    }
                 }
             }
         }
@@ -237,7 +252,11 @@ fun HiveCard(
                     ),
                 )
             }
-            Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Column(Modifier.padding(start = 16.dp, bottom = 16.dp, top = 16.dp)) {
                     Row {
                         // The name of the hive
@@ -256,10 +275,9 @@ fun HiveCard(
                     }
                 }
                 Column(
-                    Modifier.fillMaxWidth().fillMaxHeight(),
                     horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.Center
-                ) {
+                    verticalArrangement = Arrangement.Center,
+                    ) {
                     ContextMenuButton {
                         hiveViewModel.setSelectedHive(hive.id)
 
@@ -301,6 +319,7 @@ fun ContextMenuButton(
                     val press = PressInteraction.Press(offset)
 
                     onPress(DpOffset(offset.x.toDp(), offset.y.toDp()))
+                    Log.d("ContextMenuButton", "Offset: $offset")
 
                     dropdownInteractionSource.emit(press)
                     tryAwaitRelease()

@@ -11,8 +11,6 @@ import android.system.ErrnoException
 import android.util.Log
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.unit.DpOffset
 import androidx.core.app.ActivityCompat
@@ -27,10 +25,10 @@ import com.reedsloan.beekeepingapp.data.local.hive.*
 import com.reedsloan.beekeepingapp.data.repo.remote.UserDataRepository
 import com.reedsloan.beekeepingapp.domain.repo.HiveRepository
 import com.reedsloan.beekeepingapp.presentation.ContextMenuItem
-import com.reedsloan.beekeepingapp.presentation.common.data.PermissionRequest
 import com.reedsloan.beekeepingapp.presentation.HiveScreenState
 import com.reedsloan.beekeepingapp.presentation.common.MenuState
 import com.reedsloan.beekeepingapp.presentation.common.Screen
+import com.reedsloan.beekeepingapp.presentation.common.data.PermissionRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -99,25 +97,26 @@ class HiveViewModel @Inject constructor(
                 }
                 userDataRepository.updateUserData(state.value.userData)
             }.onSuccess {
-                Log.d(this::class.simpleName, "User data successfully updated")
+                showSuccess()
             }.onFailure {
                 val error = it.message ?: "Unknown error updating user data."
-                Log.e(
-                    this::class.simpleName,
-                    "Error updating user data: ${it.stackTraceToString()}"
-                )
+                showError(error)
                 Toast.makeText(app, error, Toast.LENGTH_SHORT).show()
             }
         }
     }
 
+    private var successCount = 0
     fun onSignInSuccess() {
         viewModelScope.launch {
+            successCount++
+            Log.d(this::class.simpleName, "onSignInSuccess: $successCount")
             getUserData()
         }
     }
 
     private suspend fun getUserData() {
+        setIsLoading(true)
         userDataRepository.getUserData()
             .onSuccess { userData ->
                 _state.update {
@@ -126,10 +125,10 @@ class HiveViewModel @Inject constructor(
                         userData = userData
                     )
                 }
+                showSuccess()
                 _hives.update { userData.hives }
-                Log.d(this::class.simpleName, "User data from remote: $userData")
             }.onFailure {
-                Log.e(this::class.simpleName, "Error getting user data: ${it.stackTraceToString()}")
+                showError(it.message ?: "Unknown error getting user data.")
             }
     }
 
@@ -426,26 +425,6 @@ class HiveViewModel @Inject constructor(
         }
     }
 
-    private suspend fun getAllHives() {
-//        setIsLoading(true)
-//        runCatching {
-//            hiveRepository.getAllHives()
-//        }.onSuccess { hives ->
-//            _hives.value = hives
-//            // update the selected hive if it exists
-//            setSelectedHive(state.value.selectedHive?.id ?: "")
-//            showSuccess()
-//        }.onFailure { error ->
-//            showError(error.message ?: "Unknown error")
-//
-//            // make a toast
-//            Toast.makeText(
-//                app, "Error getting hives.", Toast.LENGTH_SHORT
-//            ).show()
-//        }
-        getUserData()
-    }
-
     fun dateMillisToDateString(dateMillis: String, longFormat: Boolean = false): String {
         val format = DateFormat.getDateInstance(DateFormat.LONG)
         return (format.format(dateMillis.toLong()) + if (longFormat) " at " + DateFormat.getTimeInstance(
@@ -533,16 +512,17 @@ class HiveViewModel @Inject constructor(
      * **Use with caution.** This will delete all hives from the database.
      */
     private fun deleteAllHives() {
-        viewModelScope.launch {
+        runCatching {
             setIsLoading(true)
-            runCatching {
-                hiveRepository.deleteAllHives()
-            }.onSuccess {
-                showSuccess()
-                getAllHives()
-            }.onFailure {
-                showError(it.message ?: "Unknown error")
-            }
+            _hives.update { emptyList() }
+            deselectHive()
+        }.onSuccess {
+            showSuccess()
+            saveUserDataToRemote()
+        }.onFailure {
+            showError(it.message ?: "Unknown error")
+            // Show error message
+            Toast.makeText(app, it.message, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -605,7 +585,7 @@ class HiveViewModel @Inject constructor(
                 }
             }.onSuccess {
                 showSuccess()
-                _hives.value = hiveRepository.getAllHives()
+                saveUserDataToRemote()
             }.onFailure {
                 showError(it.message ?: "Unknown error")
             }
@@ -627,7 +607,7 @@ class HiveViewModel @Inject constructor(
                 }
             }.onSuccess {
                 showSuccess()
-                _hives.update { hiveRepository.getAllHives() }
+                saveUserDataToRemote()
             }.onFailure {
                 showError(it.message ?: "Unknown error")
             }
@@ -695,7 +675,7 @@ class HiveViewModel @Inject constructor(
                 app.contentResolver.delete(uri, null, null)
             }.onSuccess {
                 showSuccess()
-                getAllHives()
+                saveUserDataToRemote()
             }.onFailure {
                 showError(it.message ?: "Unknown error")
             }
