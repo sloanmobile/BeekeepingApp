@@ -11,7 +11,11 @@ import android.system.ErrnoException
 import android.util.Log
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.unit.DpOffset
+import androidx.core.app.ActivityCompat
 import androidx.core.content.FileProvider.getUriForFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -22,6 +26,7 @@ import com.reedsloan.beekeepingapp.data.local.TemperatureMeasurement
 import com.reedsloan.beekeepingapp.data.local.hive.*
 import com.reedsloan.beekeepingapp.data.repo.remote.UserDataRepository
 import com.reedsloan.beekeepingapp.domain.repo.HiveRepository
+import com.reedsloan.beekeepingapp.presentation.ContextMenuItem
 import com.reedsloan.beekeepingapp.presentation.common.data.PermissionRequest
 import com.reedsloan.beekeepingapp.presentation.HiveScreenState
 import com.reedsloan.beekeepingapp.presentation.common.MenuState
@@ -45,11 +50,37 @@ class HiveViewModel @Inject constructor(
     private val _state = MutableStateFlow(HiveScreenState())
     val state = _state.asStateFlow()
 
+    private val defaultScreenInstance = HiveScreenState()
 
     private val _hives = MutableStateFlow<List<Hive>>(emptyList())
     val hives = _hives.asStateFlow()
 
     val visiblePermissionDialogQueue = mutableStateListOf<PermissionRequest>()
+
+    init {
+        viewModelScope.launch {
+            getUserPreferences()
+            if (!doesUserHavePermission(android.Manifest.permission.POST_NOTIFICATIONS)) {
+                visiblePermissionDialogQueue.add(PermissionRequest.NotificationPermissionRequest)
+            }
+        }
+    }
+
+    private fun doesUserHavePermission(permission: String): Boolean {
+        return ActivityCompat.checkSelfPermission(
+            app,
+            permission
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    }
+
+    fun isPermissionPermanentlyDeclined(
+        activity: Activity,
+        permission: String
+    ): Boolean {
+        return !ActivityCompat.shouldShowRequestPermissionRationale(
+            activity, permission
+        ) && !isPermissionRequestFirstTime(permission)
+    }
 
     /**
      * Saves the user data to the remote database.
@@ -80,9 +111,8 @@ class HiveViewModel @Inject constructor(
         }
     }
 
-    fun syncData() {
+    fun onSignInSuccess() {
         viewModelScope.launch {
-            getUserPreferences()
             getUserData()
         }
     }
@@ -103,7 +133,7 @@ class HiveViewModel @Inject constructor(
             }
     }
 
-    fun isPermissionRequestFirstTime(permission: String): Boolean {
+    private fun isPermissionRequestFirstTime(permission: String): Boolean {
         return !state.value.userPreferences.requestedPermissions.contains(permission)
     }
 
@@ -149,10 +179,13 @@ class HiveViewModel @Inject constructor(
                 PermissionRequest.StoragePermissionRequestAPI33
             }
 
+            android.Manifest.permission.ACCESS_NOTIFICATION_POLICY -> {
+                PermissionRequest.NotificationPermissionRequest
+            }
+
             else -> {
                 throw IllegalArgumentException(
-                    "Unknown permission: $permission, please add it" +
-                            "to the getPermissionRequest function."
+                    "Unknown permission: $permission, please add it to the getPermissionRequest function."
                 )
             }
         }
@@ -235,7 +268,7 @@ class HiveViewModel @Inject constructor(
         }
     }
 
-    fun showDeleteHiveDialog(selectedHive: String) {
+    private fun showDeleteHiveDialog(selectedHive: String) {
         setSelectedHive(selectedHive)
         // show confirmation dialog
         _state.update { it.copy(showDeleteHiveDialog = true) }
@@ -274,18 +307,25 @@ class HiveViewModel @Inject constructor(
      * Closes all open menus and clears the selection list.
      */
     private fun closeOpenMenus() {
-        _state.value = state.value.copy(
-            navigationBarMenuState = MenuState.CLOSED,
-            hiveDeleteMode = false,
-            showExtraButtons = false
-        )
+        _state.update {
+            state.value.copy(
+                navigationBarMenuState = MenuState.CLOSED,
+                hiveDeleteMode = false,
+                showExtraButtons = false,
+                showDeleteHiveDialog = false,
+                selectionList = emptyList()
+            )
+        }
+        resetContextMenu()
         clearSelectionList()
     }
 
-    private suspend fun deleteSelectedHives() {
+    private fun deleteSelectedHives() {
         // delete all hives in selection list
         state.value.selectionList.forEach { deleteHive(it) }
         clearSelectionList()
+        // update the remote
+        saveUserDataToRemote()
     }
 
     private fun updateUserPreferences(userPreferences: UserPreferences) {
@@ -355,7 +395,7 @@ class HiveViewModel @Inject constructor(
         )
     }
 
-    private fun setSelectedHive(hiveId: String) {
+    fun setSelectedHive(hiveId: String) {
         // Set the selected hive in the state by finding the hive with the matching id
         _state.update { it.copy(selectedHive = hives.value.find { it.id == hiveId }) }
     }
@@ -883,5 +923,33 @@ class HiveViewModel @Inject constructor(
 
     fun onTapExportToCsvButton() {
         exportToCsv()
+    }
+
+    fun onTapDeleteHiveButton(hive: Hive) {
+        showDeleteHiveDialog(hive.id)
+    }
+
+    fun showContextMenu(contextMenuItems: List<ContextMenuItem>, pressOffset: DpOffset) {
+        _state.update {
+            it.copy(
+                isContextMenuVisible = true,
+                contextMenuItems = contextMenuItems,
+                pressOffset = pressOffset,
+            )
+        }
+    }
+
+    private fun resetContextMenu() {
+        _state.update {
+            it.copy(
+                isContextMenuVisible = defaultScreenInstance.isContextMenuVisible,
+                contextMenuItems = defaultScreenInstance.contextMenuItems,
+                pressOffset = defaultScreenInstance.pressOffset,
+            )
+        }
+    }
+
+    fun dismissContextMenu() {
+        closeOpenMenus()
     }
 }

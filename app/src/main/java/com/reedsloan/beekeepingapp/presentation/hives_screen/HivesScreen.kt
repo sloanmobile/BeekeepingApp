@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,6 +28,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -70,6 +72,7 @@ import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
+import com.reedsloan.beekeepingapp.presentation.ContextMenuItem
 
 fun Activity.openAppSettings() {
     Intent(
@@ -90,8 +93,6 @@ fun HivesScreen(navController: NavController, hiveViewModel: HiveViewModel) {
             }
 
             val pressOffset by remember { mutableStateOf(DpOffset.Zero) }
-
-            val dropdownInteractionSource = remember { MutableInteractionSource() }
 
 
             TopAppBar(
@@ -142,9 +143,7 @@ fun HivesScreen(navController: NavController, hiveViewModel: HiveViewModel) {
             LazyVerticalGrid(columns = GridCells.Fixed(1), modifier = Modifier.fillMaxWidth()) {
                 items(hives) { hive ->
                     HiveCard(
-                        hive = hive,
-                        navController = navController,
-                        hiveViewModel = hiveViewModel
+                        hive = hive, navController = navController, hiveViewModel = hiveViewModel
                     )
                 }
             }
@@ -168,27 +167,25 @@ fun HivesScreen(navController: NavController, hiveViewModel: HiveViewModel) {
 
 @Composable
 fun DeleteConfirmationDialog(onClick: () -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(
-        icon = {
-            Icon(
-                imageVector = Icons.Filled.Warning,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp)
-            )
-        },
-        onDismissRequest = { onDismiss() }, title = {
-            Text(text = "Delete hive?")
-        }, text = {
-            Text(text = "Are you sure you want to delete this hive?")
-        }, confirmButton = {
-            Button(onClick = { onClick() }) {
-                Text(text = "Delete")
-            }
-        }, dismissButton = {
-            Button(onClick = { onDismiss() }) {
-                Text(text = "Cancel")
-            }
-        })
+    AlertDialog(icon = {
+        Icon(
+            imageVector = Icons.Filled.Warning,
+            contentDescription = null,
+            modifier = Modifier.size(48.dp)
+        )
+    }, onDismissRequest = { onDismiss() }, title = {
+        Text(text = "Delete hive?")
+    }, text = {
+        Text(text = "Are you sure you want to delete this hive?")
+    }, confirmButton = {
+        Button(onClick = { onClick() }) {
+            Text(text = "Delete")
+        }
+    }, dismissButton = {
+        Button(onClick = { onDismiss() }) {
+            Text(text = "Cancel")
+        }
+    })
 }
 
 @Composable
@@ -204,8 +201,7 @@ fun HiveCard(
                 hiveViewModel.onTapHiveCard(hive.id, navController)
             }) {
         Column(
-            Modifier
-                .fillMaxWidth()
+            Modifier.fillMaxWidth()
         ) {
             hive.hiveDetails.image?.let { image ->
                 // Hive image
@@ -241,8 +237,8 @@ fun HiveCard(
                     ),
                 )
             }
-            Row(horizontalArrangement = Arrangement.SpaceBetween) {
-                Column(Modifier.padding(16.dp)) {
+            Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(start = 16.dp, bottom = 16.dp, top = 16.dp)) {
                     Row {
                         // The name of the hive
                         Text(
@@ -259,7 +255,59 @@ fun HiveCard(
                         )
                     }
                 }
+                Column(
+                    Modifier.fillMaxWidth().fillMaxHeight(),
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    ContextMenuButton {
+                        hiveViewModel.setSelectedHive(hive.id)
+
+                        hiveViewModel.showContextMenu(
+                            contextMenuItems = listOf(
+                                ContextMenuItem(
+                                    title = "Delete",
+                                    icon = Icons.Default.Delete,
+                                    action = {
+                                        hiveViewModel.onTapDeleteHiveButton(hive)
+                                    },
+                                )
+                            ), pressOffset = it
+                        )
+                    }
+                }
             }
         }
+    }
+}
+
+@Composable
+fun ContextMenuButton(
+    onPress: (DpOffset) -> Unit,
+) {
+    val dropdownInteractionSource = remember { MutableInteractionSource() }
+
+    Box(contentAlignment = Alignment.Center, modifier = Modifier
+        .padding(16.dp)
+        .size(40.dp)
+        // clip to circle
+        .clip(CircleShape)
+        .indication(
+            interactionSource = dropdownInteractionSource, indication = rememberRipple()
+        )
+        .pointerInput(true) {
+            detectTapGestures(
+                onPress = { offset ->
+                    val press = PressInteraction.Press(offset)
+
+                    onPress(DpOffset(offset.x.toDp(), offset.y.toDp()))
+
+                    dropdownInteractionSource.emit(press)
+                    tryAwaitRelease()
+                    dropdownInteractionSource.emit(PressInteraction.Release(press))
+                },
+            )
+        }) {
+        Icon(Icons.Filled.MoreVert, contentDescription = "More")
     }
 }

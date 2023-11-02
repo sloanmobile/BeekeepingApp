@@ -1,5 +1,8 @@
 package com.reedsloan.beekeepingapp.presentation
 
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.DpOffset
 import com.reedsloan.beekeepingapp.BuildConfig
 import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.UserData
@@ -29,4 +32,13 @@ data class HiveScreenState(
     val editingTextField: Boolean = false,
     val showDeleteHiveDialog: Boolean = false,
     val selectedHiveInspection: HiveInspection? = null,
+    val isContextMenuVisible: Boolean = false,
+    val contextMenuItems: List<ContextMenuItem> = emptyList(),
+    val pressOffset: DpOffset = DpOffset.Zero
+)
+
+data class ContextMenuItem(
+    val title: String,
+    val icon: ImageVector? = null,
+    val action: () -> Unit,
 )

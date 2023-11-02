@@ -8,4 +8,5 @@ data class UserData(
     val hives: List<Hive> = emptyList(),
     val lastUpdated: Long = 0L,
     val userId: String = "",
+    val isUserPremium: Boolean = false,
 )

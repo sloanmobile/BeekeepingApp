@@ -1,6 +1,12 @@
 package com.reedsloan.beekeepingapp
 
+import android.Manifest
+import android.app.Activity
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -8,32 +14,63 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.viewModelScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.google.android.gms.auth.api.identity.Identity
+import com.google.firebase.appdistribution.ktx.appDistribution
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.ktx.Firebase
 import com.reedsloan.beekeepingapp.presentation.ApiariesScreen
 import com.reedsloan.beekeepingapp.presentation.HiveDetailsScreen
 import com.reedsloan.beekeepingapp.presentation.InspectionsScreen
 import com.reedsloan.beekeepingapp.presentation.LogInspectionScreen
 import com.reedsloan.beekeepingapp.presentation.SettingsScreen
 import com.reedsloan.beekeepingapp.presentation.WorkInProgressOverlayText
+import com.reedsloan.beekeepingapp.presentation.common.PermissionDialog
 import com.reedsloan.beekeepingapp.presentation.common.Screen
+import com.reedsloan.beekeepingapp.presentation.hives_screen.DeleteConfirmationDialog
 import com.reedsloan.beekeepingapp.presentation.hives_screen.HiveViewModel
 import com.reedsloan.beekeepingapp.presentation.hives_screen.HivesScreen
+import com.reedsloan.beekeepingapp.presentation.hives_screen.openAppSettings
 import com.reedsloan.beekeepingapp.presentation.sign_in.GoogleAuthUiClient
 import com.reedsloan.beekeepingapp.presentation.sign_in.SignInScreen
 import com.reedsloan.beekeepingapp.presentation.sign_in.SignInViewModel
@@ -48,14 +85,269 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var googleAuthUiClient: GoogleAuthUiClient
 
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
-            val hiveViewModel = hiltViewModel<HiveViewModel>()
             AppTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize()
                 ) {
+                    val hiveViewModel = hiltViewModel<HiveViewModel>()
+                    val permissionDialogQueue =
+                        hiveViewModel.visiblePermissionDialogQueue.firstOrNull()
+                    val context = LocalContext.current
+                    val state by hiveViewModel.state.collectAsState()
+                    val multiplePermissionsLauncher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.RequestMultiplePermissions()
+                    ) { permissions ->
+                        permissions.forEach { (permission, granted) ->
+                            hiveViewModel.onPermissionResult(
+                                permission = permission, granted = granted
+                            )
+                        }
+                    }
+                    var isSheetOpen by remember { mutableStateOf(false) }
+                    val sheetState = rememberModalBottomSheetState()
+
+                    // Delete hive dialog
+                    Box(Modifier.fillMaxSize()) {
+                        if (state.showDeleteHiveDialog) DeleteConfirmationDialog(
+                            onDismiss = { hiveViewModel.dismissDeleteHiveDialog() },
+                            onClick = {
+                                hiveViewModel.onTapDeleteHiveConfirmationButton(state.selectedHive!!.id)
+                                hiveViewModel.dismissDeleteHiveDialog()
+                            })
+                    }
+
+                    // Permission dialog
+                    Box(Modifier.fillMaxSize()) {
+                        permissionDialogQueue?.let { permissionRequest ->
+                            val activity = context as Activity
+                            PermissionDialog(
+                                permissionRequest = permissionRequest,
+                                isPermanentlyDeclined = hiveViewModel.isPermissionPermanentlyDeclined(
+                                    activity,
+                                    permissionRequest.permission
+                                ),
+                                onDismiss = { hiveViewModel.dismissDialog() },
+                                onConfirm = {
+                                    multiplePermissionsLauncher.launch(
+                                        arrayOf(permissionRequest.permission)
+                                    )
+                                },
+                                onGoToAppSettingsClick = {
+                                    activity.openAppSettings()
+                                    hiveViewModel.dismissDialog()
+                                },
+                            )
+                        }
+                    }
+
+                    // Gallery or camera sheet
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        if (isSheetOpen) {
+                            ModalBottomSheet(onDismissRequest = {
+                                isSheetOpen = false
+                            }, sheetState = sheetState) {
+                                Column {
+                                    var uri: Uri? by rememberSaveable {
+                                        mutableStateOf(
+                                            null
+                                        )
+                                    }
+                                    var isLoading by remember {
+                                        mutableStateOf(
+                                            false
+                                        )
+                                    }
+
+                                    val imagePickerIntent =
+                                        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { imageUri ->
+                                            isLoading = false
+                                            uri = imageUri
+                                            hiveViewModel.setImageForSelectedHive(imageUri)
+                                            isSheetOpen = false
+                                        }
+
+                                    val cameraOpenIntent =
+                                        rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) {
+                                            if (it) {
+                                                isLoading = false
+                                                hiveViewModel.setImageForSelectedHive(uri)
+                                                isSheetOpen = false
+                                            }
+                                        }
+                                    Column(
+                                        Modifier.padding(horizontal = 16.dp)
+                                    ) {
+                                        // set image button
+                                        FilledTonalButton(
+                                            onClick = {
+                                                if (ActivityCompat.checkSelfPermission(
+                                                        context, Manifest.permission.CAMERA
+                                                    ) == PackageManager.PERMISSION_GRANTED
+                                                ) {
+                                                    isLoading = true
+                                                    uri?.let { hiveViewModel.deleteImage(it) }
+                                                    uri =
+                                                        hiveViewModel.getImageUri(state.selectedHive!!.id)
+                                                    cameraOpenIntent.launch(uri)
+                                                } else {
+                                                    hiveViewModel.onPermissionRequested(Manifest.permission.CAMERA)
+                                                }
+                                            }, modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(56.dp)
+                                        ) {
+                                            ConstraintLayout(Modifier.fillMaxSize()) {
+                                                val (icon, text) = createRefs()
+
+                                                Icon(
+                                                    Icons.Filled.PhotoCamera,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.constrainAs(icon) {
+                                                        start.linkTo(parent.start)
+                                                        top.linkTo(parent.top)
+                                                        bottom.linkTo(parent.bottom)
+                                                    })
+
+                                                Text(
+                                                    text = "USE CAMERA",
+                                                    modifier = Modifier.constrainAs(text) {
+                                                        start.linkTo(parent.start)
+                                                        top.linkTo(parent.top)
+                                                        bottom.linkTo(parent.bottom)
+                                                        end.linkTo(parent.end)
+                                                    },
+                                                    style = MaterialTheme.typography.titleMedium
+                                                )
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        // choose image button
+                                        FilledTonalButton(
+                                            onClick = {
+                                                isLoading = true
+                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                                    if (ActivityCompat.checkSelfPermission(
+                                                            context,
+                                                            Manifest.permission.READ_MEDIA_IMAGES
+                                                        ) == PackageManager.PERMISSION_GRANTED
+                                                    ) {
+                                                        imagePickerIntent.launch("image/*")
+                                                    } else {
+                                                        hiveViewModel.onPermissionRequested(Manifest.permission.READ_MEDIA_IMAGES)
+                                                    }
+                                                } else {
+                                                    if (ActivityCompat.checkSelfPermission(
+                                                            context,
+                                                            Manifest.permission.READ_EXTERNAL_STORAGE
+                                                        ) == PackageManager.PERMISSION_GRANTED
+                                                    ) {
+                                                        imagePickerIntent.launch("image/*")
+                                                    } else {
+                                                        hiveViewModel.onPermissionRequested(Manifest.permission.READ_EXTERNAL_STORAGE)
+                                                    }
+                                                }
+                                            },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(56.dp),
+                                        ) {
+                                            ConstraintLayout(Modifier.fillMaxSize()) {
+                                                val (icon, text) = createRefs()
+                                                Icon(
+                                                    Icons.Filled.Image,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.constrainAs(icon) {
+                                                        start.linkTo(parent.start)
+                                                        top.linkTo(parent.top)
+                                                        bottom.linkTo(parent.bottom)
+                                                    })
+
+                                                Text(
+                                                    text = "USE GALLERY",
+                                                    modifier = Modifier.constrainAs(text) {
+                                                        start.linkTo(parent.start)
+                                                        top.linkTo(parent.top)
+                                                        bottom.linkTo(parent.bottom)
+                                                        end.linkTo(parent.end)
+                                                    },
+                                                    style = MaterialTheme.typography.titleMedium
+                                                )
+                                            }
+                                        }
+
+                                        // Remove image button
+                                        if (state.selectedHive?.hiveDetails?.image != null) {
+                                            Spacer(modifier = Modifier.height(16.dp))
+                                            FilledTonalButton(
+                                                onClick = {
+                                                    hiveViewModel.removeImageForSelectedHive()
+                                                    isSheetOpen = false
+                                                },
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(56.dp),
+                                                colors = ButtonDefaults.filledTonalButtonColors(
+                                                    contentColor = MaterialTheme.colorScheme.error,
+                                                )
+                                            ) {
+                                                ConstraintLayout(Modifier.fillMaxSize()) {
+                                                    val (icon, text) = createRefs()
+
+                                                    Icon(
+                                                        Icons.Filled.Delete,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.constrainAs(icon) {
+                                                            start.linkTo(parent.start)
+                                                            top.linkTo(parent.top)
+                                                            bottom.linkTo(parent.bottom)
+                                                        })
+
+                                                    Text(
+                                                        text = "REMOVE IMAGE",
+                                                        modifier = Modifier.constrainAs(text) {
+                                                            start.linkTo(parent.start)
+                                                            top.linkTo(parent.top)
+                                                            bottom.linkTo(parent.bottom)
+                                                            end.linkTo(parent.end)
+                                                        },
+                                                        style = MaterialTheme.typography.titleMedium
+                                                    )
+                                                }
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Context menu
+                    Box {
+                        DropdownMenu(expanded = state.isContextMenuVisible,
+                            offset = state.pressOffset,
+                            onDismissRequest = {
+                                hiveViewModel.dismissContextMenu()
+                            }) {
+                            state.contextMenuItems.forEach { item ->
+                                DropdownMenuItem(onClick = {
+                                    item.action()
+                                }, text = {
+                                    Text(text = item.title)
+                                }, leadingIcon = {
+                                    item.icon?.let { icon ->
+                                        Icon(icon, contentDescription = item.title)
+                                    }
+                                })
+                            }
+                        }}
+
+
                     val isDebugBuild by remember { mutableStateOf(BuildConfig.DEBUG) }
 
                     if (isDebugBuild) {
@@ -63,6 +355,12 @@ class MainActivity : ComponentActivity() {
                     }
 
                     val navController = rememberNavController()
+
+                    val currentUser = googleAuthUiClient.getSignedInUser()
+
+                    if (currentUser != null) {
+                        hiveViewModel.onSignInSuccess()
+                    }
 
                     Column(
                         Modifier
@@ -72,7 +370,6 @@ class MainActivity : ComponentActivity() {
                                     hiveViewModel.onTapOutside()
                                 })
                             }) {
-
                         BackHandler {
                             hiveViewModel.backHandler(navController)
                         }
@@ -83,13 +380,13 @@ class MainActivity : ComponentActivity() {
                         ) {
                             NavHost(
                                 navController = navController,
-                                startDestination = Screen.SignInScreen.route,
+                                startDestination = if (currentUser != null) Screen.HivesScreen.route else Screen.SignInScreen.route,
                             ) {
                                 composable(
                                     route = Screen.SignInScreen.route
                                 ) {
                                     val signInViewModel = hiltViewModel<SignInViewModel>()
-                                    val state by signInViewModel.state.collectAsState()
+                                    val signInState by signInViewModel.state.collectAsState()
 
                                     val launcher = rememberLauncherForActivityResult(
                                         contract = ActivityResultContracts
@@ -107,19 +404,32 @@ class MainActivity : ComponentActivity() {
                                         }
                                     )
 
-                                    LaunchedEffect(key1 = state.isSignInSuccessful) {
-                                        if (state.isSignInSuccessful) {
+                                    // Sign in from previous session
+                                    LaunchedEffect(key1 = signInState.isSignInSuccessful) {
+                                        if (signInState.isSignInSuccessful) {
                                             navController.navigate(Screen.HivesScreen.route) {
                                                 popUpTo(Screen.SignInScreen.route) {
                                                     inclusive = true
                                                 }
                                             }
                                             // sync of data from the remote now that we're signed in
-                                            hiveViewModel.syncData()
+                                            hiveViewModel.onSignInSuccess()
                                         }
                                     }
 
-                                    SignInScreen(state = state) {
+                                    LaunchedEffect(key1 = signInState.isSignInSuccessful) {
+                                        if (signInState.isSignInSuccessful) {
+                                            navController.navigate(Screen.HivesScreen.route) {
+                                                popUpTo(Screen.SignInScreen.route) {
+                                                    inclusive = true
+                                                }
+                                            }
+                                            // sync of data from the remote now that we're signed in
+                                            hiveViewModel.onSignInSuccess()
+                                        }
+                                    }
+
+                                    SignInScreen(state = signInState) {
                                         signInViewModel.onSignInClick()
 
                                         lifecycleScope.launch {
@@ -150,7 +460,12 @@ class MainActivity : ComponentActivity() {
                                 composable(
                                     route = Screen.HiveDetailsScreen.route
                                 ) {
-                                    HiveDetailsScreen(navController, hiveViewModel)
+                                    HiveDetailsScreen(
+                                        navController,
+                                        hiveViewModel,
+                                        { isSheetOpen = true },
+                                        isSheetOpen
+                                    )
                                 }
                                 composable(
                                     route = Screen.InspectionsScreen.route

@@ -76,234 +76,17 @@ import com.reedsloan.beekeepingapp.presentation.hives_screen.HiveViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel) {
+fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel, setSheetOpenState: (Boolean) -> Unit, isSheetOpen: Boolean) {
     val state by hiveViewModel.state.collectAsState()
     val hive = state.selectedHive ?: return
-    val sheetState = rememberModalBottomSheetState()
-    var isSheetOpen by remember { mutableStateOf(false) }
-    val permissionDialogQueue = hiveViewModel.visiblePermissionDialogQueue.firstOrNull()
-    val context = LocalContext.current
-
-    val multiplePermissionsLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        permissions.forEach { (permission, granted) ->
-            hiveViewModel.onPermissionResult(
-                permission = permission, granted = granted
-            )
-        }
-    }
-    Box(Modifier.fillMaxSize()) {
-        if (state.showDeleteHiveDialog) DeleteConfirmationDialog(
-            onDismiss = { hiveViewModel.dismissDeleteHiveDialog() },
-            onClick = {
-                hiveViewModel.onTapDeleteHiveConfirmationButton(state.selectedHive!!.id)
-                hiveViewModel.dismissDeleteHiveDialog()
-            })
-    }
-
-    Box(Modifier.fillMaxSize()) {
-        permissionDialogQueue?.let {
-            val activity = context as Activity
-            PermissionDialog(
-                permissionRequest = it,
-                isPermanentlyDeclined = !ActivityCompat.shouldShowRequestPermissionRationale(
-                    activity, it.permission
-                ) && !hiveViewModel.isPermissionRequestFirstTime(it.permission),
-                onDismiss = { hiveViewModel.dismissDialog() },
-                onConfirm = {
-                    multiplePermissionsLauncher.launch(arrayOf(it.permission))
-                },
-                onGoToAppSettingsClick = {
-                    activity.openAppSettings()
-                    hiveViewModel.dismissDialog()
-                },
-            )
-        }
-    }
 
     BackHandler {
         if (isSheetOpen) {
-            isSheetOpen = false
+            setSheetOpenState(false)
         } else {
             hiveViewModel.backHandler(navController)
         }
     }
-
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        if (isSheetOpen) {
-            ModalBottomSheet(onDismissRequest = {
-                isSheetOpen = false
-            }, sheetState = sheetState) {
-                Column {
-                    var uri: Uri? by rememberSaveable {
-                        mutableStateOf(
-                            null
-                        )
-                    }
-                    var isLoading by remember {
-                        mutableStateOf(
-                            false
-                        )
-                    }
-
-                    val imagePickerIntent =
-                        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { imageUri ->
-                            isLoading = false
-                            uri = imageUri
-                            hiveViewModel.setImageForSelectedHive(imageUri)
-                            isSheetOpen = false
-                        }
-
-                    val cameraOpenIntent =
-                        rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) {
-                            if (it) {
-                                isLoading = false
-                                hiveViewModel.setImageForSelectedHive(uri)
-                                isSheetOpen = false
-                            }
-                        }
-                    Column(
-                        Modifier.padding(horizontal = 16.dp)
-                    ) {
-                        // set image button
-                        FilledTonalButton(
-                            onClick = {
-                                if (ActivityCompat.checkSelfPermission(
-                                        context, Manifest.permission.CAMERA
-                                    ) == PackageManager.PERMISSION_GRANTED
-                                ) {
-                                    isLoading = true
-                                    uri?.let { hiveViewModel.deleteImage(it) }
-                                    uri = hiveViewModel.getImageUri(hive.id)
-                                    cameraOpenIntent.launch(uri)
-                                } else {
-                                    hiveViewModel.onPermissionRequested(Manifest.permission.CAMERA)
-                                }
-                            }, modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp)
-                        ) {
-                            ConstraintLayout(Modifier.fillMaxSize()) {
-                                val (icon, text) = createRefs()
-
-                                Icon(
-                                    Icons.Filled.PhotoCamera,
-                                    contentDescription = null,
-                                    modifier = Modifier.constrainAs(icon) {
-                                        start.linkTo(parent.start)
-                                        top.linkTo(parent.top)
-                                        bottom.linkTo(parent.bottom)
-                                    })
-
-                                Text(
-                                    text = "USE CAMERA",
-                                    modifier = Modifier.constrainAs(text) {
-                                        start.linkTo(parent.start)
-                                        top.linkTo(parent.top)
-                                        bottom.linkTo(parent.bottom)
-                                        end.linkTo(parent.end)
-                                    },
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        // choose image button
-                        FilledTonalButton(
-                            onClick = {
-                                isLoading = true
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                    if (ActivityCompat.checkSelfPermission(
-                                            context, Manifest.permission.READ_MEDIA_IMAGES
-                                        ) == PackageManager.PERMISSION_GRANTED
-                                    ) {
-                                        imagePickerIntent.launch("image/*")
-                                    } else {
-                                        hiveViewModel.onPermissionRequested(Manifest.permission.READ_MEDIA_IMAGES)
-                                    }
-                                } else {
-                                    if (ActivityCompat.checkSelfPermission(
-                                            context, Manifest.permission.READ_EXTERNAL_STORAGE
-                                        ) == PackageManager.PERMISSION_GRANTED
-                                    ) {
-                                        imagePickerIntent.launch("image/*")
-                                    } else {
-                                        hiveViewModel.onPermissionRequested(Manifest.permission.READ_EXTERNAL_STORAGE)
-                                    }
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp),
-                        ) {
-                            ConstraintLayout(Modifier.fillMaxSize()) {
-                                val (icon, text) = createRefs()
-                                Icon(
-                                    Icons.Filled.Image,
-                                    contentDescription = null,
-                                    modifier = Modifier.constrainAs(icon) {
-                                        start.linkTo(parent.start)
-                                        top.linkTo(parent.top)
-                                        bottom.linkTo(parent.bottom)
-                                    })
-
-                                Text(text = "USE GALLERY", modifier = Modifier.constrainAs(text) {
-                                    start.linkTo(parent.start)
-                                    top.linkTo(parent.top)
-                                    bottom.linkTo(parent.bottom)
-                                    end.linkTo(parent.end)
-                                }, style = MaterialTheme.typography.titleMedium)
-                            }
-                        }
-
-                        // Remove image button
-                        if (hive.hiveDetails.image != null) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            FilledTonalButton(
-                                onClick = {
-                                    hiveViewModel.removeImageForSelectedHive()
-                                    isSheetOpen = false
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp),
-                                colors = ButtonDefaults.filledTonalButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.error,
-                                )
-                            ) {
-                                ConstraintLayout(Modifier.fillMaxSize()) {
-                                    val (icon, text) = createRefs()
-
-                                    Icon(
-                                        Icons.Filled.Delete,
-                                        contentDescription = null,
-                                        modifier = Modifier.constrainAs(icon) {
-                                            start.linkTo(parent.start)
-                                            top.linkTo(parent.top)
-                                            bottom.linkTo(parent.bottom)
-                                        })
-
-                                    Text(
-                                        text = "REMOVE IMAGE",
-                                        modifier = Modifier.constrainAs(text) {
-                                            start.linkTo(parent.start)
-                                            top.linkTo(parent.top)
-                                            bottom.linkTo(parent.bottom)
-                                            end.linkTo(parent.end)
-                                        },
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
-                                }
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
-                }
-            }
-        }
-    }
-
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxSize()) {
         TopAppBar(
             title = {
@@ -347,7 +130,7 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
                                 .fillMaxWidth()
                                 .height(200.dp)
                                 .clickable {
-                                    isSheetOpen = true
+                                    setSheetOpenState(true)
                                 }
                                 .clip(
                                     RoundedCornerShape(
@@ -374,7 +157,7 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
                                 .fillMaxWidth()
                                 .height(200.dp)
                                 .clickable {
-                                    isSheetOpen = true
+                                    setSheetOpenState(true)
                                 }
                                 .background(
                                     MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),

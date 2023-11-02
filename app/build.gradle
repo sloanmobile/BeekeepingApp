@@ -103,6 +103,9 @@ dependencies {
     // When using the BoM, you don't specify versions in Firebase library dependencies
     implementation("com.google.firebase:firebase-firestore-ktx")
 
+    // ADD the API-only library to all variants
+    implementation("com.google.firebase:firebase-appdistribution-api-ktx:16.0.0-beta11")
+
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
