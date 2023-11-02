@@ -112,6 +112,7 @@ fun InspectionsList(hiveViewModel: HiveViewModel, navController: NavController) 
     val state by hiveViewModel.state.collectAsState()
     val inspections =
         state.selectedHive?.hiveInspections?.sortedBy { LocalDate.parse(it.date) } ?: return
+
     LazyColumn {
         items(inspections.size) { index ->
             InspectionListItem(
@@ -133,7 +134,7 @@ fun InspectionListItem(
         mutableStateOf(false)
     }
 
-    val pressOffset = remember { mutableStateOf(DpOffset.Zero) }
+    var pressOffset by remember { mutableStateOf(DpOffset.Zero) }
 
     val dropdownInteractionSource = remember { MutableInteractionSource() }
 
@@ -159,7 +160,7 @@ fun InspectionListItem(
                     .pointerInput(true) {
                         detectTapGestures(
                             onPress = { offset ->
-                                pressOffset.value = DpOffset(offset.x.toDp(), offset.y.toDp())
+                                pressOffset = DpOffset(offset.x.toDp(), offset.y.toDp())
                                 isContextMenuVisible = true
                                 val press = PressInteraction.Press(offset)
                                 dropdownInteractionSource.emit(press)
@@ -170,7 +171,7 @@ fun InspectionListItem(
                     }) {
                     Icon(Icons.Filled.MoreVert, contentDescription = "More")
                     DropdownMenu(expanded = isContextMenuVisible,
-                        offset = pressOffset.value,
+                        offset = pressOffset,
                         onDismissRequest = {
                             isContextMenuVisible = false
                         }) {

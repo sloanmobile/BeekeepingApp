@@ -9,6 +9,10 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,10 +31,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -44,12 +53,18 @@ import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
@@ -66,11 +81,19 @@ fun Activity.openAppSettings() {
 @Composable
 fun HivesScreen(navController: NavController, hiveViewModel: HiveViewModel) {
     val hives by hiveViewModel.hives.collectAsState()
-
     Column(Modifier.fillMaxSize()) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxSize()
         ) {
+            var isContextMenuVisible by rememberSaveable {
+                mutableStateOf(false)
+            }
+
+            val pressOffset by remember { mutableStateOf(DpOffset.Zero) }
+
+            val dropdownInteractionSource = remember { MutableInteractionSource() }
+
+
             TopAppBar(
                 title = {
                     Text(text = "Hives")
@@ -87,6 +110,25 @@ fun HivesScreen(navController: NavController, hiveViewModel: HiveViewModel) {
                         hiveViewModel.onTapSettingsButton(navController)
                     }) {
                         Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                    }
+                    IconButton(onClick = {
+                        isContextMenuVisible = true
+                    }) {
+                        Icon(Icons.Filled.MoreVert, contentDescription = "More")
+                    }
+                    DropdownMenu(expanded = isContextMenuVisible,
+                        offset = pressOffset,
+                        onDismissRequest = {
+                            isContextMenuVisible = false
+                        }) {
+                        DropdownMenuItem(onClick = {
+                            isContextMenuVisible = false
+                        }, text = {
+                            Text(text = "Delete")
+                        }, leadingIcon = {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                        })
+
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -163,7 +205,8 @@ fun HiveCard(
             }) {
         Column(
             Modifier
-                .fillMaxWidth()) {
+                .fillMaxWidth()
+        ) {
             hive.hiveDetails.image?.let { image ->
                 // Hive image
                 AsyncImage(

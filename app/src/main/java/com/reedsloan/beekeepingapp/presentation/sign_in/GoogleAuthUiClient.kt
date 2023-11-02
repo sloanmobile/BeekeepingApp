@@ -6,6 +6,7 @@ import android.content.IntentSender
 import com.google.android.gms.auth.api.identity.BeginSignInRequest
 import com.google.android.gms.auth.api.identity.BeginSignInRequest.GoogleIdTokenRequestOptions
 import com.google.android.gms.auth.api.identity.SignInClient
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
@@ -16,9 +17,8 @@ import java.util.concurrent.CancellationException
 class GoogleAuthUiClient(
     private val context: Context,
     private val oneTapClient: SignInClient,
+    private val auth: FirebaseAuth,
 ) {
-    private val auth = Firebase.auth
-
     /**
      * Starts the Google sign in flow.
      *
@@ -44,7 +44,7 @@ class GoogleAuthUiClient(
 
             user?.run {
                 SignInResult(
-                    UserData(
+                    GoogleUserData(
                         id = uid,
                         username = displayName ?: "",
                         photoUrl = photoUrl?.toString() ?: ""
@@ -53,7 +53,7 @@ class GoogleAuthUiClient(
                 )
             } ?: run {
                 SignInResult(
-                    UserData(
+                    GoogleUserData(
                         id = "",
                         username = "",
                         photoUrl = ""
@@ -67,8 +67,8 @@ class GoogleAuthUiClient(
         }
     }
 
-    fun getSignedInUser(): UserData? = auth.currentUser?.run {
-            UserData(
+    fun getSignedInUser(): GoogleUserData? = auth.currentUser?.run {
+            GoogleUserData(
                 id = uid,
                 username = displayName ?: "",
                 photoUrl = photoUrl?.toString() ?: ""

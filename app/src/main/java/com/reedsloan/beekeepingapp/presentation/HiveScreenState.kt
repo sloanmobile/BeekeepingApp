@@ -2,6 +2,7 @@ package com.reedsloan.beekeepingapp.presentation
 
 import com.reedsloan.beekeepingapp.BuildConfig
 import com.reedsloan.beekeepingapp.data.UserPreferences
+import com.reedsloan.beekeepingapp.data.local.UserData
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
 import com.reedsloan.beekeepingapp.data.local.hive.HiveInspection
 import com.reedsloan.beekeepingapp.presentation.common.MenuState
@@ -11,6 +12,7 @@ data class HiveScreenState(
     val isLoading: Boolean = false,
     val isError: Boolean = false,
     val isSuccess: Boolean = false,
+    val userData: UserData = UserData(),
     val errorMessage: String = "",
     val navigationBarMenuState: MenuState = MenuState.CLOSED,
     val isCameraPermissionAllowed: Boolean = false,

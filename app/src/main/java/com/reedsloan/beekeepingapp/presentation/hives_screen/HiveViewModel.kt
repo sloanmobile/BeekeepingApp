@@ -20,6 +20,7 @@ import com.reedsloan.beekeepingapp.data.TimeFormat
 import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.TemperatureMeasurement
 import com.reedsloan.beekeepingapp.data.local.hive.*
+import com.reedsloan.beekeepingapp.data.repo.remote.UserDataRepository
 import com.reedsloan.beekeepingapp.domain.repo.HiveRepository
 import com.reedsloan.beekeepingapp.presentation.common.data.PermissionRequest
 import com.reedsloan.beekeepingapp.presentation.HiveScreenState
@@ -39,10 +40,10 @@ import javax.inject.Inject
 class HiveViewModel @Inject constructor(
     private val app: Application,
     private val hiveRepository: HiveRepository,
+    private val userDataRepository: UserDataRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow(HiveScreenState())
     val state = _state.asStateFlow()
-
 
 
     private val _hives = MutableStateFlow<List<Hive>>(emptyList())
@@ -50,11 +51,56 @@ class HiveViewModel @Inject constructor(
 
     val visiblePermissionDialogQueue = mutableStateListOf<PermissionRequest>()
 
-    init {
+    /**
+     * Saves the user data to the remote database.
+     * This should be used when the user adds, updates, or deletes a hive.
+     */
+    private fun saveUserDataToRemote() {
+        viewModelScope.launch {
+            runCatching {
+                _state.update {
+                    state.value.copy(
+                        userData = state.value.userData.copy(
+                            hives = hives.value,
+                            lastUpdated = System.currentTimeMillis()
+                        )
+                    )
+                }
+                userDataRepository.updateUserData(state.value.userData)
+            }.onSuccess {
+                Log.d(this::class.simpleName, "User data successfully updated")
+            }.onFailure {
+                val error = it.message ?: "Unknown error updating user data."
+                Log.e(
+                    this::class.simpleName,
+                    "Error updating user data: ${it.stackTraceToString()}"
+                )
+                Toast.makeText(app, error, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    fun syncData() {
         viewModelScope.launch {
             getUserPreferences()
-            getAllHives()
+            getUserData()
         }
+    }
+
+    private suspend fun getUserData() {
+        userDataRepository.getUserData()
+            .onSuccess { userData ->
+                _state.update {
+                    it.copy(
+                        userPreferences = userData.userPreferences,
+                        userData = userData
+                    )
+                }
+                _hives.update { userData.hives }
+                Log.d(this::class.simpleName, "User data from remote: $userData")
+            }.onFailure {
+                Log.e(this::class.simpleName, "Error getting user data: ${it.stackTraceToString()}")
+            }
     }
 
     fun isPermissionRequestFirstTime(permission: String): Boolean {
@@ -174,7 +220,7 @@ class HiveViewModel @Inject constructor(
         // make a toast notification
         Toast.makeText(app, "New hive created.", Toast.LENGTH_SHORT).show()
         closeOpenMenus()
-        createHive()
+        addHive()
     }
 
 
@@ -341,22 +387,23 @@ class HiveViewModel @Inject constructor(
     }
 
     private suspend fun getAllHives() {
-        setIsLoading(true)
-        runCatching {
-            hiveRepository.getAllHives()
-        }.onSuccess { hives ->
-            _hives.value = hives
-            // update the selected hive if it exists
-            setSelectedHive(state.value.selectedHive?.id ?: "")
-            showSuccess()
-        }.onFailure { error ->
-            showError(error.message ?: "Unknown error")
-
-            // make a toast
-            Toast.makeText(
-                app, "Error getting hives.", Toast.LENGTH_SHORT
-            ).show()
-        }
+//        setIsLoading(true)
+//        runCatching {
+//            hiveRepository.getAllHives()
+//        }.onSuccess { hives ->
+//            _hives.value = hives
+//            // update the selected hive if it exists
+//            setSelectedHive(state.value.selectedHive?.id ?: "")
+//            showSuccess()
+//        }.onFailure { error ->
+//            showError(error.message ?: "Unknown error")
+//
+//            // make a toast
+//            Toast.makeText(
+//                app, "Error getting hives.", Toast.LENGTH_SHORT
+//            ).show()
+//        }
+        getUserData()
     }
 
     fun dateMillisToDateString(dateMillis: String, longFormat: Boolean = false): String {
@@ -373,39 +420,18 @@ class HiveViewModel @Inject constructor(
         }
     }
 
-    private fun createHive() {
-        viewModelScope.launch {
-            runCatching {
-                val hives = hiveRepository.getAllHives()
-                val hive = Hive(
-                    id = UUID.randomUUID().toString(), HiveInfo(
-                        name = "Hive ${hives.size + 1}",
-                    ), displayOrder = hives.size + 1
-                )
-                hiveRepository.createHive(hive)
-            }.onSuccess {
-                getAllHives()
-            }.onFailure {
-                showError(it.message ?: "Unknown error")
-                // Show error message
-                Toast.makeText(app, it.message, Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-
-    private suspend fun updateHive(hive: Hive) {
+    private fun addHive(
+        hive: Hive = Hive(
+            id = UUID.randomUUID().toString(), HiveInfo(
+                name = "Hive ${hives.value.size + 1}",
+            ), displayOrder = hives.value.size + 1
+        )
+    ) {
         runCatching {
-            setIsLoading(true)
-            hiveRepository.updateHive(
-                hive.copy(
-                    hiveDetails = hive.hiveDetails.copy(
-                        dateModified = LocalDate.now()
-                    )
-                )
-            )
+            _hives.update { it + hive }
         }.onSuccess {
-            getAllHives()
+            showSuccess()
+            saveUserDataToRemote()
         }.onFailure {
             showError(it.message ?: "Unknown error")
             // Show error message
@@ -413,14 +439,49 @@ class HiveViewModel @Inject constructor(
         }
     }
 
-    private suspend fun deleteHive(hiveId: String) {
+    private fun updateHive(hive: Hive) {
         runCatching {
             setIsLoading(true)
-            deselectHive()
-            hiveRepository.deleteHive(hiveId)
+            _hives.update {
+                it.map { h ->
+                    if (h.id == hive.id) {
+                        hive
+                    } else {
+                        h
+                    }
+                }
+            }
         }.onSuccess {
-            // get all hives again
-            getAllHives()
+            showSuccess()
+            updateSelectedHive(hive)
+            saveUserDataToRemote()
+        }.onFailure {
+            showError(it.message ?: "Unknown error")
+            // Show error message
+            Toast.makeText(app, it.message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun updateSelectedHive(hive: Hive) {
+        _state.update {
+            it.copy(
+                selectedHive = hive
+            )
+        }
+    }
+
+    private fun deleteHive(hiveId: String) {
+        runCatching {
+            setIsLoading(true)
+            _hives.update {
+                it.filter { h ->
+                    h.id != hiveId
+                }
+            }
+            deselectHive()
+        }.onSuccess {
+            showSuccess()
+            saveUserDataToRemote()
         }.onFailure {
             showError(it.message ?: "Unknown error")
             // Show error message
@@ -457,12 +518,13 @@ class HiveViewModel @Inject constructor(
             }.onFailure {
                 Log.e(this::class.simpleName, "Error exporting to CSV: ${it.stackTraceToString()}")
                 Log.e(this::class.simpleName, "${it.cause}")
-                when(it.cause) {
+                when (it.cause) {
                     is ErrnoException -> {
                         Toast.makeText(
                             app, "Please empty your devices trash.", Toast.LENGTH_LONG
                         ).show()
                     }
+
                     else -> {
                         Toast.makeText(
                             app, "Error exporting to CSV", Toast.LENGTH_SHORT
@@ -612,7 +674,7 @@ class HiveViewModel @Inject constructor(
         }
     }
 
-    private suspend fun updateHiveInspection(hiveInspection: HiveInspection) {
+    private fun updateHiveInspection(hiveInspection: HiveInspection) {
         runCatching {
             updateHive(
                 hive = state.value.selectedHive!!.copy(
@@ -785,22 +847,18 @@ class HiveViewModel @Inject constructor(
      * @see [HiveInspection]
      */
     private fun createInspection() {
-        viewModelScope.launch {
-            runCatching {
-                val hive = state.value.selectedHive ?: return@runCatching
-                val hiveInspection = getDefaultInspection()
+        runCatching {
+            state.value.selectedHive?.let { hive ->
                 updateHive(
                     hive.copy(
-                        hiveInspections = hive.hiveInspections + hiveInspection
+                        hiveInspections = hive.hiveInspections + getDefaultInspection()
                     )
                 )
-            }.onSuccess {
-                getAllHives()
-            }.onFailure {
-                showError(it.message ?: "Unknown error")
-                // Show error message
-                Toast.makeText(app, it.message, Toast.LENGTH_SHORT).show()
             }
+        }.onSuccess {
+            showSuccess()
+        }.onFailure {
+            showError(it.message ?: "Unknown error")
         }
     }
 

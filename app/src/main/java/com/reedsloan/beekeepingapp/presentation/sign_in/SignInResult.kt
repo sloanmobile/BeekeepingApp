@@ -1,11 +1,11 @@
 package com.reedsloan.beekeepingapp.presentation.sign_in
 
 data class SignInResult(
-    val data: UserData? = null,
+    val data: GoogleUserData? = null,
     val error: String?
 )
 
-data class UserData(
+data class GoogleUserData(
     val id: String,
     val username: String,
     val photoUrl: String

@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -39,13 +40,13 @@ import com.reedsloan.beekeepingapp.presentation.sign_in.SignInViewModel
 import com.reedsloan.beekeepingapp.presentation.ui.theme.AppTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private val googleAuthUiClient by lazy {
-        GoogleAuthUiClient(applicationContext, Identity.getSignInClient(applicationContext))
-    }
+    @Inject
+    lateinit var googleAuthUiClient: GoogleAuthUiClient
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -113,6 +114,8 @@ class MainActivity : ComponentActivity() {
                                                     inclusive = true
                                                 }
                                             }
+                                            // sync of data from the remote now that we're signed in
+                                            hiveViewModel.syncData()
                                         }
                                     }
 

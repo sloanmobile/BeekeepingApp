@@ -4,8 +4,8 @@ import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
 
 data class UserData(
-    val userPreferences: UserPreferences,
-    val hives: List<Hive>,
-    val lastUpdated: Long,
-    val userId: String,
+    val userPreferences: UserPreferences = UserPreferences(),
+    val hives: List<Hive> = emptyList(),
+    val lastUpdated: Long = 0L,
+    val userId: String = "",
 )
