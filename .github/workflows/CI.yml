@@ -20,6 +20,7 @@ jobs:
         with:
           distribution: ${{ env.JAVA_DIST }}
           java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
 
       - name: Gradle cache
         uses: gradle/gradle-build-action@v2
