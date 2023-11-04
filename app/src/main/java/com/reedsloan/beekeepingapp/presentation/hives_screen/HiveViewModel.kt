@@ -22,8 +22,8 @@ import com.reedsloan.beekeepingapp.data.TimeFormat
 import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.TemperatureMeasurement
 import com.reedsloan.beekeepingapp.data.local.hive.*
-import com.reedsloan.beekeepingapp.data.repo.remote.UserDataRepository
 import com.reedsloan.beekeepingapp.domain.repo.HiveRepository
+import com.reedsloan.beekeepingapp.domain.repo.UserDataRepository
 import com.reedsloan.beekeepingapp.presentation.ContextMenuItem
 import com.reedsloan.beekeepingapp.presentation.HiveScreenState
 import com.reedsloan.beekeepingapp.presentation.common.MenuState
@@ -315,7 +315,6 @@ class HiveViewModel @Inject constructor(
                 selectionList = emptyList()
             )
         }
-        resetContextMenu()
         clearSelectionList()
     }
 
@@ -907,29 +906,5 @@ class HiveViewModel @Inject constructor(
 
     fun onTapDeleteHiveButton(hive: Hive) {
         showDeleteHiveDialog(hive.id)
-    }
-
-    fun showContextMenu(contextMenuItems: List<ContextMenuItem>, pressOffset: DpOffset) {
-        _state.update {
-            it.copy(
-                isContextMenuVisible = true,
-                contextMenuItems = contextMenuItems,
-                pressOffset = pressOffset,
-            )
-        }
-    }
-
-    private fun resetContextMenu() {
-        _state.update {
-            it.copy(
-                isContextMenuVisible = defaultScreenInstance.isContextMenuVisible,
-                contextMenuItems = defaultScreenInstance.contextMenuItems,
-                pressOffset = defaultScreenInstance.pressOffset,
-            )
-        }
-    }
-
-    fun dismissContextMenu() {
-        closeOpenMenus()
     }
 }

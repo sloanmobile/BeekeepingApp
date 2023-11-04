@@ -32,9 +32,6 @@ data class HiveScreenState(
     val editingTextField: Boolean = false,
     val showDeleteHiveDialog: Boolean = false,
     val selectedHiveInspection: HiveInspection? = null,
-    val isContextMenuVisible: Boolean = false,
-    val contextMenuItems: List<ContextMenuItem> = emptyList(),
-    val pressOffset: DpOffset = DpOffset.Zero
 )
 
 data class ContextMenuItem(
