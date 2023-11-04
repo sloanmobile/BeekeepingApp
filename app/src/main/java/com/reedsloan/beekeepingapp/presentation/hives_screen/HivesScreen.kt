@@ -5,7 +5,6 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import android.util.Log
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -67,26 +66,34 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.reedsloan.beekeepingapp.core.util.TestTags
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
 import com.reedsloan.beekeepingapp.presentation.ContextMenuItem
 import com.reedsloan.beekeepingapp.presentation.sign_in.SignInViewModel
 
 fun Activity.openAppSettings() {
     Intent(
-        Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null)
+        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+        Uri.fromParts("package", packageName, null)
     ).also(::startActivity)
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HivesScreen(navController: NavController, hiveViewModel: HiveViewModel, signInViewModel: SignInViewModel) {
+fun HivesScreen(
+    navController: NavController,
+    hiveViewModel: HiveViewModel,
+    signInViewModel: SignInViewModel
+) {
     val hives by hiveViewModel.hives.collectAsState()
     val state by hiveViewModel.state.collectAsState()
+
     Column(Modifier.fillMaxSize()) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxSize()
@@ -152,8 +159,16 @@ fun HivesScreen(navController: NavController, hiveViewModel: HiveViewModel, sign
                 }
             } else {
                 Spacer(modifier = Modifier.height(16.dp))
-                LazyVerticalGrid(columns = GridCells.Fixed(1), modifier = Modifier.fillMaxWidth()) {
-                    items(hives) { hive ->
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(1),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(TestTags.LAZY_VERTICAL_GRID)
+                ) {
+                    items(
+                        items = hives,
+                        key = { hive -> hive.id }
+                    ) { hive ->
                         HiveCard(
                             hive = hive,
                             navController = navController,
@@ -164,7 +179,14 @@ fun HivesScreen(navController: NavController, hiveViewModel: HiveViewModel, sign
             }
         }
     }
-
+    // Delete hive dialog
+    Box(Modifier.fillMaxSize()) {
+        if (state.showDeleteHiveDialog) DeleteConfirmationDialog(onDismiss = { hiveViewModel.dismissDeleteHiveDialog() },
+            onClick = {
+                hiveViewModel.onTapDeleteHiveConfirmationButton(state.selectedHive!!.id)
+                hiveViewModel.dismissDeleteHiveDialog()
+            })
+    }
     Box(Modifier.fillMaxSize()) {
         ExtendedFloatingActionButton(
             onClick = { hiveViewModel.onTapAddHiveButton() },
@@ -172,6 +194,7 @@ fun HivesScreen(navController: NavController, hiveViewModel: HiveViewModel, sign
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
                 .zIndex(1F)
+                .testTag(TestTags.ADD_HIVE_BUTTON)
         ) {
             Icon(Icons.Filled.Add, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
@@ -193,7 +216,10 @@ fun DeleteConfirmationDialog(onClick: () -> Unit, onDismiss: () -> Unit) {
     }, text = {
         Text(text = "Are you sure you want to delete this hive?")
     }, confirmButton = {
-        Button(onClick = { onClick() }) {
+        Button(
+            onClick = { onClick() },
+            modifier = Modifier.testTag(TestTags.DELETE_HIVE_CONFIRMATION_BUTTON)
+        ) {
             Text(text = "Delete")
         }
     }, dismissButton = {
@@ -209,8 +235,10 @@ fun HiveCard(
     navController: NavController,
     hiveViewModel: HiveViewModel,
 ) {
+    val state by hiveViewModel.state.collectAsState()
     ElevatedCard(
         Modifier
+            .testTag(TestTags.HIVE_CARD)
             .padding(8.dp)
             .clickable {
                 hiveViewModel.onTapHiveCard(hive.id, navController)
@@ -274,24 +302,32 @@ fun HiveCard(
                         )
                     }
                 }
+                var isContextMenuVisible by remember { mutableStateOf(false) }
+                var pressOffset by remember { mutableStateOf(DpOffset.Zero) }
+
                 Column(
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.Center,
+                ) {
+                    ContextMenuButton(
+                        isContextMenuVisible = isContextMenuVisible,
+                        contextMenuItems = listOf(
+                            ContextMenuItem(
+                                title = "Delete",
+                                icon = Icons.Filled.Delete,
+                                action = {
+                                    hiveViewModel.onTapDeleteHiveButton(hive)
+                                }
+                            )
+                        ),
+                        pressOffset = pressOffset,
+                        onDismissRequest = {
+                            isContextMenuVisible = false
+                        },
                     ) {
-                    ContextMenuButton {
                         hiveViewModel.setSelectedHive(hive.id)
-
-                        hiveViewModel.showContextMenu(
-                            contextMenuItems = listOf(
-                                ContextMenuItem(
-                                    title = "Delete",
-                                    icon = Icons.Default.Delete,
-                                    action = {
-                                        hiveViewModel.onTapDeleteHiveButton(hive)
-                                    },
-                                )
-                            ), pressOffset = it
-                        )
+                        pressOffset = it
+                        isContextMenuVisible = true
                     }
                 }
             }
@@ -301,32 +337,57 @@ fun HiveCard(
 
 @Composable
 fun ContextMenuButton(
+    isContextMenuVisible: Boolean,
+    contextMenuItems: List<ContextMenuItem>,
+    pressOffset: DpOffset = DpOffset.Zero,
+    onDismissRequest: () -> Unit,
     onPress: (DpOffset) -> Unit,
-) {
+    ) {
     val dropdownInteractionSource = remember { MutableInteractionSource() }
 
-    Box(contentAlignment = Alignment.Center, modifier = Modifier
-        .padding(16.dp)
-        .size(40.dp)
-        // clip to circle
-        .clip(CircleShape)
-        .indication(
-            interactionSource = dropdownInteractionSource, indication = rememberRipple()
-        )
-        .pointerInput(true) {
-            detectTapGestures(
-                onPress = { offset ->
-                    val press = PressInteraction.Press(offset)
-
-                    onPress(DpOffset(offset.x.toDp(), offset.y.toDp()))
-                    Log.d("ContextMenuButton", "Offset: $offset")
-
-                    dropdownInteractionSource.emit(press)
-                    tryAwaitRelease()
-                    dropdownInteractionSource.emit(PressInteraction.Release(press))
-                },
+        Box(contentAlignment = Alignment.Center, modifier = Modifier
+            .padding(16.dp)
+            .size(40.dp)
+            // clip to circle
+            .clip(CircleShape)
+            .indication(
+                interactionSource = dropdownInteractionSource, indication = rememberRipple()
             )
-        }) {
-        Icon(Icons.Filled.MoreVert, contentDescription = "More")
+            .testTag(TestTags.CONTEXT_MENU_BUTTON)
+            .pointerInput(true) {
+                detectTapGestures(
+                    onPress = { offset ->
+                        val press = PressInteraction.Press(offset)
+
+                        onPress(DpOffset(offset.x.toDp(), offset.y.toDp()-28.dp))
+                        Log.d("ContextMenuButton", "Offset: $offset")
+
+                        dropdownInteractionSource.emit(press)
+                        tryAwaitRelease()
+                        dropdownInteractionSource.emit(PressInteraction.Release(press))
+                    },
+                )
+            }) {
+            Icon(Icons.Filled.MoreVert, contentDescription = "More")
+        }
+
+        DropdownMenu(expanded = isContextMenuVisible,
+            offset = pressOffset,
+            onDismissRequest = {
+                onDismissRequest()
+            }) {
+            contextMenuItems.forEachIndexed { index, contextMenuItem ->
+                DropdownMenuItem(onClick = {
+                    contextMenuItem.action()
+                }, text = {
+                    Text(text = contextMenuItem.title)
+                }, leadingIcon = {
+                    contextMenuItem.icon?.let { icon ->
+                        Icon(icon, contentDescription = contextMenuItem.title)
+                    }
+                },
+                    modifier = Modifier.testTag(TestTags.CONTEXT_MENU_ITEM)
+                )
+            }
     }
 }

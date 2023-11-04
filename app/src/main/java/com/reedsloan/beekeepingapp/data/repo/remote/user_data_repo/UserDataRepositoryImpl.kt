@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.data.repo.remote
+package com.reedsloan.beekeepingapp.data.repo.remote.user_data_repo
 
 import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
@@ -9,20 +9,21 @@ import com.google.gson.Gson
 import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.UserData
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
+import com.reedsloan.beekeepingapp.domain.repo.UserDataRepository
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class UserDataRepository @Inject constructor(
+class UserDataRepositoryImpl @Inject constructor(
     firebase: Firebase,
     private val auth: FirebaseAuth,
     private val gson: Gson
-) {
+): UserDataRepository {
     private val db = firebase.firestore
     private val usersCollection = db.collection("users")
 
-    suspend fun updateUserData(userData: UserData) {
+    override suspend fun updateUserData(userData: UserData) {
         runCatching {
             val userId =
                 auth.currentUser?.uid ?: throw Exception("Error updating user data: userId is null")
@@ -48,7 +49,7 @@ class UserDataRepository @Inject constructor(
         }
     }
 
-    suspend fun getUserData(): Result<UserData> {
+    override suspend fun getUserData(): Result<UserData> {
         return runCatching {
             val userId =
                 auth.currentUser?.uid ?: throw Exception("Error updating user data: userId is null")
