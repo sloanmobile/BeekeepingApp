@@ -159,21 +159,23 @@ fun HivesScreen(
                 }
             } else {
                 Spacer(modifier = Modifier.height(16.dp))
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(1),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag(TestTags.LAZY_VERTICAL_GRID)
-                ) {
-                    items(
-                        items = hives,
-                        key = { hive -> hive.id }
-                    ) { hive ->
-                        HiveCard(
-                            hive = hive,
-                            navController = navController,
-                            hiveViewModel = hiveViewModel
-                        )
+                if (hives.isNotEmpty()) {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(1),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag(TestTags.LAZY_VERTICAL_GRID)
+                    ) {
+                        items(
+                            items = hives,
+                            key = { hive -> hive.id }
+                        ) { hive ->
+                            HiveCard(
+                                hive = hive,
+                                navController = navController,
+                                hiveViewModel = hiveViewModel
+                            )
+                        }
                     }
                 }
             }
@@ -342,52 +344,52 @@ fun ContextMenuButton(
     pressOffset: DpOffset = DpOffset.Zero,
     onDismissRequest: () -> Unit,
     onPress: (DpOffset) -> Unit,
-    ) {
+) {
     val dropdownInteractionSource = remember { MutableInteractionSource() }
 
-        Box(contentAlignment = Alignment.Center, modifier = Modifier
-            .padding(16.dp)
-            .size(40.dp)
-            // clip to circle
-            .clip(CircleShape)
-            .indication(
-                interactionSource = dropdownInteractionSource, indication = rememberRipple()
-            )
-            .testTag(TestTags.CONTEXT_MENU_BUTTON)
-            .pointerInput(true) {
-                detectTapGestures(
-                    onPress = { offset ->
-                        val press = PressInteraction.Press(offset)
+    Box(contentAlignment = Alignment.Center, modifier = Modifier
+        .padding(16.dp)
+        .size(40.dp)
+        // clip to circle
+        .clip(CircleShape)
+        .indication(
+            interactionSource = dropdownInteractionSource, indication = rememberRipple()
+        )
+        .testTag(TestTags.CONTEXT_MENU_BUTTON)
+        .pointerInput(true) {
+            detectTapGestures(
+                onPress = { offset ->
+                    val press = PressInteraction.Press(offset)
 
-                        onPress(DpOffset(offset.x.toDp(), offset.y.toDp()-28.dp))
-                        Log.d("ContextMenuButton", "Offset: $offset")
+                    onPress(DpOffset(offset.x.toDp(), offset.y.toDp() - 28.dp))
+                    Log.d("ContextMenuButton", "Offset: $offset")
 
-                        dropdownInteractionSource.emit(press)
-                        tryAwaitRelease()
-                        dropdownInteractionSource.emit(PressInteraction.Release(press))
-                    },
-                )
-            }) {
-            Icon(Icons.Filled.MoreVert, contentDescription = "More")
-        }
-
-        DropdownMenu(expanded = isContextMenuVisible,
-            offset = pressOffset,
-            onDismissRequest = {
-                onDismissRequest()
-            }) {
-            contextMenuItems.forEachIndexed { index, contextMenuItem ->
-                DropdownMenuItem(onClick = {
-                    contextMenuItem.action()
-                }, text = {
-                    Text(text = contextMenuItem.title)
-                }, leadingIcon = {
-                    contextMenuItem.icon?.let { icon ->
-                        Icon(icon, contentDescription = contextMenuItem.title)
-                    }
+                    dropdownInteractionSource.emit(press)
+                    tryAwaitRelease()
+                    dropdownInteractionSource.emit(PressInteraction.Release(press))
                 },
-                    modifier = Modifier.testTag(TestTags.CONTEXT_MENU_ITEM)
-                )
-            }
+            )
+        }) {
+        Icon(Icons.Filled.MoreVert, contentDescription = "More")
+    }
+
+    DropdownMenu(expanded = isContextMenuVisible,
+        offset = pressOffset,
+        onDismissRequest = {
+            onDismissRequest()
+        }) {
+        contextMenuItems.forEachIndexed { index, contextMenuItem ->
+            DropdownMenuItem(onClick = {
+                contextMenuItem.action()
+            }, text = {
+                Text(text = contextMenuItem.title)
+            }, leadingIcon = {
+                contextMenuItem.icon?.let { icon ->
+                    Icon(icon, contentDescription = contextMenuItem.title)
+                }
+            },
+                modifier = Modifier.testTag(TestTags.CONTEXT_MENU_ITEM)
+            )
+        }
     }
 }
