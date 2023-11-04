@@ -22,7 +22,7 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
 
       - name: Gradle cache
-        uses: gradle/gradle-build-action@2.4.2
+        uses: gradle/gradle-build-action@v2
 
       - name: AVD cache
         uses: actions/cache@v3
@@ -66,6 +66,9 @@ jobs:
         with:
           distribution: ${{ env.JAVA_DIST }}
           java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Gradle cache
+        uses: gradle/gradle-build-action@v2
 
       - name: Run All Unit Tests
         run: ./gradlew test --info
