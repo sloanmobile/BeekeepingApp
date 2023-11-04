@@ -1,8 +1,7 @@
-package com.reedsloan.beekeepingapp.data.type_converter
+package com.reedsloan.beekeepingapp.data.repo.local.hive_repo
 
 import androidx.room.TypeConverter
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
 

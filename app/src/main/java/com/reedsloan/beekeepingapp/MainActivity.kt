@@ -46,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.core.app.ActivityCompat
@@ -55,6 +56,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
+import com.reedsloan.beekeepingapp.core.util.TestTags
 import com.reedsloan.beekeepingapp.presentation.ApiariesScreen
 import com.reedsloan.beekeepingapp.presentation.HiveDetailsScreen
 import com.reedsloan.beekeepingapp.presentation.InspectionsScreen
@@ -109,15 +111,6 @@ class MainActivity : ComponentActivity() {
                     }
                     var isSheetOpen by remember { mutableStateOf(false) }
                     val sheetState = rememberModalBottomSheetState()
-
-                    // Delete hive dialog
-                    Box(Modifier.fillMaxSize()) {
-                        if (state.showDeleteHiveDialog) DeleteConfirmationDialog(onDismiss = { hiveViewModel.dismissDeleteHiveDialog() },
-                            onClick = {
-                                hiveViewModel.onTapDeleteHiveConfirmationButton(state.selectedHive!!.id)
-                                hiveViewModel.dismissDeleteHiveDialog()
-                            })
-                    }
 
                     // Permission dialog
                     Box(Modifier.fillMaxSize()) {
@@ -320,28 +313,6 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
-
-                    // Context menu
-                    Box {
-                        DropdownMenu(expanded = state.isContextMenuVisible,
-                            offset = state.pressOffset,
-                            onDismissRequest = {
-                                hiveViewModel.dismissContextMenu()
-                            }) {
-                            state.contextMenuItems.forEach { item ->
-                                DropdownMenuItem(onClick = {
-                                    item.action()
-                                }, text = {
-                                    Text(text = item.title)
-                                }, leadingIcon = {
-                                    item.icon?.let { icon ->
-                                        Icon(icon, contentDescription = item.title)
-                                    }
-                                })
-                            }
-                        }
-                    }
-
 
                     val isDebugBuild by remember { mutableStateOf(BuildConfig.DEBUG) }
 

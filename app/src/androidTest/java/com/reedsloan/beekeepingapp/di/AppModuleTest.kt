@@ -4,11 +4,9 @@ import android.app.Application
 import androidx.room.Room
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.ktx.Firebase
-import com.google.gson.Gson
 import com.reedsloan.beekeepingapp.data.repo.local.hive_repo.HiveDatabase
 import com.reedsloan.beekeepingapp.data.repo.local.hive_repo.HiveRepositoryImpl
-import com.reedsloan.beekeepingapp.data.repo.remote.user_data_repo.UserDataRepositoryImpl
+import com.reedsloan.beekeepingapp.data.repo.remote.user_data_repo.UserDataRepositoryImplTest
 import com.reedsloan.beekeepingapp.domain.repo.HiveRepository
 import com.reedsloan.beekeepingapp.domain.repo.UserDataRepository
 import com.reedsloan.beekeepingapp.presentation.sign_in.GoogleAuthUiClient
@@ -16,12 +14,15 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.mockkStatic
+import org.junit.Assert.*
 import javax.inject.Singleton
-
 
 @Module
 @InstallIn(SingletonComponent::class)
-object AppModule {
+object AppModuleTest {
     @Singleton
     @Provides
     fun provideHiveRepository(app: Application): HiveRepository {
@@ -34,7 +35,7 @@ object AppModule {
         return Room.databaseBuilder(
             app,
             HiveDatabase::class.java,
-            "hive_database"
+            "hive_database_test"
         ).build()
     }
 
@@ -47,11 +48,7 @@ object AppModule {
     @Singleton
     @Provides
     fun provideUserDataRepository(): UserDataRepository {
-        return UserDataRepositoryImpl(
-            firebase = Firebase,
-            auth = provideFirebaseAuth(),
-            gson = Gson()
-        )
+        return UserDataRepositoryImplTest()
     }
 
     @Singleton
@@ -60,7 +57,7 @@ object AppModule {
         return GoogleAuthUiClient(
             context = app,
             oneTapClient = Identity.getSignInClient(app),
-            auth = provideFirebaseAuth()
+            auth = AppModule.provideFirebaseAuth()
         )
     }
 }
