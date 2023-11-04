@@ -328,9 +328,10 @@ class MainActivity : ComponentActivity() {
                     }
 
                     val signInViewModel = hiltViewModel<SignInViewModel>()
+                    val signInState by signInViewModel.state.collectAsState()
 
                     LaunchedEffect(key1 = firebaseAuth.currentUser) {
-                        if (firebaseAuth.currentUser != null) {
+                        if (firebaseAuth.currentUser != null && !signInState.isSignInSuccessful) {
                             hiveViewModel.onSignInSuccess()
                         }
                     }
@@ -357,7 +358,6 @@ class MainActivity : ComponentActivity() {
                                 composable(
                                     route = Screen.SignInScreen.route
                                 ) {
-                                    val signInState by signInViewModel.state.collectAsState()
 
                                     val launcher =
                                         rememberLauncherForActivityResult(contract = ActivityResultContracts.StartIntentSenderForResult(),
@@ -376,6 +376,8 @@ class MainActivity : ComponentActivity() {
                                     // Sign in from previous session
                                     LaunchedEffect(key1 = signInState.isSignInSuccessful) {
                                         if (signInState.isSignInSuccessful) {
+                                            hiveViewModel.onSignInSuccess()
+
                                             navController.navigate(Screen.HivesScreen.route) {
                                                 popUpTo(Screen.SignInScreen.route) {
                                                     inclusive = true
