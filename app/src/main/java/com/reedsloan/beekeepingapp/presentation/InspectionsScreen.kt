@@ -103,6 +103,8 @@ fun InspectionsScreen(navController: NavController, hiveViewModel: HiveViewModel
             ),
         )
 
+        // 16.DP SPACER
+        Spacer(modifier = Modifier.height(8.dp))
         InspectionsList(hiveViewModel = hiveViewModel, navController = navController)
     }
 }
@@ -140,7 +142,7 @@ fun InspectionListItem(
 
     ElevatedCard(modifier = Modifier
         .fillMaxWidth()
-        .padding(16.dp)
+        .padding(horizontal = 8.dp, vertical = 8.dp)
         .clickable { hiveViewModel.onTapInspectionButton(inspection, navController) }) {
         Box {
             Row(
