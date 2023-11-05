@@ -184,7 +184,7 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Inspections Button
+                // Inspections action
                 HiveDetailsAction(title = "Inspections",
                     description = "View and edit inspections",
                     icon = Icons.Rounded.Hive,
@@ -193,7 +193,7 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
                     })
 
                 Spacer(modifier = Modifier.height(16.dp))
-                // Tasks Button
+                // Tasks action
                 HiveDetailsAction(title = "Tasks",
                     description = "View and edit tasks",
                     icon = Icons.Rounded.TaskAlt,
@@ -219,6 +219,10 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
                     onClick = {
                         hiveViewModel.onTapExportToCsvButton()
                     })
+
+
+                // Push the content up so it's not all the way at the bottom of the screen
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }
@@ -230,7 +234,7 @@ fun HiveDetailsAction(title: String, description: String, icon: ImageVector, onC
     ElevatedCard(
         onClick = onClick,
         modifier = Modifier
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 8.dp)
             .height(112.dp)
             .fillMaxWidth()
     ) {
@@ -238,7 +242,7 @@ fun HiveDetailsAction(title: String, description: String, icon: ImageVector, onC
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
@@ -269,7 +273,7 @@ fun HiveDetailsAction(title: String, description: String, icon: Int, onClick: ()
     ElevatedCard(
         onClick = onClick,
         modifier = Modifier
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 8.dp)
             .height(112.dp)
             .fillMaxWidth()
     ) {
@@ -277,7 +281,7 @@ fun HiveDetailsAction(title: String, description: String, icon: Int, onClick: ()
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
