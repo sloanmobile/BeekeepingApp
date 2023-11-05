@@ -69,9 +69,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
 import com.reedsloan.beekeepingapp.core.util.TestTags
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
 import com.reedsloan.beekeepingapp.presentation.ContextMenuItem
@@ -148,7 +152,23 @@ fun HivesScreen(
                     ),
                 ),
             )
-
+            Spacer(modifier = Modifier.height(8.dp))
+            AndroidView(
+                factory = { context ->
+                    AdView(context).apply {
+                        setAdSize(AdSize.BANNER)
+                        adUnitId = "ca-app-pub-3632086592843305/2812394424"
+                        loadAd(
+                            AdRequest.Builder().build()
+                        )
+                    }
+                }, modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .testTag(TestTags.AD_VIEW)
+            ) { adView ->
+                adView
+            }
             if (hives.isEmpty() && state.isLoading) {
                 Column(
                     modifier = Modifier.fillMaxSize(),
@@ -158,7 +178,6 @@ fun HivesScreen(
                     CircularProgressIndicator()
                 }
             } else {
-                Spacer(modifier = Modifier.height(16.dp))
                 if (hives.isNotEmpty()) {
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(1),

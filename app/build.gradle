@@ -106,6 +106,8 @@ dependencies {
     // ADD the API-only library to all variants
     implementation("com.google.firebase:firebase-appdistribution-api-ktx:16.0.0-beta11")
 
+    // google ads
+    implementation("com.google.android.gms:play-services-ads:22.5.0")
 
     // Local unit tests
     testImplementation "androidx.test:core:1.5.0"
