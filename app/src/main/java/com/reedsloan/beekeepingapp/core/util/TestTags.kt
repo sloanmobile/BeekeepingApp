@@ -1,6 +1,7 @@
 package com.reedsloan.beekeepingapp.core.util
 
 object TestTags {
+    const val AD_VIEW: String = "ad_view"
     const val LAZY_VERTICAL_GRID: String = "lazy_vertical_grid"
     const val DELETE_HIVE_CONFIRMATION_BUTTON: String = "delete_hive_confirmation_button"
     const val CONTEXT_MENU_ITEM: String = "context_menu_item"
