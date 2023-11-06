@@ -1,5 +1,6 @@
-package com.reedsloan.beekeepingapp.presentation
+package com.reedsloan.beekeepingapp.presentation.log_inspection
 
+import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,6 +35,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,6 +43,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -73,8 +77,10 @@ import java.time.YearMonth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LogInspectionScreen(navController: NavController, hiveViewModel: HiveViewModel) {
-
+fun LogInspectionScreen(
+    navController: NavController, hiveViewModel: HiveViewModel, adViewModel: AdViewModel
+) {
+    val adState by adViewModel.adState.collectAsState()
     val state by hiveViewModel.state.collectAsState()
     val hive = state.selectedHive ?: return
     val currentMonth = remember { YearMonth.now() }
@@ -88,10 +94,23 @@ fun LogInspectionScreen(navController: NavController, hiveViewModel: HiveViewMod
         firstVisibleMonth = currentMonth,
         firstDayOfWeek = firstDayOfWeek
     )
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(key1 = lifecycle) {
+        adViewModel.loadAd()
+    }
+    val context = LocalContext.current
+    val activity = context as Activity
+
+    LaunchedEffect(key1 = adState) {
+        if(adState.isAdPlaying) {
+            hiveViewModel.saveInspection(navController)
+        } else if(adState.isAdFailedToPlay) {
+            hiveViewModel.saveInspection(navController)
+        }
+    }
 
     var showDatePicker by remember { mutableStateOf(true) }
     val inspection = state.selectedHiveInspection ?: return
-
     Column {
         TopAppBar(
             title = {
@@ -176,7 +195,7 @@ fun LogInspectionScreen(navController: NavController, hiveViewModel: HiveViewMod
                                 )
                             )
                         },
-                        label = { Text("Inspection notes..." )},
+                        label = { Text("Inspection notes...") },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(128.dp)
@@ -213,8 +232,7 @@ fun LogInspectionScreen(navController: NavController, hiveViewModel: HiveViewMod
                             Icon(Icons.Default.Thermostat, contentDescription = "Thermometer")
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Temperature and Humidity",
-                                fontSize = 20.sp
+                                text = "Temperature and Humidity", fontSize = 20.sp
                             )
                         }
                         Row(Modifier.padding(horizontal = 8.dp)) {
@@ -277,7 +295,8 @@ fun LogInspectionScreen(navController: NavController, hiveViewModel: HiveViewMod
                     }
 
                     // wind amount
-                    DataEntryChip(title = "Wind Speed",
+                    DataEntryChip(
+                        title = "Wind Speed",
                         selectedValue = inspection.hiveConditions.windSpeed,
                         enumClass = WindSpeed::class.java,
                         onChipSelected = {
@@ -518,11 +537,10 @@ fun LogInspectionScreen(navController: NavController, hiveViewModel: HiveViewMod
             }
         }
     }
-
     Box(Modifier.fillMaxSize()) {
         ExtendedFloatingActionButton(
             onClick = {
-                hiveViewModel.saveInspection(navController = navController)
+                adViewModel.showAd(activity = activity)
             }, modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
