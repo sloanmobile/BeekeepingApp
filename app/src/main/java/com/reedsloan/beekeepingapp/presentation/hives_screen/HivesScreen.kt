@@ -66,6 +66,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
@@ -76,6 +77,7 @@ import coil.compose.AsyncImage
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
+import com.reedsloan.beekeepingapp.R
 import com.reedsloan.beekeepingapp.core.util.TestTags
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
 import com.reedsloan.beekeepingapp.presentation.ContextMenuItem
@@ -152,23 +154,27 @@ fun HivesScreen(
                     ),
                 ),
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            AndroidView(
-                factory = { context ->
-                    AdView(context).apply {
-                        setAdSize(AdSize.BANNER)
-                        adUnitId = "ca-app-pub-3632086592843305/2812394424"
-                        loadAd(
-                            AdRequest.Builder().build()
-                        )
-                    }
-                }, modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .testTag(TestTags.AD_VIEW)
-            ) { adView ->
-                adView
+
+            var showBannerAd by remember { mutableStateOf(true) }
+            val context = LocalContext.current
+            val adFactory by remember {
+                mutableStateOf(AdView(context).apply {
+                    setAdSize(AdSize.FULL_BANNER)
+                    adUnitId = context.resources.getString(R.string.admob_banner_id)
+                    loadAd(
+                        AdRequest.Builder().build()
+                    )
+                    showBannerAd = !isLoading
+                })
             }
+
+            Spacer(modifier = Modifier.height(8.dp))
+                AndroidView(
+                    factory = { adFactory }, modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .testTag(TestTags.AD_VIEW)
+                )
             if (hives.isEmpty() && state.isLoading) {
                 Column(
                     modifier = Modifier.fillMaxSize(),

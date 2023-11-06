@@ -44,9 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -54,15 +52,13 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.google.android.gms.ads.AdSize
-import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.RequestConfiguration
 import com.google.firebase.auth.FirebaseAuth
-import com.reedsloan.beekeepingapp.core.util.TestTags
 import com.reedsloan.beekeepingapp.presentation.ApiariesScreen
 import com.reedsloan.beekeepingapp.presentation.HiveDetailsScreen
 import com.reedsloan.beekeepingapp.presentation.InspectionsScreen
-import com.reedsloan.beekeepingapp.presentation.LogInspectionScreen
+import com.reedsloan.beekeepingapp.presentation.log_inspection.LogInspectionScreen
 import com.reedsloan.beekeepingapp.presentation.SettingsScreen
 import com.reedsloan.beekeepingapp.presentation.WorkInProgressOverlayText
 import com.reedsloan.beekeepingapp.presentation.common.PermissionDialog
@@ -70,12 +66,14 @@ import com.reedsloan.beekeepingapp.presentation.common.Screen
 import com.reedsloan.beekeepingapp.presentation.hives_screen.HiveViewModel
 import com.reedsloan.beekeepingapp.presentation.hives_screen.HivesScreen
 import com.reedsloan.beekeepingapp.presentation.hives_screen.openAppSettings
+import com.reedsloan.beekeepingapp.presentation.log_inspection.AdViewModel
 import com.reedsloan.beekeepingapp.presentation.sign_in.GoogleAuthUiClient
 import com.reedsloan.beekeepingapp.presentation.sign_in.SignInScreen
 import com.reedsloan.beekeepingapp.presentation.sign_in.SignInViewModel
 import com.reedsloan.beekeepingapp.presentation.ui.theme.AppTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.util.Arrays
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -90,6 +88,9 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val testDeviceIds = listOf("A402D2707790DAA8C1C5ECB954D61686")
+        val configuration = RequestConfiguration.Builder().setTestDeviceIds(testDeviceIds).build()
+        MobileAds.setRequestConfiguration(configuration)
         MobileAds.initialize(this)
 
         setContent {
@@ -98,6 +99,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize()
                 ) {
                     val hiveViewModel = hiltViewModel<HiveViewModel>()
+                    val adViewModel = hiltViewModel<AdViewModel>()
                     val permissionDialogQueue =
                         hiveViewModel.visiblePermissionDialogQueue.firstOrNull()
                     val context = LocalContext.current
@@ -434,7 +436,7 @@ class MainActivity : ComponentActivity() {
                                 composable(
                                     route = Screen.LogInspectionScreen.route
                                 ) {
-                                    LogInspectionScreen(navController, hiveViewModel)
+                                    LogInspectionScreen(navController, hiveViewModel, adViewModel)
                                 }
                             }
                         }
