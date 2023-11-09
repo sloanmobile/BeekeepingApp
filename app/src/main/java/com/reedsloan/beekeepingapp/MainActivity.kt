@@ -57,8 +57,8 @@ import com.google.android.gms.ads.RequestConfiguration
 import com.google.firebase.auth.FirebaseAuth
 import com.reedsloan.beekeepingapp.presentation.ApiariesScreen
 import com.reedsloan.beekeepingapp.presentation.HiveDetailsScreen
-import com.reedsloan.beekeepingapp.presentation.InspectionsScreen
-import com.reedsloan.beekeepingapp.presentation.log_inspection.LogInspectionScreen
+import com.reedsloan.beekeepingapp.presentation.inspections_screen.InspectionsScreen
+import com.reedsloan.beekeepingapp.presentation.log_inspection_screen.LogInspectionScreen
 import com.reedsloan.beekeepingapp.presentation.SettingsScreen
 import com.reedsloan.beekeepingapp.presentation.WorkInProgressOverlayText
 import com.reedsloan.beekeepingapp.presentation.common.PermissionDialog
@@ -66,14 +66,13 @@ import com.reedsloan.beekeepingapp.presentation.common.Screen
 import com.reedsloan.beekeepingapp.presentation.hives_screen.HiveViewModel
 import com.reedsloan.beekeepingapp.presentation.hives_screen.HivesScreen
 import com.reedsloan.beekeepingapp.presentation.hives_screen.openAppSettings
-import com.reedsloan.beekeepingapp.presentation.log_inspection.AdViewModel
+import com.reedsloan.beekeepingapp.presentation.ads.AdViewModel
 import com.reedsloan.beekeepingapp.presentation.sign_in.GoogleAuthUiClient
 import com.reedsloan.beekeepingapp.presentation.sign_in.SignInScreen
 import com.reedsloan.beekeepingapp.presentation.sign_in.SignInViewModel
 import com.reedsloan.beekeepingapp.presentation.ui.theme.AppTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import java.util.Arrays
 import javax.inject.Inject
 
 @AndroidEntryPoint

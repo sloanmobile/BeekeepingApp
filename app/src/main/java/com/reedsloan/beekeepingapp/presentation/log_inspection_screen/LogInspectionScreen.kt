@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.presentation.log_inspection
+package com.reedsloan.beekeepingapp.presentation.log_inspection_screen
 
 import android.app.Activity
 import androidx.compose.foundation.background
@@ -67,6 +67,7 @@ import com.reedsloan.beekeepingapp.data.local.hive.Temperament
 import com.reedsloan.beekeepingapp.data.local.hive.Treatment
 import com.reedsloan.beekeepingapp.data.local.hive.WeatherCondition
 import com.reedsloan.beekeepingapp.data.local.hive.WindSpeed
+import com.reedsloan.beekeepingapp.presentation.ads.AdViewModel
 import com.reedsloan.beekeepingapp.presentation.common.DataEntryChip
 import com.reedsloan.beekeepingapp.presentation.common.Divider
 import com.reedsloan.beekeepingapp.presentation.common.MultiDataEntryChip
