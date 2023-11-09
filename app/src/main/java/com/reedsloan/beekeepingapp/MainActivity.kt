@@ -67,6 +67,8 @@ import com.reedsloan.beekeepingapp.presentation.hives_screen.HiveViewModel
 import com.reedsloan.beekeepingapp.presentation.hives_screen.HivesScreen
 import com.reedsloan.beekeepingapp.presentation.hives_screen.openAppSettings
 import com.reedsloan.beekeepingapp.presentation.ads.AdViewModel
+import com.reedsloan.beekeepingapp.presentation.inspection_insights_screen.InspectionInsightsScreen
+import com.reedsloan.beekeepingapp.presentation.inspection_insights_screen.InspectionsInsightsViewModel
 import com.reedsloan.beekeepingapp.presentation.sign_in.GoogleAuthUiClient
 import com.reedsloan.beekeepingapp.presentation.sign_in.SignInScreen
 import com.reedsloan.beekeepingapp.presentation.sign_in.SignInViewModel
@@ -97,12 +99,13 @@ class MainActivity : ComponentActivity() {
                 Surface(
                     modifier = Modifier.fillMaxSize()
                 ) {
+                    val navController = rememberNavController()
                     val hiveViewModel = hiltViewModel<HiveViewModel>()
                     val adViewModel = hiltViewModel<AdViewModel>()
                     val permissionDialogQueue =
                         hiveViewModel.visiblePermissionDialogQueue.firstOrNull()
                     val context = LocalContext.current
-                    val state by hiveViewModel.state.collectAsState()
+                    val hiveScreenState by hiveViewModel.state.collectAsState()
                     val multiplePermissionsLauncher = rememberLauncherForActivityResult(
                         contract = ActivityResultContracts.RequestMultiplePermissions()
                     ) { permissions ->
@@ -185,7 +188,7 @@ class MainActivity : ComponentActivity() {
                                                     isLoading = true
                                                     uri?.let { hiveViewModel.deleteImage(it) }
                                                     uri =
-                                                        hiveViewModel.getImageUri(state.selectedHive!!.id)
+                                                        hiveViewModel.getImageUri(hiveScreenState.selectedHive!!.id)
                                                     cameraOpenIntent.launch(uri)
                                                 } else {
                                                     hiveViewModel.onPermissionRequested(Manifest.permission.CAMERA)
@@ -272,7 +275,7 @@ class MainActivity : ComponentActivity() {
                                         }
 
                                         // Remove image button
-                                        if (state.selectedHive?.hiveDetails?.image != null) {
+                                        if (hiveScreenState.selectedHive?.hiveDetails?.image != null) {
                                             Spacer(modifier = Modifier.height(16.dp))
                                             FilledTonalButton(
                                                 onClick = {
@@ -323,7 +326,6 @@ class MainActivity : ComponentActivity() {
                         WorkInProgressOverlayText()
                     }
 
-                    val navController = rememberNavController()
                     val signedInUser by remember {
                         mutableStateOf(
                             firebaseAuth.currentUser
@@ -436,6 +438,30 @@ class MainActivity : ComponentActivity() {
                                     route = Screen.LogInspectionScreen.route
                                 ) {
                                     LogInspectionScreen(navController, hiveViewModel, adViewModel)
+                                }
+                                composable(
+                                    route = Screen.InspectionInsightsScreen.route
+                                ) {
+                                    val inspectionsInsightsViewModel =
+                                        hiltViewModel<InspectionsInsightsViewModel>()
+                                    val inspectionInsightsScreenState by
+                                    inspectionsInsightsViewModel.state.collectAsState()
+
+                                    LaunchedEffect(key1 = hiveScreenState.selectedHive) {
+                                        if (hiveScreenState.selectedHive != null) {
+                                            inspectionsInsightsViewModel.initialize(hiveScreenState.selectedHive!!.id)
+                                        }
+                                    }
+
+                                    InspectionInsightsScreen(
+                                        state = inspectionInsightsScreenState,
+                                        onEvent = { event ->
+                                            inspectionsInsightsViewModel.onEvent(
+                                                event,
+                                                navController
+                                            )
+                                        }
+                                    )
                                 }
                             }
                         }

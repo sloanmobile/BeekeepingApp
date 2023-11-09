@@ -8,13 +8,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.staggeredgrid.LazyHorizontalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -62,8 +66,10 @@ fun <T : Enum<T>> DataEntryChip(
             ) {
                 items(enumClass.enumConstants?.size ?: 0) { index ->
                     val enumValue = enumClass.enumConstants?.get(index)
+                    val selected = selectedValue == enumValue
                     FilterChip(
-                        selected = selectedValue == enumValue,
+                        leadingIcon = { LeadingIcon(selected) },
+                        selected = selected,
                         onClick = {
                             onChipSelected(enumValue)
                         },
@@ -118,8 +124,10 @@ fun DataEntryChip(
                 horizontalItemSpacing = 4.dp,
             ) {
                 items(stringValues) { value ->
+                    val selected = selectedValue == value
                     FilterChip(
-                        selected = selectedValue == value,
+                        leadingIcon = { LeadingIcon(selected) },
+                        selected = selected,
                         onClick = {
                             onChipSelected(value)
                         },
@@ -132,6 +140,17 @@ fun DataEntryChip(
         }
     }
     if (divider.bottom) HorizontalDivider()
+}
+
+@Composable
+fun LeadingIcon(selected: Boolean) {
+    if (selected) {
+        Icon(
+            imageVector = Icons.Filled.Check,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp)
+        )
+    }
 }
 
 @Composable
@@ -185,8 +204,10 @@ fun MultiDataEntryChip(
                 horizontalItemSpacing = 4.dp,
             ) {
                 items(stringValues) { value ->
+                    val selected = selectedValues.contains(value)
                     FilterChip(
-                        selected = selectedValues.contains(value),
+                        leadingIcon = { LeadingIcon(selected) },
+                        selected = selected,
                         onClick = {
                             val updatedSelection = if (selectedValues.contains(value)) {
                                 selectedValues.filter { it != value }
@@ -217,7 +238,7 @@ fun MultiDataEntryChip(
  * @param divider The divider displayed above and below the filter chips.
  * Defaults to only displaying a divider below the filter chips.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun <T : Enum<T>> DataEntryChip(
     enumClass: Class<T>,
@@ -243,8 +264,10 @@ fun <T : Enum<T>> DataEntryChip(
             ) {
                 items(enumClass.enumConstants?.size ?: 0) { index ->
                     val enumValue = enumClass.enumConstants?.get(index)
+                    val selected = selectedValues.contains(enumValue)
                     FilterChip(
-                        selected = selectedValues.contains(enumValue),
+                        leadingIcon = { LeadingIcon(selected) },
+                        selected = selected,
                         onClick = {
                             val updatedSelection = if (selectedValues.contains(enumValue)) {
                                 selectedValues.filter { it != enumValue }
@@ -305,8 +328,10 @@ fun <T : Enum<T>> MultiDataEntryChip(
             ) {
                 items(enumClass.enumConstants?.size ?: 0) { index ->
                     val enumValue = enumClass.enumConstants?.get(index)
+                    val selected = selectedValues.contains(enumValue)
                     FilterChip(
-                        selected = selectedValues.contains(enumValue),
+                        leadingIcon = { LeadingIcon(selected) },
+                        selected = selected,
                         onClick = {
                             val updatedSelection = if (selectedValues.contains(enumValue)) {
                                 selectedValues.filter { it != enumValue }

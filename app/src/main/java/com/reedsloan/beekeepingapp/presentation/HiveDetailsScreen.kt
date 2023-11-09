@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Hive
 import androidx.compose.material.icons.rounded.TaskAlt
 import androidx.compose.material3.ElevatedCard
@@ -166,6 +167,16 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
                     icon = Icons.Rounded.Hive,
                     onClick = {
                         hiveViewModel.onTapInspectionsButton(navController)
+                    })
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Inspections Insights action
+                HiveDetailsAction(title = "Inspections Insights",
+                    description = "View insights about inspections",
+                    icon = Icons.Rounded.BarChart,
+                    onClick = {
+                        hiveViewModel.onTapInspectionsInsightsButton(navController)
                     })
 
                 Spacer(modifier = Modifier.height(16.dp))

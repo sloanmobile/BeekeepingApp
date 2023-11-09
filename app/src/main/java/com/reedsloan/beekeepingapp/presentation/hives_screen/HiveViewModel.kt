@@ -719,6 +719,16 @@ class HiveViewModel @Inject constructor(
         }
     }
 
+    fun updateHiveHealthEstimation(value: Float) {
+        updateSelectedInspection(
+            state.value.selectedHiveInspection!!.copy(
+                hiveHealth = state.value.selectedHiveInspection!!.hiveHealth.copy(
+                    healthEstimation = value
+                )
+            )
+        )
+    }
+
     fun saveInspection(navController: NavController) {
         viewModelScope.launch {
             runCatching {
@@ -904,5 +914,10 @@ class HiveViewModel @Inject constructor(
 
     fun onTapDeleteHiveButton(hive: Hive) {
         showDeleteHiveDialog(hive.id)
+    }
+
+    fun onTapInspectionsInsightsButton(navController: NavController) {
+        closeOpenMenus()
+        navController.navigate(Screen.InspectionInsightsScreen.route)
     }
 }

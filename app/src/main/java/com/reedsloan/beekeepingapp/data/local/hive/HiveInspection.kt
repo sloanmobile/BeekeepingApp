@@ -12,5 +12,5 @@ data class HiveInspection(
     val hiveTreatments: List<Treatment?>,
     val feeding: HiveFeeding,
     val localPhotoUris: List<String> = emptyList(),
-    val notes: String? = null,
+    val notes: String? = null
 )

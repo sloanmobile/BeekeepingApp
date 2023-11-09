@@ -188,4 +188,17 @@ dependencies {
     // https://github.com/kizitonwose/Calendar
     // The compose calendar library
     implementation "com.kizitonwose.calendar:compose:2.4.0"
+
+    // vico charts
+    // For Jetpack Compose.
+    implementation("com.patrykandpatrick.vico:compose:1.13.0-alpha.9")
+    
+    // For `compose`. Creates a `ChartStyle` based on an M3 Material Theme.
+    implementation("com.patrykandpatrick.vico:compose-m3:1.13.0-alpha.9")
+
+    // Houses the core logic for charts and other elements. Included in all other modules.
+    implementation("com.patrykandpatrick.vico:core:1.13.0-alpha.9")
+
+    // For the view system.
+    implementation("com.patrykandpatrick.vico:views:1.13.0-alpha.9")
 }
