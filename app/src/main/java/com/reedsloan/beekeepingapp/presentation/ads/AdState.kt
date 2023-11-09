@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.presentation.log_inspection
+package com.reedsloan.beekeepingapp.presentation.ads
 
 data class AdState(
     val isAdFinished: Boolean = false,

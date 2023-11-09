@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.presentation
+package com.reedsloan.beekeepingapp.presentation.inspections_screen
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -16,6 +16,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -45,10 +49,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
+import com.reedsloan.beekeepingapp.core.util.TestTags
 import com.reedsloan.beekeepingapp.data.local.hive.HiveInspection
 import com.reedsloan.beekeepingapp.presentation.hives_screen.HiveViewModel
 import java.time.LocalDate
@@ -115,11 +121,16 @@ fun InspectionsList(hiveViewModel: HiveViewModel, navController: NavController) 
     val inspections =
         state.selectedHive?.hiveInspections?.sortedBy { LocalDate.parse(it.date) } ?: return
 
-    LazyColumn {
-        items(inspections.size) { index ->
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(1),
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag(TestTags.LAZY_VERTICAL_GRID)
+    ) {
+        items(inspections, { inspection -> inspection.id }) { inspection ->
             InspectionListItem(
                 hiveViewModel = hiveViewModel,
-                inspection = inspections[index],
+                inspection = inspection,
                 navController = navController
             )
         }

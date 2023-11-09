@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.presentation.log_inspection
+package com.reedsloan.beekeepingapp.presentation.ads
 
 import android.app.Activity
 import android.app.Application
