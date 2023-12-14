@@ -20,6 +20,7 @@ import androidx.navigation.NavController
 import com.reedsloan.beekeepingapp.data.TimeFormat
 import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.TemperatureMeasurement
+import com.reedsloan.beekeepingapp.data.local.UserData
 import com.reedsloan.beekeepingapp.data.local.hive.*
 import com.reedsloan.beekeepingapp.domain.repo.HiveRepository
 import com.reedsloan.beekeepingapp.domain.repo.UserDataRepository
@@ -64,14 +65,12 @@ class HiveViewModel @Inject constructor(
 
     private fun doesUserHavePermission(permission: String): Boolean {
         return ActivityCompat.checkSelfPermission(
-            app,
-            permission
+            app, permission
         ) == android.content.pm.PackageManager.PERMISSION_GRANTED
     }
 
     fun isPermissionPermanentlyDeclined(
-        activity: Activity,
-        permission: String
+        activity: Activity, permission: String
     ): Boolean {
         return !ActivityCompat.shouldShowRequestPermissionRationale(
             activity, permission
@@ -88,8 +87,7 @@ class HiveViewModel @Inject constructor(
                 _state.update {
                     state.value.copy(
                         userData = state.value.userData.copy(
-                            hives = hives.value,
-                            lastUpdated = System.currentTimeMillis()
+                            hives = hives.value, lastUpdated = System.currentTimeMillis()
                         )
                     )
                 }
@@ -104,30 +102,25 @@ class HiveViewModel @Inject constructor(
         }
     }
 
-    private var successCount = 0
     fun onSignInSuccess() {
         viewModelScope.launch {
-            successCount++
-            Log.d(this::class.simpleName, "onSignInSuccess: $successCount")
             getUserData()
         }
     }
 
     private suspend fun getUserData() {
         setIsLoading(true)
-        userDataRepository.getUserData()
-            .onSuccess { userData ->
-                _state.update {
-                    it.copy(
-                        userPreferences = userData.userPreferences,
-                        userData = userData
-                    )
-                }
-                showSuccess()
-                _hives.update { userData.hives }
-            }.onFailure {
-                showError(it.message ?: "Unknown error getting user data.")
+        userDataRepository.getUserData().onSuccess { userData ->
+            _state.update {
+                it.copy(
+                    userPreferences = userData.userPreferences, userData = userData
+                )
             }
+            showSuccess()
+            _hives.update { userData.hives }
+        }.onFailure {
+            showError(it.message ?: "Unknown error getting user data.")
+        }
     }
 
     private fun isPermissionRequestFirstTime(permission: String): Boolean {
@@ -393,7 +386,9 @@ class HiveViewModel @Inject constructor(
 
     fun setSelectedHive(hiveId: String) {
         // Set the selected hive in the state by finding the hive with the matching id
-        _state.update { it.copy(selectedHive = hives.value.find { it.id == hiveId }) }
+        _state.update { hiveScreenState ->
+            hiveScreenState.copy(selectedHive = hives.value.find { it.id == hiveId })
+        }
     }
 
     private fun toggleNavigationBarMenuState() {
@@ -414,10 +409,7 @@ class HiveViewModel @Inject constructor(
     private fun showError(error: String) {
         _state.update {
             it.copy(
-                isError = true,
-                errorMessage = error,
-                isLoading = false,
-                isSuccess = false
+                isError = true, errorMessage = error, isLoading = false, isSuccess = false
             )
         }
     }
@@ -549,6 +541,22 @@ class HiveViewModel @Inject constructor(
                     }
                 }
             }
+        }
+    }
+    fun onEvent(event: HiveScreenEvent) {
+        when (event) {
+            is HiveScreenEvent.OnUpdateUserData -> {
+                updateUserData(event.userData)
+            }
+        }
+    }
+
+    fun updateUserData(userData: UserData) {
+        _state.update {
+            it.copy(
+                isLoading = false,
+                userData = userData
+            )
         }
     }
 
@@ -693,17 +701,13 @@ class HiveViewModel @Inject constructor(
 
     private fun updateHiveInspection(hiveInspection: HiveInspection) {
         runCatching {
-            updateHive(
-                hive = state.value.selectedHive!!.copy(
-                    hiveInspections = state.value.selectedHive!!.hiveInspections.map {
-                        if (it.date == hiveInspection.date) {
-                            hiveInspection
-                        } else {
-                            it
-                        }
-                    }
-                )
-            )
+            updateHive(hive = state.value.selectedHive!!.copy(hiveInspections = state.value.selectedHive!!.hiveInspections.map {
+                if (it.date == hiveInspection.date) {
+                    hiveInspection
+                } else {
+                    it
+                }
+            }))
         }.onSuccess {
             showSuccess()
         }.onFailure {
@@ -719,21 +723,27 @@ class HiveViewModel @Inject constructor(
         }
     }
 
+    fun updateHiveHealthEstimation(value: Float) {
+        updateSelectedInspection(
+            state.value.selectedHiveInspection!!.copy(
+                hiveHealth = state.value.selectedHiveInspection!!.hiveHealth.copy(
+                    healthEstimation = value
+                )
+            )
+        )
+    }
+
     fun saveInspection(navController: NavController) {
         viewModelScope.launch {
             runCatching {
                 state.value.selectedHive?.let { hive ->
-                    updateHive(
-                        hive.copy(
-                            hiveInspections = hive.hiveInspections.map {
-                                if (it.id == state.value.selectedHiveInspection?.id) {
-                                    state.value.selectedHiveInspection!!
-                                } else {
-                                    it
-                                }
-                            }
-                        )
-                    )
+                    updateHive(hive.copy(hiveInspections = hive.hiveInspections.map {
+                        if (it.id == state.value.selectedHiveInspection?.id) {
+                            state.value.selectedHiveInspection!!
+                        } else {
+                            it
+                        }
+                    }))
                 }
             }.onSuccess {
                 showSuccess()
@@ -745,15 +755,11 @@ class HiveViewModel @Inject constructor(
     }
 
     fun onDoubleValueChange(
-        previousString: String,
-        updatedString: String,
-        function: (Double) -> Unit
+        previousString: String, updatedString: String, function: (Double) -> Unit
     ) {
         // do nothing if the user deletes a decimal or adds a second decimal
         // this is a hacky way to prevent the user from entering a decimal
-        if ((updatedString.contains("..") || !updatedString.contains("."))
-            && previousString != ""
-        ) {
+        if ((updatedString.contains("..") || !updatedString.contains(".")) && previousString != "") {
             return
         }
 
@@ -904,5 +910,19 @@ class HiveViewModel @Inject constructor(
 
     fun onTapDeleteHiveButton(hive: Hive) {
         showDeleteHiveDialog(hive.id)
+    }
+
+    fun onTapInspectionsInsightsButton(navController: NavController) {
+        closeOpenMenus()
+        navController.navigate(Screen.InspectionInsightsScreen.route)
+    }
+
+    fun onHiveScreenLaunched(hiveId: String?) {
+        viewModelScope.launch {
+            getUserData()
+            hiveId?.let {
+                setSelectedHive(hiveId)
+            }
+        }
     }
 }

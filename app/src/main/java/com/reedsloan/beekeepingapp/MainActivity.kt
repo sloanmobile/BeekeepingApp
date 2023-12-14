@@ -49,27 +49,38 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.RequestConfiguration
 import com.google.firebase.auth.FirebaseAuth
 import com.reedsloan.beekeepingapp.presentation.ApiariesScreen
 import com.reedsloan.beekeepingapp.presentation.HiveDetailsScreen
-import com.reedsloan.beekeepingapp.presentation.inspections_screen.InspectionsScreen
-import com.reedsloan.beekeepingapp.presentation.log_inspection_screen.LogInspectionScreen
 import com.reedsloan.beekeepingapp.presentation.SettingsScreen
 import com.reedsloan.beekeepingapp.presentation.WorkInProgressOverlayText
+import com.reedsloan.beekeepingapp.presentation.ads.AdViewModel
 import com.reedsloan.beekeepingapp.presentation.common.PermissionDialog
 import com.reedsloan.beekeepingapp.presentation.common.Screen
+import com.reedsloan.beekeepingapp.presentation.common.home_screen.HomeScreen
+import com.reedsloan.beekeepingapp.presentation.common.home_screen.HomeScreenEvent
+import com.reedsloan.beekeepingapp.presentation.common.home_screen.HomeScreenViewModel
+import com.reedsloan.beekeepingapp.presentation.hives_screen.HiveScreenEvent
 import com.reedsloan.beekeepingapp.presentation.hives_screen.HiveViewModel
 import com.reedsloan.beekeepingapp.presentation.hives_screen.HivesScreen
 import com.reedsloan.beekeepingapp.presentation.hives_screen.openAppSettings
-import com.reedsloan.beekeepingapp.presentation.ads.AdViewModel
+import com.reedsloan.beekeepingapp.presentation.inspection_insights_screen.InspectionInsightsScreen
+import com.reedsloan.beekeepingapp.presentation.inspection_insights_screen.InspectionsInsightsViewModel
+import com.reedsloan.beekeepingapp.presentation.inspections_screen.InspectionsScreen
+import com.reedsloan.beekeepingapp.presentation.log_inspection_screen.LogInspectionScreen
 import com.reedsloan.beekeepingapp.presentation.sign_in.GoogleAuthUiClient
 import com.reedsloan.beekeepingapp.presentation.sign_in.SignInScreen
 import com.reedsloan.beekeepingapp.presentation.sign_in.SignInViewModel
+import com.reedsloan.beekeepingapp.presentation.tasks_screen.TasksScreen
+import com.reedsloan.beekeepingapp.presentation.tasks_screen.TasksScreenEvent
+import com.reedsloan.beekeepingapp.presentation.tasks_screen.TasksViewModel
 import com.reedsloan.beekeepingapp.presentation.ui.theme.AppTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -97,12 +108,20 @@ class MainActivity : ComponentActivity() {
                 Surface(
                     modifier = Modifier.fillMaxSize()
                 ) {
+                    val navController = rememberNavController()
                     val hiveViewModel = hiltViewModel<HiveViewModel>()
                     val adViewModel = hiltViewModel<AdViewModel>()
+                    val tasksViewModel = hiltViewModel<TasksViewModel>()
+                    val homeScreenViewModel = hiltViewModel<HomeScreenViewModel>()
+                    val inspectionsInsightsViewModel = hiltViewModel<InspectionsInsightsViewModel>()
+                    val inspectionInsightsScreenState by inspectionsInsightsViewModel.state.collectAsState()
+                    val homeScreenState by homeScreenViewModel.state.collectAsState()
+                    val tasksScreenState by tasksViewModel.state.collectAsState()
+
                     val permissionDialogQueue =
                         hiveViewModel.visiblePermissionDialogQueue.firstOrNull()
                     val context = LocalContext.current
-                    val state by hiveViewModel.state.collectAsState()
+                    val hiveScreenState by hiveViewModel.state.collectAsState()
                     val multiplePermissionsLauncher = rememberLauncherForActivityResult(
                         contract = ActivityResultContracts.RequestMultiplePermissions()
                     ) { permissions ->
@@ -185,7 +204,7 @@ class MainActivity : ComponentActivity() {
                                                     isLoading = true
                                                     uri?.let { hiveViewModel.deleteImage(it) }
                                                     uri =
-                                                        hiveViewModel.getImageUri(state.selectedHive!!.id)
+                                                        hiveViewModel.getImageUri(hiveScreenState.selectedHive!!.id)
                                                     cameraOpenIntent.launch(uri)
                                                 } else {
                                                     hiveViewModel.onPermissionRequested(Manifest.permission.CAMERA)
@@ -272,7 +291,7 @@ class MainActivity : ComponentActivity() {
                                         }
 
                                         // Remove image button
-                                        if (state.selectedHive?.hiveDetails?.image != null) {
+                                        if (hiveScreenState.selectedHive?.hiveDetails?.image != null) {
                                             Spacer(modifier = Modifier.height(16.dp))
                                             FilledTonalButton(
                                                 onClick = {
@@ -323,7 +342,6 @@ class MainActivity : ComponentActivity() {
                         WorkInProgressOverlayText()
                     }
 
-                    val navController = rememberNavController()
                     val signedInUser by remember {
                         mutableStateOf(
                             firebaseAuth.currentUser
@@ -336,8 +354,19 @@ class MainActivity : ComponentActivity() {
                     LaunchedEffect(key1 = firebaseAuth.currentUser) {
                         if (firebaseAuth.currentUser != null && !signInState.isSignInSuccessful) {
                             hiveViewModel.onSignInSuccess()
+
                         }
                     }
+
+                    // launched effect to tell when we are navigating to the home screen
+                    LaunchedEffect(key1 = navController.currentBackStackEntry) {
+                        if (navController.currentBackStackEntry?.destination?.route == Screen.HomeScreen.route) {
+                            homeScreenViewModel.onEvent(
+                                HomeScreenEvent.OnNavigateToHomeScreen, navController
+                            )
+                        }
+                    }
+
 
                     Column(
                         Modifier
@@ -356,8 +385,24 @@ class MainActivity : ComponentActivity() {
                         ) {
                             NavHost(
                                 navController = navController,
-                                startDestination = if (signedInUser != null) Screen.HivesScreen.route else Screen.SignInScreen.route,
+                                startDestination = if (signedInUser != null) Screen.HomeScreen.route else Screen.SignInScreen.route,
                             ) {
+                                composable(
+                                    route = Screen.HomeScreen.route
+                                ) {
+                                    HomeScreen(
+                                        state = homeScreenState,
+                                        onEvent = {
+                                            if (it is HomeScreenEvent.OnUpdateUserData) {
+                                                hiveViewModel.updateUserData(it.userData)
+                                                tasksViewModel.updateUserData(it.userData)
+                                            }
+                                            homeScreenViewModel.onEvent(it, navController)
+                                        },
+                                        signInViewModel = signInViewModel,
+                                        navController = navController
+                                    )
+                                }
                                 composable(
                                     route = Screen.SignInScreen.route
                                 ) {
@@ -376,12 +421,12 @@ class MainActivity : ComponentActivity() {
                                                 }
                                             })
 
-                                    // Sign in from previous session
+                                    // Sign in effect
                                     LaunchedEffect(key1 = signInState.isSignInSuccessful) {
                                         if (signInState.isSignInSuccessful) {
                                             hiveViewModel.onSignInSuccess()
 
-                                            navController.navigate(Screen.HivesScreen.route) {
+                                            navController.navigate(Screen.HomeScreen.route) {
                                                 popUpTo(Screen.SignInScreen.route) {
                                                     inclusive = true
                                                 }
@@ -403,8 +448,8 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
                                 composable(
-                                    route = Screen.HivesScreen.route
-                                ) {
+                                    route = Screen.HivesScreen.route + Screen.HivesScreen.arguments,
+                                ) { backStackEntry ->
                                     HivesScreen(navController, hiveViewModel, signInViewModel)
                                 }
                                 composable(
@@ -418,8 +463,19 @@ class MainActivity : ComponentActivity() {
                                     ApiariesScreen(navController, hiveViewModel)
                                 }
                                 composable(
-                                    route = Screen.HiveDetailsScreen.route
-                                ) {
+                                    route = Screen.HiveDetailsScreen.route + Screen.HiveDetailsScreen.arguments,
+                                    arguments = listOf(navArgument("hiveId") {
+                                        type = NavType.StringType
+                                    })
+                                ) { backStackEntry ->
+                                    val hiveId = backStackEntry.arguments?.getString("hiveId")
+
+                                    LaunchedEffect(key1 = hiveId) {
+                                        if (hiveId != null) hiveViewModel.onHiveScreenLaunched(
+                                            hiveId
+                                        )
+                                    }
+
                                     HiveDetailsScreen(
                                         navController,
                                         hiveViewModel,
@@ -436,6 +492,21 @@ class MainActivity : ComponentActivity() {
                                     route = Screen.LogInspectionScreen.route
                                 ) {
                                     LogInspectionScreen(navController, hiveViewModel, adViewModel)
+                                }
+                                composable(
+                                    route = Screen.InspectionInsightsScreen.route
+                                ) {
+                                    InspectionInsightsScreen(state = inspectionInsightsScreenState,
+                                        onEvent = { event ->
+                                            inspectionsInsightsViewModel.onEvent(
+                                                event, navController
+                                            )
+                                        })
+                                }
+                                composable(Screen.TasksScreen.route) {
+                                    TasksScreen(state = tasksScreenState, onEvent = {
+                                        tasksViewModel.onEvent(it, navController)
+                                    })
                                 }
                             }
                         }

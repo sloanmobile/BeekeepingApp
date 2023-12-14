@@ -61,7 +61,7 @@ fun SignInScreen(state: SignInState, onSignInClick: () -> Unit) {
                 style = MaterialTheme.typography.displayLarge
             )
             Text(
-                text = "BeeLog",
+                text = "BeeJournal",
                 style = MaterialTheme.typography.displayLarge.copy(
                     fontWeight = FontWeight.Bold
                 ),

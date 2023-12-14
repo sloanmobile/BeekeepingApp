@@ -4,5 +4,6 @@ package com.reedsloan.beekeepingapp.data.local.hive
 //HIVE HEALTH: SMALL HIVE BEETLES, VARROA MITES, ANTS, MOLD, WAX MOTH, CHALKBROOD, TRACHEAL MITES, NOSEMA, EFB, AFB
 data class HiveHealth(
     val diseases: List<HiveDisease?> = emptyList(),
-    val treatments: List<HiveTreatment> = emptyList()
+    val treatments: List<HiveTreatment> = emptyList(),
+    val healthEstimation: Float = 10F
 )

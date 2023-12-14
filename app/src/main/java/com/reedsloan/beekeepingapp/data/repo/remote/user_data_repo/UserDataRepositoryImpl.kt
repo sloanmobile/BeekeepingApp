@@ -9,6 +9,7 @@ import com.google.gson.Gson
 import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.UserData
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
+import com.reedsloan.beekeepingapp.data.local.tasks.Task
 import com.reedsloan.beekeepingapp.domain.repo.UserDataRepository
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -19,7 +20,7 @@ class UserDataRepositoryImpl @Inject constructor(
     firebase: Firebase,
     private val auth: FirebaseAuth,
     private val gson: Gson
-): UserDataRepository {
+) : UserDataRepository {
     private val db = firebase.firestore
     private val usersCollection = db.collection("users")
 
@@ -36,7 +37,8 @@ class UserDataRepositoryImpl @Inject constructor(
                 "userPreferences" to gson.toJson(userData.userPreferences),
                 "hives" to gson.toJson(userData.hives),
                 "lastUpdated" to userData.lastUpdated,
-                "userId" to userData.userId
+                "userId" to userData.userId,
+                "tasks" to gson.toJson(userData.tasks)
             )
             document
                 .set(map, SetOptions.merge())
@@ -56,30 +58,37 @@ class UserDataRepositoryImpl @Inject constructor(
             val document = userId.let { usersCollection.document(it) }
 
             var userData: UserData? = null
-            var data: Map<String, Any>? = null
             document
                 .get()
                 .addOnSuccessListener { result ->
                     // log the result
                     Log.d(this::class.simpleName, "result data: ${result.data}")
-
-                    data = result.data
+                    result.data?.let { data ->
+                        userData = UserData(
+                            userPreferences = gson.fromJson(
+                                data["userPreferences"].toString(),
+                                UserPreferences::class.java
+                            ),
+                            hives = Gson().fromJson(
+                                data["hives"].toString(),
+                                Array<Hive>::class.java
+                            ).toList(),
+                            lastUpdated = data["lastUpdated"].toString().toLong(),
+                            userId = data["userId"].toString(),
+                            tasks = data["tasks"].toString().let { tasks ->
+                                Log.w(this::class.simpleName, "tasks: $tasks")
+                                if (tasks != "null") {
+                                    Gson().fromJson(
+                                        tasks,
+                                        Array<Task>::class.java
+                                    ).toList()
+                                } else {
+                                    emptyList()
+                                }
+                            }
+                        )
+                    }
                 }.await()
-
-            data?.let { result ->
-                userData = UserData(
-                    userPreferences = gson.fromJson(
-                        result["userPreferences"].toString(),
-                        UserPreferences::class.java
-                    ),
-                    hives = Gson().fromJson(
-                        result["hives"].toString(),
-                        Array<Hive>::class.java
-                    ).toList(),
-                    lastUpdated = result["lastUpdated"].toString().toLong(),
-                    userId = result["userId"].toString()
-                )
-            }
 
             userData ?: throw Exception("Error getting user data")
         }

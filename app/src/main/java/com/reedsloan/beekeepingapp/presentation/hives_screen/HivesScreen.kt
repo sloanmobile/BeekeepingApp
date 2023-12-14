@@ -28,6 +28,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
@@ -63,6 +64,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -134,7 +136,7 @@ fun HivesScreen(
                         Icon(Icons.Filled.MoreVert, contentDescription = "More")
                     }
                     DropdownMenu(expanded = isContextMenuVisible,
-                        offset = pressOffset,
+                        offset = DpOffset.Zero,
                         onDismissRequest = {
                             isContextMenuVisible = false
                         }) {
@@ -144,7 +146,7 @@ fun HivesScreen(
                         }, text = {
                             Text(text = "Sign out")
                         }, leadingIcon = {
-                            Icon(Icons.Default.Logout, contentDescription = "Sign Out")
+                            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Sign Out")
                         })
                     }
                 },

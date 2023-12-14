@@ -16,10 +16,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Air
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MonitorHeart
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Thermostat
@@ -30,6 +31,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -38,7 +41,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -75,13 +78,13 @@ import com.reedsloan.beekeepingapp.presentation.common.calendar.Day
 import com.reedsloan.beekeepingapp.presentation.common.calendar.Month
 import com.reedsloan.beekeepingapp.presentation.hives_screen.HiveViewModel
 import java.time.YearMonth
+import kotlin.math.floor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LogInspectionScreen(
     navController: NavController, hiveViewModel: HiveViewModel, adViewModel: AdViewModel
 ) {
-    val adState by adViewModel.adState.collectAsState()
     val state by hiveViewModel.state.collectAsState()
     val hive = state.selectedHive ?: return
     val currentMonth = remember { YearMonth.now() }
@@ -102,15 +105,6 @@ fun LogInspectionScreen(
     val context = LocalContext.current
     val activity = context as Activity
 
-    LaunchedEffect(key1 = adState) {
-        if(adState.isAdPlaying) {
-            hiveViewModel.saveInspection(navController)
-        } else if(adState.isAdFailedToPlay) {
-            hiveViewModel.saveInspection(navController)
-        }
-    }
-
-    var showDatePicker by remember { mutableStateOf(true) }
     val inspection = state.selectedHiveInspection ?: return
     Column {
         TopAppBar(
@@ -121,7 +115,7 @@ fun LogInspectionScreen(
                 IconButton(onClick = {
                     hiveViewModel.backHandler(navController)
                 }) {
-                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
             },
             actions = {
@@ -499,7 +493,42 @@ fun LogInspectionScreen(
                 }
 
                 // Diseases and treatments category
-                HiveLogSection(title = "Diseases and Treatments") {
+                HiveLogSection(title = "Hive Health") {
+                    HorizontalDivider()
+
+                    Row(modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp)) {
+                        Icon(Icons.Default.MonitorHeart, contentDescription = "Edit")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Overall Health Estimation",
+                            fontSize = 20.sp,
+                        )
+                    }
+
+                    var sliderPosition by remember {
+                        mutableFloatStateOf(inspection.hiveHealth.healthEstimation)
+                    }
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(horizontal = 32.dp)
+                    ) {
+                        Slider(
+                            value = sliderPosition,
+                            onValueChange = {
+                                sliderPosition = floor(it)
+                                hiveViewModel.updateHiveHealthEstimation(sliderPosition)
+                            },
+                            colors = SliderDefaults.colors(
+                                thumbColor = MaterialTheme.colorScheme.secondary,
+                                activeTrackColor = MaterialTheme.colorScheme.secondary,
+                                inactiveTrackColor = MaterialTheme.colorScheme.secondaryContainer,
+                            ),
+                            steps = 9,
+                            valueRange = 0f..10f
+                        )
+                        Text(text = sliderPosition.toString())
+                    }
                     // diseases (select many)
                     MultiDataEntryChip(
                         title = "Diseases (select many)",
@@ -532,7 +561,6 @@ fun LogInspectionScreen(
                         },
                     )
                 }
-
                 // This is a spacer to push the FAB up a bit so it doesn't cover the last entry
                 Spacer(modifier = Modifier.height(64.dp))
             }
@@ -541,6 +569,7 @@ fun LogInspectionScreen(
     Box(Modifier.fillMaxSize()) {
         ExtendedFloatingActionButton(
             onClick = {
+                hiveViewModel.saveInspection(navController)
                 adViewModel.showAd(activity = activity)
             }, modifier = Modifier
                 .align(Alignment.BottomEnd)
@@ -548,7 +577,7 @@ fun LogInspectionScreen(
         ) {
             Icon(Icons.Filled.Save, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
-            Text(text = "Save Entry")
+            Text(text = "Save Inspection")
         }
     }
 }
