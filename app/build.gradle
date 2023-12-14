@@ -120,7 +120,7 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-test-manifest:1.6.0-alpha08"
 
     // Instrumentation tests
-    androidTestImplementation 'com.google.dagger:hilt-android-testing:2.48.1'
+    androidTestImplementation 'com.google.dagger:hilt-android-testing:2.49'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
     kspAndroidTest 'com.google.dagger:hilt-android-compiler:2.49'
