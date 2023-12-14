@@ -15,14 +15,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Settings
@@ -92,7 +90,7 @@ fun InspectionsScreen(navController: NavController, hiveViewModel: HiveViewModel
                 IconButton(onClick = {
                     hiveViewModel.backHandler(navController)
                 }) {
-                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
             },
             actions = {
@@ -215,7 +213,7 @@ fun InspectionListItem(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = when {
-                            daysAgo < -1L -> "${-daysAgo} days ago"
+                            daysAgo < -1L -> "${-daysAgo} from now"
                             daysAgo == -1L -> "Tomorrow"
                             daysAgo == 0L -> "Today"
                             daysAgo == 1L -> "Yesterday"

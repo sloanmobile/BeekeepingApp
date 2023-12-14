@@ -169,15 +169,16 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
                         hiveViewModel.onTapInspectionsButton(navController)
                     })
 
-                Spacer(modifier = Modifier.height(16.dp))
 
-                // Inspections Insights action
-                HiveDetailsAction(title = "Inspections Insights",
-                    description = "View insights about inspections",
-                    icon = Icons.Rounded.BarChart,
-                    onClick = {
-                        hiveViewModel.onTapInspectionsInsightsButton(navController)
-                    })
+//                Spacer(modifier = Modifier.height(16.dp))
+//
+//                // Inspections Insights action
+//                HiveDetailsAction(title = "Inspections Insights",
+//                    description = "View insights about inspections",
+//                    icon = Icons.Rounded.BarChart,
+//                    onClick = {
+//                        hiveViewModel.onTapInspectionsInsightsButton(navController)
+//                    })
 
                 Spacer(modifier = Modifier.height(16.dp))
                 // Tasks action

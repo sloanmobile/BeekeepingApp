@@ -9,6 +9,7 @@ import com.google.gson.Gson
 import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.UserData
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
+import com.reedsloan.beekeepingapp.data.local.tasks.Task
 import com.reedsloan.beekeepingapp.domain.repo.UserDataRepository
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -36,7 +37,8 @@ class UserDataRepositoryImpl @Inject constructor(
                 "userPreferences" to gson.toJson(userData.userPreferences),
                 "hives" to gson.toJson(userData.hives),
                 "lastUpdated" to userData.lastUpdated,
-                "userId" to userData.userId
+                "userId" to userData.userId,
+                "tasks" to gson.toJson(userData.tasks)
             )
             document
                 .set(map, SetOptions.merge())
@@ -72,7 +74,18 @@ class UserDataRepositoryImpl @Inject constructor(
                                 Array<Hive>::class.java
                             ).toList(),
                             lastUpdated = data["lastUpdated"].toString().toLong(),
-                            userId = data["userId"].toString()
+                            userId = data["userId"].toString(),
+                            tasks = data["tasks"].toString().let { tasks ->
+                                Log.w(this::class.simpleName, "tasks: $tasks")
+                                if (tasks != "null") {
+                                    Gson().fromJson(
+                                        tasks,
+                                        Array<Task>::class.java
+                                    ).toList()
+                                } else {
+                                    emptyList()
+                                }
+                            }
                         )
                     }
                 }.await()
