@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.presentation.common.home_screen
+package com.reedsloan.beekeepingapp.presentation.home_screen
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -156,6 +156,22 @@ fun HomeScreen(
                         })
                     }
                 }
+            }
+            // go to hives screen
+            TextButton(onClick = {
+                onEvent(HomeScreenEvent.OnAllHivesClicked)
+            }) {
+                Text(
+                    text = "All Hives", style = MaterialTheme.typography.titleMedium.copy(
+                        color = MaterialTheme.colorScheme.primary
+                    ), modifier = Modifier.padding(end = 8.dp)
+                )
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                    contentDescription = "All Hives",
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }

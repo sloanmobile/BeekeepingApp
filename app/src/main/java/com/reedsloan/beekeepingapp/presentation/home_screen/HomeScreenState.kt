@@ -1,4 +1,4 @@
-package com.reedsloan.beekeepingapp.presentation.common.home_screen
+package com.reedsloan.beekeepingapp.presentation.home_screen
 
 import com.reedsloan.beekeepingapp.data.local.UserData
 

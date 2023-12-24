@@ -64,9 +64,9 @@ import com.reedsloan.beekeepingapp.presentation.WorkInProgressOverlayText
 import com.reedsloan.beekeepingapp.presentation.ads.AdViewModel
 import com.reedsloan.beekeepingapp.presentation.common.PermissionDialog
 import com.reedsloan.beekeepingapp.presentation.common.Screen
-import com.reedsloan.beekeepingapp.presentation.common.home_screen.HomeScreen
-import com.reedsloan.beekeepingapp.presentation.common.home_screen.HomeScreenEvent
-import com.reedsloan.beekeepingapp.presentation.common.home_screen.HomeScreenViewModel
+import com.reedsloan.beekeepingapp.presentation.home_screen.HomeScreen
+import com.reedsloan.beekeepingapp.presentation.home_screen.HomeScreenEvent
+import com.reedsloan.beekeepingapp.presentation.home_screen.HomeScreenViewModel
 import com.reedsloan.beekeepingapp.presentation.hives_screen.HiveScreenEvent
 import com.reedsloan.beekeepingapp.presentation.hives_screen.HiveViewModel
 import com.reedsloan.beekeepingapp.presentation.hives_screen.HivesScreen
