@@ -2,7 +2,6 @@ package com.reedsloan.beekeepingapp.presentation
 
 import android.util.Log
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,12 +17,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Hive
 import androidx.compose.material.icons.rounded.TaskAlt
 import androidx.compose.material3.ElevatedCard
@@ -51,7 +50,7 @@ import coil.compose.AsyncImage
 import com.reedsloan.beekeepingapp.R
 import com.reedsloan.beekeepingapp.presentation.hives_screen.HiveViewModel
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel, setSheetOpenState: (Boolean) -> Unit, isSheetOpen: Boolean) {
     val state by hiveViewModel.state.collectAsState()
@@ -73,7 +72,7 @@ fun HiveDetailsScreen(navController: NavController, hiveViewModel: HiveViewModel
                 IconButton(onClick = {
                     hiveViewModel.backHandler(navController)
                 }) {
-                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
             },
             actions = {

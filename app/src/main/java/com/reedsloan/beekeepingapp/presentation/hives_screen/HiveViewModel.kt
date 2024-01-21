@@ -543,6 +543,7 @@ class HiveViewModel @Inject constructor(
             }
         }
     }
+
     fun onEvent(event: HiveScreenEvent) {
         when (event) {
             is HiveScreenEvent.OnUpdateUserData -> {
@@ -792,7 +793,12 @@ class HiveViewModel @Inject constructor(
     fun onTapHiveCard(id: String, navController: NavController) {
         setSelectedHive(id)
         closeOpenMenus()
-        navController.navigate(Screen.HiveDetailsScreen.route)
+        navController.navigate(
+            Screen.HiveDetailsScreen.route + Screen.HiveDetailsScreen.arguments?.replace(
+                "{hiveId}",
+                id
+            )
+        )
     }
 
     fun setImageForSelectedHive(uri: Uri?) {

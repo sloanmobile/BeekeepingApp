@@ -311,7 +311,7 @@ class MainActivity : ComponentActivity() {
                                                     Icon(Icons.Filled.Delete,
                                                         contentDescription = null,
                                                         modifier = Modifier.constrainAs(icon) {
-                                                            start.linkTo(parent.start)
+                                                            start.linkTo(parent.start) 
                                                             top.linkTo(parent.top)
                                                             bottom.linkTo(parent.bottom)
                                                         })
