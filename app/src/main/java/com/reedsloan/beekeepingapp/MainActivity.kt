@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -52,6 +53,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.google.android.gms.ads.MobileAds
@@ -133,6 +135,48 @@ class MainActivity : ComponentActivity() {
                     }
                     var isSheetOpen by remember { mutableStateOf(false) }
                     val sheetState = rememberModalBottomSheetState()
+                    val navControllerFlow = navController.currentBackStackEntryAsState()
+                    // Pass any arguments and apply OnNavigateToScreen events to view models
+                    LaunchedEffect(key1 = navControllerFlow.value) {
+                        when (navControllerFlow.value?.destination?.route) {
+                            Screen.HivesScreen.route -> {
+                                val hiveId = navController.currentBackStackEntry?.arguments?.getString("hiveId")
+                                // log navigation event
+                                Log.d("MainActivity", "Navigated to HiveDetailsScreen with hiveId: $hiveId")
+                                hiveViewModel.onEvent(
+                                    HiveScreenEvent.OnNavigateToHivesScreen
+                                )
+                            }
+                            Screen.HomeScreen.route -> {
+                                homeScreenViewModel.onEvent(
+                                    HomeScreenEvent.OnNavigateToScreen, navController
+                                )
+                            }
+                            Screen.InspectionsScreen.route -> {
+                                hiveScreenState.selectedHive?.let {
+                                    hiveViewModel.onEvent(
+                                        HiveScreenEvent.OnNavigateToHiveInspectionScreen(it.id)
+                                    )
+                                }
+                            }
+                            Screen.TasksScreen.route -> {
+                                tasksViewModel.onEvent(
+                                    TasksScreenEvent.OnNavigateToScreen, navController
+                                )
+                            }
+                            Screen.HiveDetailsScreen.route -> {
+                                val hiveId = navController.currentBackStackEntry?.arguments?.getString("hiveId")
+                                // log navigation event
+                                Log.d("MainActivity", "Navigated to HiveDetailsScreen with hiveId: $hiveId")
+                                hiveViewModel.onEvent(
+                                    HiveScreenEvent.OnNavigateToHiveDetailsScreen(hiveId!!)
+                                )
+                            }
+                            else -> {
+                                Log.d("MainActivity", "No matching route found for ${navController.currentBackStackEntry?.destination?.route}")
+                            }
+                        }
+                    }
 
                     // Permission dialog
                     Box(Modifier.fillMaxSize()) {
@@ -311,7 +355,7 @@ class MainActivity : ComponentActivity() {
                                                     Icon(Icons.Filled.Delete,
                                                         contentDescription = null,
                                                         modifier = Modifier.constrainAs(icon) {
-                                                            start.linkTo(parent.start) 
+                                                            start.linkTo(parent.start)
                                                             top.linkTo(parent.top)
                                                             bottom.linkTo(parent.bottom)
                                                         })
@@ -353,17 +397,15 @@ class MainActivity : ComponentActivity() {
 
                     LaunchedEffect(key1 = firebaseAuth.currentUser) {
                         if (firebaseAuth.currentUser != null && !signInState.isSignInSuccessful) {
-                            hiveViewModel.onSignInSuccess()
-
-                        }
-                    }
-
-                    // launched effect to tell when we are navigating to the home screen
-                    LaunchedEffect(key1 = navController.currentBackStackEntry) {
-                        if (navController.currentBackStackEntry?.destination?.route == Screen.HomeScreen.route) {
-                            homeScreenViewModel.onEvent(
-                                HomeScreenEvent.OnNavigateToHomeScreen, navController
-                            )
+                           homeScreenViewModel.onEvent(
+                               HomeScreenEvent.OnSignInSuccess,
+                               navController
+                           )
+                            navController.navigate(Screen.HomeScreen.route) {
+                                popUpTo(Screen.SignInScreen.route) {
+                                    inclusive = true
+                                }
+                            }
                         }
                     }
 
@@ -393,10 +435,6 @@ class MainActivity : ComponentActivity() {
                                     HomeScreen(
                                         state = homeScreenState,
                                         onEvent = {
-                                            if (it is HomeScreenEvent.OnUpdateUserData) {
-                                                hiveViewModel.updateUserData(it.userData)
-                                                tasksViewModel.updateUserData(it.userData)
-                                            }
                                             homeScreenViewModel.onEvent(it, navController)
                                         },
                                         signInViewModel = signInViewModel,
@@ -424,7 +462,10 @@ class MainActivity : ComponentActivity() {
                                     // Sign in effect
                                     LaunchedEffect(key1 = signInState.isSignInSuccessful) {
                                         if (signInState.isSignInSuccessful) {
-                                            hiveViewModel.onSignInSuccess()
+                                            homeScreenViewModel.onEvent(
+                                                HomeScreenEvent.OnSignInSuccess,
+                                                navController
+                                            )
 
                                             navController.navigate(Screen.HomeScreen.route) {
                                                 popUpTo(Screen.SignInScreen.route) {
@@ -470,12 +511,6 @@ class MainActivity : ComponentActivity() {
                                 ) { backStackEntry ->
                                     val hiveId = backStackEntry.arguments?.getString("hiveId")
 
-                                    LaunchedEffect(key1 = hiveId) {
-                                        if (hiveId != null) hiveViewModel.onHiveScreenLaunched(
-                                            hiveId
-                                        )
-                                    }
-
                                     HiveDetailsScreen(
                                         navController,
                                         hiveViewModel,
@@ -496,7 +531,8 @@ class MainActivity : ComponentActivity() {
                                 composable(
                                     route = Screen.InspectionInsightsScreen.route
                                 ) {
-                                    InspectionInsightsScreen(state = inspectionInsightsScreenState,
+                                    InspectionInsightsScreen(
+                                        state = inspectionInsightsScreenState,
                                         onEvent = { event ->
                                             inspectionsInsightsViewModel.onEvent(
                                                 event, navController

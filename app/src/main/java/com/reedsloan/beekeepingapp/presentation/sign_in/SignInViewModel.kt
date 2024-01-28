@@ -7,7 +7,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 import com.reedsloan.beekeepingapp.data.UserPreferences
-import com.reedsloan.beekeepingapp.domain.repo.HiveRepository
+import com.reedsloan.beekeepingapp.data.local.UserData
+import com.reedsloan.beekeepingapp.domain.repo.LocalUserDataRepository
 import com.reedsloan.beekeepingapp.presentation.common.Screen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,7 +19,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SignInViewModel @Inject constructor(
     private val app: Application,
-    private val hiveRepository: HiveRepository,
+    private val localUserDataRepository: LocalUserDataRepository,
     private val firebaseAuth: FirebaseAuth
 ) : ViewModel() {
     private val _state = MutableStateFlow(SignInState())
@@ -26,7 +27,7 @@ class SignInViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            getUserPreferences()
+            getUserDataFromLocal()
         }
     }
 
@@ -59,7 +60,9 @@ class SignInViewModel @Inject constructor(
         }.onFailure {
             Toast.makeText(app, "Error signing in", Toast.LENGTH_SHORT).show()
         }
-        updateUserPreferences(state.value.userPreferences)
+        viewModelScope.launch {
+            saveUserDataToLocal(UserData(userPreferences = state.value.userPreferences))
+        }
     }
 
     private fun resetState() {
@@ -71,20 +74,17 @@ class SignInViewModel @Inject constructor(
         }
     }
 
-    private suspend fun getUserPreferences() {
-        runCatching { hiveRepository.getUserPreferences() }.onSuccess { userPreferences ->
-            _state.update { it.copy(userPreferences = userPreferences) }
-        }
+    private suspend fun saveUserDataToLocal(userData: UserData) {
+        localUserDataRepository.updateUserData(userData)
     }
 
-    private fun updateUserPreferences(userPreferences: UserPreferences) {
-        viewModelScope.launch {
-            runCatching { hiveRepository.updateUserPreferences(userPreferences) }.onSuccess {
-                _state.update { state.value.copy(userPreferences = userPreferences) }
-            }.onFailure {
-                Toast.makeText(
-                    app, "Error updating user data", Toast.LENGTH_SHORT
-                ).show()
+    private suspend fun getUserDataFromLocal() {
+        localUserDataRepository.getUserData().onSuccess {userData ->
+            _state.update {
+                it.copy(
+                    isLoading = false,
+                    userPreferences = userData.userPreferences
+                )
             }
         }
     }

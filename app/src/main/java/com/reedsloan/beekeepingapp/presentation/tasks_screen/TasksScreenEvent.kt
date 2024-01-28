@@ -19,4 +19,5 @@ sealed class TasksScreenEvent {
     data class OnUpdateUserData(val userData: UserData) : TasksScreenEvent()
     data object ClearTasksFilter : TasksScreenEvent()
     data object OnSettingsClicked : TasksScreenEvent()
+    data object OnNavigateToScreen: TasksScreenEvent()
 }

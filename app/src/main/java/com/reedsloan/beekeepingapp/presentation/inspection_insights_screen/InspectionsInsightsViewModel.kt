@@ -1,7 +1,6 @@
 package com.reedsloan.beekeepingapp.presentation.inspection_insights_screen
 
 import android.app.Application
-import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

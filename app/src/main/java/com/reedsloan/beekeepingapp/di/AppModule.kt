@@ -1,19 +1,15 @@
 package com.reedsloan.beekeepingapp.di
 
 import android.app.Application
-import androidx.compose.runtime.Composable
-import androidx.navigation.NavController
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import androidx.room.Room
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.ktx.Firebase
 import com.google.gson.Gson
-import com.reedsloan.beekeepingapp.data.repo.local.hive_repo.HiveDatabase
-import com.reedsloan.beekeepingapp.data.repo.local.hive_repo.HiveRepositoryImpl
+import com.reedsloan.beekeepingapp.data.repo.local.hive_repo.UserDataDatabase
+import com.reedsloan.beekeepingapp.data.repo.local.hive_repo.LocalUserDataRepositoryImpl
 import com.reedsloan.beekeepingapp.data.repo.remote.user_data_repo.UserDataRepositoryImpl
-import com.reedsloan.beekeepingapp.domain.repo.HiveRepository
+import com.reedsloan.beekeepingapp.domain.repo.LocalUserDataRepository
 import com.reedsloan.beekeepingapp.domain.repo.UserDataRepository
 import com.reedsloan.beekeepingapp.presentation.sign_in.GoogleAuthUiClient
 import dagger.Module
@@ -28,16 +24,16 @@ import javax.inject.Singleton
 object AppModule {
     @Singleton
     @Provides
-    fun provideHiveRepository(app: Application): HiveRepository {
-        return HiveRepositoryImpl(db = provideHiveDatabase(app), app)
+    fun provideHiveRepository(app: Application): LocalUserDataRepository {
+        return LocalUserDataRepositoryImpl(db = provideHiveDatabase(app), app)
     }
 
     @Singleton
     @Provides
-    fun provideHiveDatabase(app: Application): HiveDatabase {
+    fun provideHiveDatabase(app: Application): UserDataDatabase {
         return Room.databaseBuilder(
             app,
-            HiveDatabase::class.java,
+            UserDataDatabase::class.java,
             "hive_database"
         ).build()
     }

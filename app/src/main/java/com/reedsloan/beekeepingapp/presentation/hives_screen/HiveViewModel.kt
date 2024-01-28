@@ -7,6 +7,7 @@ import android.content.res.Resources.NotFoundException
 import android.graphics.Bitmap
 import android.icu.text.DateFormat
 import android.net.Uri
+import android.os.Build
 import android.system.ErrnoException
 import android.util.Log
 import android.view.inputmethod.InputMethodManager
@@ -22,7 +23,7 @@ import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.TemperatureMeasurement
 import com.reedsloan.beekeepingapp.data.local.UserData
 import com.reedsloan.beekeepingapp.data.local.hive.*
-import com.reedsloan.beekeepingapp.domain.repo.HiveRepository
+import com.reedsloan.beekeepingapp.domain.repo.LocalUserDataRepository
 import com.reedsloan.beekeepingapp.domain.repo.UserDataRepository
 import com.reedsloan.beekeepingapp.presentation.HiveScreenState
 import com.reedsloan.beekeepingapp.presentation.common.MenuState
@@ -41,13 +42,11 @@ import javax.inject.Inject
 @HiltViewModel
 class HiveViewModel @Inject constructor(
     private val app: Application,
-    private val hiveRepository: HiveRepository,
-    private val userDataRepository: UserDataRepository
+    private val localUserDataRepository: LocalUserDataRepository,
+    private val remoteUserDataRepository: UserDataRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow(HiveScreenState())
     val state = _state.asStateFlow()
-
-    private val defaultScreenInstance = HiveScreenState()
 
     private val _hives = MutableStateFlow<List<Hive>>(emptyList())
     val hives = _hives.asStateFlow()
@@ -91,7 +90,7 @@ class HiveViewModel @Inject constructor(
                         )
                     )
                 }
-                userDataRepository.updateUserData(state.value.userData)
+                remoteUserDataRepository.updateUserData(state.value.userData)
             }.onSuccess {
                 showSuccess()
             }.onFailure {
@@ -102,24 +101,19 @@ class HiveViewModel @Inject constructor(
         }
     }
 
-    fun onSignInSuccess() {
-        viewModelScope.launch {
-            getUserData()
+    private suspend fun getUserDataFromLocal() {
+        _state.update {
+            it.copy(
+                isLoading = true,
+                error = false,
+            )
         }
-    }
-
-    private suspend fun getUserData() {
-        setIsLoading(true)
-        userDataRepository.getUserData().onSuccess { userData ->
-            _state.update {
-                it.copy(
-                    userPreferences = userData.userPreferences, userData = userData
-                )
-            }
+        localUserDataRepository.getUserData().onSuccess {
+            Log.d(this::class.simpleName, "getUserDataFromLocal: $it")
+            updateUserData(it)
             showSuccess()
-            _hives.update { userData.hives }
         }.onFailure {
-            showError(it.message ?: "Unknown error getting user data.")
+            showError(it.message ?: "Unknown error")
         }
     }
 
@@ -151,22 +145,26 @@ class HiveViewModel @Inject constructor(
             dismissDialog()
         } else {
             dismissDialog()
-            visiblePermissionDialogQueue.add(getPermissionRequest(permission = permission))
+            getPermissionRequest(permission = permission)?.let { visiblePermissionDialogQueue.add(it) }
         }
     }
 
     fun onPermissionRequested(permission: String) {
-        visiblePermissionDialogQueue.add(getPermissionRequest(permission))
+        getPermissionRequest(permission)?.let { visiblePermissionDialogQueue.add(it) }
     }
 
-    private fun getPermissionRequest(permission: String): PermissionRequest {
+    private fun getPermissionRequest(permission: String): PermissionRequest? {
         return when (permission) {
             android.Manifest.permission.CAMERA -> {
                 PermissionRequest.CameraPermissionRequest
             }
 
             android.Manifest.permission.READ_MEDIA_IMAGES -> {
-                PermissionRequest.StoragePermissionRequestAPI33
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    PermissionRequest.StoragePermissionRequestAPI33
+                } else {
+                    return null
+                }
             }
 
             android.Manifest.permission.ACCESS_NOTIFICATION_POLICY -> {
@@ -209,8 +207,12 @@ class HiveViewModel @Inject constructor(
 
 
     private suspend fun getUserPreferences() {
-        runCatching { hiveRepository.getUserPreferences() }.onSuccess { userPreferences ->
-            _state.update { it.copy(userPreferences = userPreferences) }
+        localUserDataRepository.getUserData().onSuccess {
+            _state.update {
+                it.copy(
+                    userPreferences = it.userPreferences
+                )
+            }
         }
     }
 
@@ -313,20 +315,19 @@ class HiveViewModel @Inject constructor(
         // delete all hives in selection list
         state.value.selectionList.forEach { deleteHive(it) }
         clearSelectionList()
-        // update the remote
-        saveUserDataToRemote()
     }
 
     private fun updateUserPreferences(userPreferences: UserPreferences) {
-        viewModelScope.launch {
-            runCatching { hiveRepository.updateUserPreferences(userPreferences) }.onSuccess {
-                _state.update { state.value.copy(userPreferences = userPreferences) }
-            }.onFailure {
-                Toast.makeText(
-                    app, "Error updating user preferences", Toast.LENGTH_SHORT
-                ).show()
-            }
+        _state.update {
+            it.copy(
+                userPreferences = userPreferences
+            )
         }
+        syncUserData()
+    }
+
+    private suspend fun saveUserDataToLocal() {
+        localUserDataRepository.updateUserData(state.value.userData)
     }
 
     /**
@@ -408,8 +409,9 @@ class HiveViewModel @Inject constructor(
 
     private fun showError(error: String) {
         _state.update {
+            Toast.makeText(app, error, Toast.LENGTH_SHORT).show()
             it.copy(
-                isError = true, errorMessage = error, isLoading = false, isSuccess = false
+                error = true, errorMessage = error, isLoading = false, isSuccess = false
             )
         }
     }
@@ -435,39 +437,17 @@ class HiveViewModel @Inject constructor(
             ), displayOrder = hives.value.size + 1
         )
     ) {
-        runCatching {
-            _hives.update { it + hive }
-        }.onSuccess {
-            showSuccess()
-            saveUserDataToRemote()
-        }.onFailure {
-            showError(it.message ?: "Unknown error")
-            // Show error message
-            Toast.makeText(app, it.message, Toast.LENGTH_SHORT).show()
-        }
+        updateUserData(state.value.userData.copy(hives = hives.value + hive))
     }
 
     private fun updateHive(hive: Hive) {
-        runCatching {
-            setIsLoading(true)
-            _hives.update {
-                it.map { h ->
-                    if (h.id == hive.id) {
-                        hive
-                    } else {
-                        h
-                    }
-                }
+        updateUserData(state.value.userData.copy(hives = hives.value.map {
+            if (it.id == hive.id) {
+                hive
+            } else {
+                it
             }
-        }.onSuccess {
-            showSuccess()
-            updateSelectedHive(hive)
-            saveUserDataToRemote()
-        }.onFailure {
-            showError(it.message ?: "Unknown error")
-            // Show error message
-            Toast.makeText(app, it.message, Toast.LENGTH_SHORT).show()
-        }
+        }))
     }
 
     private fun updateSelectedHive(hive: Hive) {
@@ -486,10 +466,17 @@ class HiveViewModel @Inject constructor(
                     h.id != hiveId
                 }
             }
+            _state.update {
+                it.copy(
+                    userData = state.value.userData.copy(
+                        hives = hives.value
+                    )
+                )
+            }
             deselectHive()
         }.onSuccess {
             showSuccess()
-            saveUserDataToRemote()
+            syncUserData()
         }.onFailure {
             showError(it.message ?: "Unknown error")
             // Show error message
@@ -504,10 +491,16 @@ class HiveViewModel @Inject constructor(
         runCatching {
             setIsLoading(true)
             _hives.update { emptyList() }
+            _state.update {
+                it.copy(
+                    userData = state.value.userData.copy(
+                        hives = hives.value
+                    )
+                )
+            }
             deselectHive()
         }.onSuccess {
             showSuccess()
-            saveUserDataToRemote()
         }.onFailure {
             showError(it.message ?: "Unknown error")
             // Show error message
@@ -519,7 +512,7 @@ class HiveViewModel @Inject constructor(
         viewModelScope.launch {
             setIsLoading(true)
             runCatching {
-                hiveRepository.exportToCsv(state.value.selectedHive!!)
+                localUserDataRepository.exportToCsv(state.value.selectedHive!!)
             }.onSuccess {
                 Toast.makeText(
                     app, "CSV file(s) saved to the downloads folder.", Toast.LENGTH_SHORT
@@ -549,16 +542,41 @@ class HiveViewModel @Inject constructor(
             is HiveScreenEvent.OnUpdateUserData -> {
                 updateUserData(event.userData)
             }
+
+            is HiveScreenEvent.OnNavigateToHiveDetailsScreen -> {
+                viewModelScope.launch {
+                    getUserDataFromLocal()
+                    setSelectedHive(event.hiveId)
+                }
+            }
+
+            is HiveScreenEvent.OnNavigateToHivesScreen -> {
+                viewModelScope.launch {
+                    getUserDataFromLocal()
+                }
+            }
+
+            is HiveScreenEvent.OnNavigateToHiveInspectionScreen -> {
+                viewModelScope.launch {
+                    getUserDataFromLocal()
+                }
+            }
         }
     }
 
-    fun updateUserData(userData: UserData) {
+    private fun updateUserData(userData: UserData) {
+        Log.d(this::class.simpleName, "updateUserData: $userData")
         _state.update {
             it.copy(
                 isLoading = false,
-                userData = userData
+                userData = userData,
+                selectedHive = userData.hives.find { hive ->
+                    hive.id == state.value.selectedHive?.id
+                }
             )
         }
+        _hives.update { userData.hives }
+        syncUserData()
     }
 
     fun onTapOutside() {
@@ -591,10 +609,17 @@ class HiveViewModel @Inject constructor(
                 }
             }.onSuccess {
                 showSuccess()
-                saveUserDataToRemote()
+                syncUserData()
             }.onFailure {
                 showError(it.message ?: "Unknown error")
             }
+        }
+    }
+
+    private fun syncUserData() {
+        viewModelScope.launch {
+            saveUserDataToLocal()
+            saveUserDataToRemote()
         }
     }
 
@@ -613,7 +638,7 @@ class HiveViewModel @Inject constructor(
                 }
             }.onSuccess {
                 showSuccess()
-                saveUserDataToRemote()
+                syncUserData()
             }.onFailure {
                 showError(it.message ?: "Unknown error")
             }
@@ -681,7 +706,7 @@ class HiveViewModel @Inject constructor(
                 app.contentResolver.delete(uri, null, null)
             }.onSuccess {
                 showSuccess()
-                saveUserDataToRemote()
+                syncUserData()
             }.onFailure {
                 showError(it.message ?: "Unknown error")
             }
@@ -876,19 +901,17 @@ class HiveViewModel @Inject constructor(
      * @see [HiveInspection]
      */
     private fun createInspection() {
-        runCatching {
-            state.value.selectedHive?.let { hive ->
-                updateHive(
-                    hive.copy(
-                        hiveInspections = hive.hiveInspections + getDefaultInspection()
+        updateUserData(state.value.userData.copy(
+            hives = hives.value.map {
+                if (it.id == state.value.selectedHive?.id) {
+                    it.copy(
+                        hiveInspections = it.hiveInspections + getDefaultInspection()
                     )
-                )
+                } else {
+                    it
+                }
             }
-        }.onSuccess {
-            showSuccess()
-        }.onFailure {
-            showError(it.message ?: "Unknown error")
-        }
+        ))
     }
 
     fun onTapTasksButton(navController: NavController) {
@@ -921,14 +944,5 @@ class HiveViewModel @Inject constructor(
     fun onTapInspectionsInsightsButton(navController: NavController) {
         closeOpenMenus()
         navController.navigate(Screen.InspectionInsightsScreen.route)
-    }
-
-    fun onHiveScreenLaunched(hiveId: String?) {
-        viewModelScope.launch {
-            getUserData()
-            hiveId?.let {
-                setSelectedHive(hiveId)
-            }
-        }
     }
 }

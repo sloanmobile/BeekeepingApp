@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.reedsloan.beekeepingapp.data.local.UserData
 import com.reedsloan.beekeepingapp.data.local.tasks.Task
+import com.reedsloan.beekeepingapp.domain.repo.LocalUserDataRepository
 import com.reedsloan.beekeepingapp.domain.repo.UserDataRepository
 import com.reedsloan.beekeepingapp.presentation.common.Screen
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,7 +20,8 @@ import javax.inject.Inject
 @HiltViewModel
 class TasksViewModel @Inject constructor(
     private val app: Application,
-    private val userDataRepository: UserDataRepository
+    private val remoteUserDataRepository: UserDataRepository,
+    private val localUserDataRepository: LocalUserDataRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow(TasksScreenState())
     val state = _state.asStateFlow()
@@ -70,6 +72,12 @@ class TasksViewModel @Inject constructor(
             is TasksScreenEvent.OnSettingsClicked -> {
                 navController.navigate(Screen.SettingsScreen.route)
             }
+
+            is TasksScreenEvent.OnNavigateToScreen -> {
+                viewModelScope.launch {
+                    getUserDataFromLocal()
+                }
+            }
         }
     }
 
@@ -104,7 +112,10 @@ class TasksViewModel @Inject constructor(
                 )
             )
         }
-        syncUserDataToRemote()
+        viewModelScope.launch {
+            saveUserDataToLocal()
+            saveUserDataToRemote()
+        }
     }
 
     private fun updateTask(task: Task) {
@@ -122,7 +133,10 @@ class TasksViewModel @Inject constructor(
 
             )
         }
-        syncUserDataToRemote()
+        viewModelScope.launch {
+            saveUserDataToLocal()
+            saveUserDataToRemote()
+        }
     }
 
     private fun createNewTask(task: Task) {
@@ -133,26 +147,30 @@ class TasksViewModel @Inject constructor(
                 )
             )
         }
-        syncUserDataToRemote()
+        viewModelScope.launch {
+            saveUserDataToLocal()
+            saveUserDataToRemote()
+        }
     }
 
-    private fun getUserData() {
-        viewModelScope.launch {
-            userDataRepository.getUserData().onSuccess {
-                _state.update {
-                    it.copy(
-                        userData = it.userData
-                    )
-                }
+    private suspend fun saveUserDataToLocal() {
+        localUserDataRepository.updateUserData(state.value.userData)
+    }
+
+    private suspend fun getUserDataFromLocal() {
+        localUserDataRepository.getUserData().onSuccess {
+            _state.update {
+                it.copy(
+                    userData = it.userData
+                )
             }
         }
+        Log.d(this::class.simpleName, "getUserDataFromLocal: ${state.value.userData}")
     }
 
-    private fun syncUserDataToRemote() {
-        viewModelScope.launch {
-            Log.d(this::class.simpleName, "updateUserData: ${state.value.userData}")
-            userDataRepository.updateUserData(state.value.userData)
-        }
+    private suspend fun saveUserDataToRemote() {
+        Log.d(this::class.simpleName, "updateUserData: ${state.value.userData}")
+        remoteUserDataRepository.updateUserData(state.value.userData)
     }
 
     fun updateUserData(userData: UserData) {

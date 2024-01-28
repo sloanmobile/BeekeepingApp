@@ -4,9 +4,9 @@ import android.app.Application
 import android.os.Environment
 import android.util.Log
 import com.reedsloan.beekeepingapp.data.Message
-import com.reedsloan.beekeepingapp.data.UserPreferences
+import com.reedsloan.beekeepingapp.data.local.UserData
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
-import com.reedsloan.beekeepingapp.domain.repo.HiveRepository
+import com.reedsloan.beekeepingapp.domain.repo.LocalUserDataRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.kotlinx.dataframe.api.dataFrameOf
@@ -17,32 +17,19 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class HiveRepositoryImpl @Inject constructor(db: HiveDatabase, private val app: Application) :
-    HiveRepository {
+class LocalUserDataRepositoryImpl @Inject constructor(
+    db: UserDataDatabase,
+    private val app: Application
+) :
+    LocalUserDataRepository {
     private val dao = db.dao
 
-    override suspend fun getHive(hiveId: Int): Hive {
-        return dao.getHive(hiveId).toHive()
-    }
-
-    override suspend fun getAllHives(): List<Hive> {
-        return dao.getAllHives().map { it.toHive() }
-    }
-
-    override suspend fun createHive(hive: Hive) {
-        dao.insertHive(hive.toHiveEntity())
-    }
-
-    override suspend fun updateHive(hive: Hive) {
-        dao.updateHive(hive.toHiveEntity())
-    }
-
-    override suspend fun deleteHive(hiveId: String) {
-        dao.deleteHive(hiveId)
-    }
-
-    override suspend fun deleteAllHives() {
-        dao.deleteAllHives()
+    override suspend fun getUserData(): Result<UserData> {
+        return runCatching {
+            val result = dao.getUserData()
+            Log.d(this::class.simpleName, "getUserData: $result")
+            result?.toUserData() ?: UserData()
+        }
     }
 
     /**
@@ -124,17 +111,12 @@ class HiveRepositoryImpl @Inject constructor(db: HiveDatabase, private val app: 
         return Result.failure(Exception("Failed to save CSV file"))
     }
 
-
-    override suspend fun getUserPreferences(): UserPreferences {
-        return dao.getUserPreferences().toUserPreferences()
+    override suspend fun updateUserData(userData: UserData) {
+        dao.updateUserData(userData)
     }
 
-    override suspend fun updateUserPreferences(userPreferences: UserPreferences) {
-        dao.updateUserPreferences(userPreferences.toUserPreferencesEntity())
+    override suspend fun deleteUserData() {
+        dao.deleteUserData()
     }
 
-    override suspend fun resetUserPreferences() {
-        // initialize a default user preferences object
-        dao.updateUserPreferences(UserPreferences().toUserPreferencesEntity())
-    }
 }

@@ -27,4 +27,5 @@ sealed class PermissionRequest(
         message = "Notification permission is required to receive notifications about your hives.",
         isPermanentlyDeniedMessage = "Notification permission is required to receive notifications about your hives. Please enable it in your device settings."
     )
+
 }

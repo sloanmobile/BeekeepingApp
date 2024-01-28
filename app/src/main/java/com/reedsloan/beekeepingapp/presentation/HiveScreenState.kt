@@ -1,8 +1,6 @@
 package com.reedsloan.beekeepingapp.presentation
 
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.DpOffset
 import com.reedsloan.beekeepingapp.BuildConfig
 import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.UserData
@@ -13,7 +11,7 @@ import com.reedsloan.beekeepingapp.presentation.common.Screen
 
 data class HiveScreenState(
     val isLoading: Boolean = false,
-    val isError: Boolean = false,
+    val error: Boolean = false,
     val isSuccess: Boolean = false,
     val userData: UserData = UserData(),
     val errorMessage: String = "",

@@ -21,5 +21,6 @@ sealed class HomeScreenEvent {
     data object OnBackClicked : HomeScreenEvent()
 
     data object OnAllHivesClicked : HomeScreenEvent()
-    data object OnNavigateToHomeScreen : HomeScreenEvent()
+    data object OnNavigateToScreen : HomeScreenEvent()
+    data object OnSignInSuccess: HomeScreenEvent()
 }
