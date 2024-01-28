@@ -41,20 +41,28 @@ class TasksViewModel @Inject constructor(
             }
 
             is TasksScreenEvent.OnTaskClicked -> {
-                // toggle task completed
-                updateTask(event.task.copy(isCompleted = !event.task.isCompleted))
+                viewModelScope.launch {
+                    // toggle task completed
+                    updateTask(event.task.copy(isCompleted = !event.task.isCompleted))
+                }
             }
 
             is TasksScreenEvent.OnUpdateTaskClicked -> {
-                updateTask(event.task)
+                viewModelScope.launch {
+                    updateTask(event.task)
+                }
             }
 
             is TasksScreenEvent.OnUpdateCategoryClicked -> {
-                updateCategory(event.oldCategory, event.newCategory)
+                viewModelScope.launch {
+                    updateCategory(event.oldCategory, event.newCategory)
+                }
             }
 
             is TasksScreenEvent.OnCreateNewTaskClicked -> {
-                createNewTask(event.task)
+                viewModelScope.launch {
+                    createNewTask(event.task)
+                }
             }
 
             is TasksScreenEvent.OnDeleteClicked -> {
@@ -98,7 +106,8 @@ class TasksViewModel @Inject constructor(
         }
     }
 
-    private fun updateCategory(oldCategory: String, newCategory: String) {
+    private suspend fun updateCategory(oldCategory: String, newCategory: String) {
+        getUserDataFromLocal()
         _state.update {
             it.copy(
                 userData = it.userData.copy(
@@ -112,13 +121,11 @@ class TasksViewModel @Inject constructor(
                 )
             )
         }
-        viewModelScope.launch {
             saveUserDataToLocal()
-            saveUserDataToRemote()
-        }
+        saveUserDataToRemote()
     }
 
-    private fun updateTask(task: Task) {
+    private suspend fun updateTask(task: Task) {
         _state.update {
             it.copy(
                 userData = it.userData.copy(
@@ -133,13 +140,12 @@ class TasksViewModel @Inject constructor(
 
             )
         }
-        viewModelScope.launch {
-            saveUserDataToLocal()
-            saveUserDataToRemote()
-        }
+        saveUserDataToLocal()
+        saveUserDataToRemote()
     }
 
-    private fun createNewTask(task: Task) {
+    private suspend fun createNewTask(task: Task) {
+        getUserDataFromLocal()
         _state.update {
             it.copy(
                 userData = it.userData.copy(
@@ -147,10 +153,8 @@ class TasksViewModel @Inject constructor(
                 )
             )
         }
-        viewModelScope.launch {
-            saveUserDataToLocal()
-            saveUserDataToRemote()
-        }
+        saveUserDataToLocal()
+        saveUserDataToRemote()
     }
 
     private suspend fun saveUserDataToLocal() {
@@ -158,14 +162,13 @@ class TasksViewModel @Inject constructor(
     }
 
     private suspend fun getUserDataFromLocal() {
-        localUserDataRepository.getUserData().onSuccess {
+        localUserDataRepository.getUserData().onSuccess { result ->
             _state.update {
                 it.copy(
-                    userData = it.userData
+                    userData = result
                 )
             }
         }
-        Log.d(this::class.simpleName, "getUserDataFromLocal: ${state.value.userData}")
     }
 
     private suspend fun saveUserDataToRemote() {
