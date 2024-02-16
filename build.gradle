@@ -6,7 +6,7 @@ buildscript {
         hilt_version = "2.49"
         ktor_version = "2.3.5"
         kotlin_version = "1.9.10"
-        room_version = "2.5.2"
+        room_version = "2.6.1"
     }
 
     dependencies {
