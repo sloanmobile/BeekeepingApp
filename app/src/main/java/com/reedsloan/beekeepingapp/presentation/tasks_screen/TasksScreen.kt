@@ -1,5 +1,6 @@
 package com.reedsloan.beekeepingapp.presentation.tasks_screen
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +19,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Checkbox
@@ -34,10 +37,13 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -55,20 +61,6 @@ fun TasksScreen(state: TasksScreenState, onEvent: (TasksScreenEvent) -> Unit) {
     val completedTasksInCategory =
         tasksInCategory.mapValues { it.value.filter { t -> t.isCompleted } }
 
-    val newTask = remember {
-        mutableStateOf(
-            Task(
-                UUID.randomUUID(),
-                "My Task",
-                LocalDate.now().toString(),
-                false,
-                "Complete this task",
-                false,
-                "My Category"
-            )
-        )
-    }
-
     Box(Modifier.fillMaxSize()) {
         Box(
             Modifier
@@ -76,8 +68,21 @@ fun TasksScreen(state: TasksScreenState, onEvent: (TasksScreenEvent) -> Unit) {
                 .zIndex(1F)
         ) {
             ExtendedFloatingActionButton(
-                onClick = { onEvent(TasksScreenEvent.OnCreateNewTaskClicked(newTask.value)) },
-                modifier = Modifier
+                onClick = {
+                    onEvent(
+                        TasksScreenEvent.OnCreateNewTaskClicked(
+                            Task(
+                                UUID.randomUUID(),
+                                "My Task",
+                                LocalDate.now().toString(),
+                                false,
+                                "Complete this task",
+                                false,
+                                "My Category"
+                            )
+                        )
+                    )
+                }, modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(16.dp)
             ) {
@@ -153,16 +158,12 @@ fun TasksScreen(state: TasksScreenState, onEvent: (TasksScreenEvent) -> Unit) {
                 val tasksToDisplay = when (state.tasksFilter) {
                     is TasksFilter.AllTasks -> state.userData.tasks
 
-                    is TasksFilter.CompletedTasks -> state.userData.tasks
-                        .filter { it.isCompleted }
+                    is TasksFilter.CompletedTasks -> state.userData.tasks.filter { it.isCompleted }
 
-                    is TasksFilter.IncompleteTasks -> state.userData.tasks
-                        .filter { !it.isCompleted }
+                    is TasksFilter.IncompleteTasks -> state.userData.tasks.filter { !it.isCompleted }
 
-                    is TasksFilter.Category -> state.userData.tasks
-                        .filter { it.category == state.tasksFilter.category }
+                    is TasksFilter.Category -> state.userData.tasks.filter { it.category == state.tasksFilter.category }
                 }.groupBy { it.category }
-
 
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(1),
@@ -172,8 +173,10 @@ fun TasksScreen(state: TasksScreenState, onEvent: (TasksScreenEvent) -> Unit) {
                 ) {
                     item {
                         Column {
+                            var expanded by remember { mutableStateOf(false) }
+
                             tasksToDisplay.forEach { (category, tasks) ->
-                                ElevatedCard(Modifier.padding(vertical = 8.dp)) {
+                                ElevatedCard {
                                     val count = tasksInCategory[category]?.size ?: 0
                                     val progress = completedTasksInCategory[category]?.size ?: 0
                                     val total = tasksInCategory[category]?.size ?: 0
@@ -183,27 +186,71 @@ fun TasksScreen(state: TasksScreenState, onEvent: (TasksScreenEvent) -> Unit) {
                                         progress.toFloat() / total.toFloat()
                                     }
 
-                                    Column(Modifier.padding(16.dp)) {
-                                        Text(
-                                            text = "$count tasks",
-                                            style = MaterialTheme.typography.bodyMedium.copy(
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                fontWeight = FontWeight.Bold
-                                            ),
-                                        )
-                                        TaskCategoryHeader(category = category, onEvent = onEvent)
+                                    Column(
+                                        Modifier
+                                            .clip(MaterialTheme.shapes.medium)
+                                            .clickable { expanded = !expanded }
+                                    ) {
+                                        Column(
+                                            Modifier
+                                                .padding(
+                                                    top = 16.dp,
+                                                    start = 16.dp,
+                                                    end = 16.dp
+                                                )
+                                        ) {
+                                            Text(
+                                                text = "$count tasks",
+                                                style = MaterialTheme.typography.bodyMedium.copy(
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    fontWeight = FontWeight.Bold
+                                                ),
+                                            )
+                                            TaskCategoryHeader(
+                                                category = category,
+                                                onEvent = onEvent
+                                            )
 
-                                        Spacer(modifier = Modifier.height(8.dp))
+                                            Spacer(modifier = Modifier.height(8.dp))
 
-                                        LinearProgressIndicator(
-                                            progress = { progressBar },
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
+                                            LinearProgressIndicator(
+                                                progress = { progressBar },
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
+
+                                            Icon(
+                                                imageVector =
+                                                if (expanded) Icons.Filled.KeyboardArrowUp
+                                                else Icons.Filled.KeyboardArrowDown,
+                                                contentDescription = null,
+                                                modifier = Modifier
+                                                    .align(Alignment.CenterHorizontally)
+                                            )
+                                        }
                                     }
-                                }
-                                tasks.forEach { task ->
-                                    TaskItem(task = task,
-                                        onClick = { onEvent(TasksScreenEvent.OnTaskClicked(task)) })
+
+
+                                    // column that will expand and collapse with animation
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .animateContentSize()
+                                    ) {
+                                        if (expanded) {
+                                            tasks.forEach { task ->
+                                                ElevatedCard(
+                                                    modifier = Modifier.padding(
+                                                        vertical = 4.dp,
+                                                        horizontal = 8.dp
+                                                    ),
+                                                ) {
+                                                    TaskItem(task = task) {
+                                                        onEvent(TasksScreenEvent.OnTaskClicked(task))
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -217,10 +264,10 @@ fun TasksScreen(state: TasksScreenState, onEvent: (TasksScreenEvent) -> Unit) {
 @Composable
 fun TaskItem(task: Task, onClick: (Task) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable {
-        onClick(task.copy(isCompleted = !task.isCompleted))
+        onClick(task)
     }) {
         Checkbox(checked = task.isCompleted, onCheckedChange = {
-            onClick(task.copy(isCompleted = it))
+            onClick(task)
         })
         Row(
             verticalAlignment = Alignment.CenterVertically,
