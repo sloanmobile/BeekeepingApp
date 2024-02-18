@@ -86,7 +86,7 @@ fun LogInspectionScreen(
     navController: NavController, hiveViewModel: HiveViewModel, adViewModel: AdViewModel
 ) {
     val state by hiveViewModel.state.collectAsState()
-    val hive = state.selectedHive ?: return
+    val hive = state.selectedHive
     val currentMonth = remember { YearMonth.now() }
     val startMonth = remember { currentMonth.minusMonths(100) } // Adjust as needed
     val endMonth = remember { currentMonth.plusMonths(100) } // Adjust as needed
@@ -104,468 +104,480 @@ fun LogInspectionScreen(
     }
     val context = LocalContext.current
     val activity = context as Activity
+    val inspection = state.selectedHiveInspection
 
-    val inspection = state.selectedHiveInspection ?: return
-    Column {
-        TopAppBar(
-            title = {
-                Text(text = "${hive.hiveDetails.name}: ${inspection.date}")
-            },
-            navigationIcon = {
-                IconButton(onClick = {
-                    hiveViewModel.backHandler(navController)
-                }) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                }
-            },
-            actions = {
-                IconButton(onClick = {
-                    hiveViewModel.onTapSettingsButton(navController)
-                }) {
-                    Icon(Icons.Filled.Edit, contentDescription = "Edit Hive Details")
-                }
-                IconButton(onClick = {
-                    hiveViewModel.onTapSettingsButton(navController)
-                }) {
-                    Icon(Icons.Filled.Settings, contentDescription = "Settings")
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(
-                    2.dp
+    if (inspection != null && hive != null) {
+        Column {
+            TopAppBar(
+                title = {
+                    Text(text = "${hive.hiveDetails.name}: ${inspection.date}")
+                },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        hiveViewModel.backHandler(navController)
+                    }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = {
+                        hiveViewModel.onTapSettingsButton(navController)
+                    }) {
+                        Icon(Icons.Filled.Edit, contentDescription = "Edit Hive Details")
+                    }
+                    IconButton(onClick = {
+                        hiveViewModel.onTapSettingsButton(navController)
+                    }) {
+                        Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(
+                        2.dp
+                    ),
                 ),
-            ),
-        )
+            )
 
-        LazyColumn(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp)
-        ) {
-            item {
-                HiveLogSection(title = "Hive Info") {
-                    HorizontalDivider()
-                    HorizontalCalendar(
-                        state = calendarState,
-                        dayContent = { calendarDay ->
-                            val currentHiveDataEntries =
-                                state.selectedHive?.hiveInspections ?: emptyList()
+            LazyColumn(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Top,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp)
+            ) {
+                item {
+                    HiveLogSection(title = "Hive Info") {
+                        HorizontalDivider()
+                        HorizontalCalendar(
+                            state = calendarState,
+                            dayContent = { calendarDay ->
+                                val currentHiveDataEntries =
+                                    state.selectedHive?.hiveInspections ?: emptyList()
 
-                            val isSelected = calendarDay.date.toString() == inspection.date
+                                val isSelected = calendarDay.date.toString() == inspection.date
 
-                            val hasDataEntry =
-                                currentHiveDataEntries.filter { it.id != inspection.id }.any {
-                                    it.date == calendarDay.date.toString()
-                                }
+                                val hasDataEntry =
+                                    currentHiveDataEntries.filter { it.id != inspection.id }
+                                        .any {
+                                            it.date == calendarDay.date.toString()
+                                        }
 
-                            Day(day = calendarDay,
-                                isSelected = isSelected,
-                                hasDataEntry = hasDataEntry,
-                                onClick = { day ->
-                                    // update the selected data entry
-                                    hiveViewModel.updateSelectedInspection(
-                                        inspection.copy(
-                                            date = day.date.toString()
+                                Day(day = calendarDay,
+                                    isSelected = isSelected,
+                                    hasDataEntry = hasDataEntry,
+                                    onClick = { day ->
+                                        // update the selected data entry
+                                        hiveViewModel.updateSelectedInspection(
+                                            inspection.copy(
+                                                date = day.date.toString()
+                                            )
+                                        )
+                                    })
+                            },
+                            monthHeader = { Month(it) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
+                                    shape = MaterialTheme.shapes.medium
+                                ),
+                        )
+                        // notes
+                        OutlinedTextField(
+                            value = inspection.notes ?: "",
+                            onValueChange = {
+                                hiveViewModel.updateSelectedInspection(
+                                    inspection.copy(
+                                        notes = it.trimStart()
+                                    )
+                                )
+                            },
+                            label = { Text("Inspection notes...") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(128.dp)
+                                .padding(horizontal = 8.dp),
+                            singleLine = false,
+                            maxLines = 12,
+                        )
+                    }
+
+                    HiveLogSection(title = "Environment") {
+                        // weather
+                        DataEntryChip(
+                            title = "Conditions",
+                            selectedValue = inspection.hiveConditions.weatherCondition,
+                            enumClass = WeatherCondition::class.java,
+                            onChipSelected = {
+                                hiveViewModel.updateSelectedInspection(
+                                    inspection.copy(
+                                        hiveConditions = inspection.hiveConditions.copy(
+                                            weatherCondition = it
                                         )
                                     )
-                                })
-                        },
-                        monthHeader = { Month(it) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                                shape = MaterialTheme.shapes.medium
-                            ),
-                    )
-                    // notes
-                    OutlinedTextField(
-                        value = inspection.notes ?: "",
-                        onValueChange = {
-                            hiveViewModel.updateSelectedInspection(
-                                inspection.copy(
-                                    notes = it.trimStart()
                                 )
-                            )
-                        },
-                        label = { Text("Inspection notes...") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(128.dp)
-                            .padding(horizontal = 8.dp),
-                        singleLine = false,
-                        maxLines = 12,
-                    )
-                }
+                            },
+                            icon = {
+                                Icon(Icons.Default.Cloud, contentDescription = "Cloud")
+                            },
+                            // show the divider on top
+                            divider = Divider(top = true, bottom = true)
+                        )
+                        Column {
 
-                HiveLogSection(title = "Environment") {
-                    // weather
-                    DataEntryChip(
-                        title = "Conditions",
-                        selectedValue = inspection.hiveConditions.weatherCondition,
-                        enumClass = WeatherCondition::class.java,
-                        onChipSelected = {
-                            hiveViewModel.updateSelectedInspection(
-                                inspection.copy(
-                                    hiveConditions = inspection.hiveConditions.copy(
-                                        weatherCondition = it
+                            Row(modifier = Modifier.padding(vertical = 8.dp)) {
+                                Icon(
+                                    Icons.Default.Thermostat,
+                                    contentDescription = "Thermometer"
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Temperature and Humidity", fontSize = 20.sp
+                                )
+                            }
+                            Row(Modifier.padding(horizontal = 8.dp)) {
+                                // temperature (text field)
+                                OutlinedTextField(
+                                    value = inspection.hiveConditions.temperatureFahrenheit?.toString()
+                                        ?: "",
+                                    onValueChange = {
+                                        hiveViewModel.onDoubleValueChange(
+                                            inspection.hiveConditions.temperatureFahrenheit?.toString()
+                                                ?: "", it
+                                        ) { result ->
+                                            hiveViewModel.updateSelectedInspection(
+                                                inspection.copy(
+                                                    hiveConditions = inspection.hiveConditions.copy(
+                                                        temperatureFahrenheit = result
+                                                    )
+                                                )
+                                            )
+                                        }
+                                    },
+                                    label = { Text("Temperature") },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .weight(1f),
+                                    singleLine = true,
+                                    maxLines = 1,
+                                    // set keyboard to number
+                                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+                                )
+
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                // humidity (text field number)
+                                OutlinedTextField(
+                                    value = inspection.hiveConditions.humidity?.toString()
+                                        ?: "",
+                                    onValueChange = {
+                                        hiveViewModel.onDoubleValueChange(
+                                            inspection.hiveConditions.humidity?.toString()
+                                                ?: "", it
+                                        ) { result ->
+                                            hiveViewModel.updateSelectedInspection(
+                                                inspection.copy(
+                                                    hiveConditions = inspection.hiveConditions.copy(
+                                                        humidity = result
+                                                    )
+                                                )
+                                            )
+                                        }
+                                    },
+                                    label = { Text("Humidity") },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .weight(1f),
+                                    singleLine = true,
+                                    maxLines = 1,
+                                    // set keyboard to number
+                                    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+                                )
+                            }
+                        }
+
+                        // wind amount
+                        DataEntryChip(
+                            title = "Wind Speed",
+                            selectedValue = inspection.hiveConditions.windSpeed,
+                            enumClass = WindSpeed::class.java,
+                            onChipSelected = {
+                                hiveViewModel.updateSelectedInspection(
+                                    inspection.copy(
+                                        hiveConditions = inspection.hiveConditions.copy(
+                                            windSpeed = it
+                                        )
                                     )
                                 )
-                            )
-                        },
-                        icon = {
-                            Icon(Icons.Default.Cloud, contentDescription = "Cloud")
-                        },
-                        // show the divider on top
-                        divider = Divider(top = true, bottom = true)
-                    )
-                    Column {
+                            },
+                            icon = {
+                                Icon(
+                                    Icons.Default.Air,
+                                    contentDescription = "Edit Hive Details"
+                                )
+                            },
+                            divider = Divider(top = true, bottom = true)
+                        )
+                        // What's blooming now
+                        OutlinedTextField(
+                            value = inspection.hiveConditions.bloomingNow ?: "",
+                            onValueChange = {
+                                hiveViewModel.updateSelectedInspection(
+                                    inspection.copy(
+                                        hiveConditions = inspection.hiveConditions.copy(
+                                            bloomingNow = it.trimStart()
+                                        )
+                                    )
+                                )
+                            },
+                            label = { Text("What's blooming now?") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp),
+                            singleLine = false,
+                            maxLines = 4,
+                        )
+                        HorizontalDivider()
 
-                        Row(modifier = Modifier.padding(vertical = 8.dp)) {
-                            Icon(Icons.Default.Thermostat, contentDescription = "Thermometer")
+                    }
+
+                    HiveLogSection(title = "Hive Conditions") {
+
+                        DataEntryChip(
+                            title = "Odor",
+                            selectedValue = inspection.hiveConditions.odor,
+                            enumClass = Odor::class.java,
+                            onChipSelected = {
+                                hiveViewModel.updateSelectedInspection(
+                                    inspection.copy(
+                                        hiveConditions = inspection.hiveConditions.copy(
+                                            odor = it
+                                        )
+                                    )
+                                )
+                            },
+                            // show the divider on top
+                            divider = Divider(top = true, bottom = true)
+                        )
+
+                        // equipment condition
+                        DataEntryChip(title = "Equipment Condition",
+                            selectedValue = inspection.hiveConditions.equipmentCondition,
+                            enumClass = EquipmentCondition::class.java,
+                            onChipSelected = {
+                                hiveViewModel.updateSelectedInspection(
+                                    inspection.copy(
+                                        hiveConditions = inspection.hiveConditions.copy(
+                                            equipmentCondition = it
+                                        )
+                                    )
+                                )
+                            })
+
+                        // frames and combs
+                        DataEntryChip(title = "Frames",
+                            selectedValue = inspection.hiveConditions.frames,
+                            enumClass = FramesAndCombs::class.java,
+                            onChipSelected = {
+                                hiveViewModel.updateSelectedInspection(
+                                    inspection.copy(
+                                        hiveConditions = inspection.hiveConditions.copy(
+                                            frames = it
+                                        )
+                                    )
+                                )
+                            })
+
+                        // foundation type
+                        DataEntryChip(title = "Foundation Type",
+                            selectedValue = inspection.hiveConditions.foundationType,
+                            enumClass = FoundationType::class.java,
+                            onChipSelected = {
+                                hiveViewModel.updateSelectedInspection(
+                                    inspection.copy(
+                                        hiveConditions = inspection.hiveConditions.copy(
+                                            foundationType = it
+                                        )
+                                    )
+                                )
+                            })
+
+                        // temperament
+                        DataEntryChip(title = "Temperament",
+                            selectedValue = inspection.hiveConditions.temperament,
+                            enumClass = Temperament::class.java,
+                            onChipSelected = {
+                                hiveViewModel.updateSelectedInspection(
+                                    inspection.copy(
+                                        hiveConditions = inspection.hiveConditions.copy(
+                                            temperament = it
+                                        )
+                                    )
+                                )
+                            })
+
+                        // population
+                        DataEntryChip(title = "Population",
+                            selectedValue = inspection.hiveConditions.population,
+                            enumClass = Population::class.java,
+                            onChipSelected = {
+                                hiveViewModel.updateSelectedInspection(
+                                    inspection.copy(
+                                        hiveConditions = inspection.hiveConditions.copy(
+                                            population = it
+                                        )
+                                    )
+                                )
+                            })
+
+                        // queen cells
+                        DataEntryChip(title = "Queen Cells",
+                            selectedValue = inspection.hiveConditions.queenCells,
+                            enumClass = QueenCells::class.java,
+                            onChipSelected = {
+                                hiveViewModel.updateSelectedInspection(
+                                    inspection.copy(
+                                        hiveConditions = inspection.hiveConditions.copy(
+                                            queenCells = it
+                                        )
+                                    )
+                                )
+                            })
+
+                        // queen spotted
+                        DataEntryChip(title = "Queen Spotted",
+                            stringValues = listOf("Yes", "No"),
+                            selectedValue = inspection.hiveConditions.queenSpotted?.let { if (it) "Yes" else "No" },
+                            onChipSelected = {
+                                hiveViewModel.updateSelectedInspection(
+                                    inspection.copy(
+                                        hiveConditions = inspection.hiveConditions.copy(
+                                            queenSpotted = it == "Yes"
+                                        )
+                                    )
+                                )
+                            })
+
+                        // queen marker
+                        DataEntryChip(title = "Queen Marker",
+                            selectedValue = inspection.hiveConditions.queenMarker,
+                            enumClass = QueenMarker::class.java,
+                            onChipSelected = {
+                                hiveViewModel.updateSelectedInspection(
+                                    inspection.copy(
+                                        hiveConditions = inspection.hiveConditions.copy(
+                                            queenMarker = it
+                                        )
+                                    )
+                                )
+                            })
+
+                        // laying pattern
+                        DataEntryChip(title = "Laying Pattern",
+                            selectedValue = inspection.hiveConditions.layingPattern,
+                            enumClass = LayingPattern::class.java,
+                            onChipSelected = {
+                                hiveViewModel.updateSelectedInspection(
+                                    inspection.copy(
+                                        hiveConditions = inspection.hiveConditions.copy(
+                                            layingPattern = it
+                                        )
+                                    )
+                                )
+                            })
+
+                        // brood stage
+                        DataEntryChip(title = "Brood Stage",
+                            selectedValue = inspection.hiveConditions.broodStage,
+                            enumClass = BroodStage::class.java,
+                            onChipSelected = {
+                                hiveViewModel.updateSelectedInspection(
+                                    inspection.copy(
+                                        hiveConditions = inspection.hiveConditions.copy(
+                                            broodStage = it
+                                        )
+                                    )
+                                )
+                            })
+                    }
+
+                    // Diseases and treatments category
+                    HiveLogSection(title = "Hive Health") {
+                        HorizontalDivider()
+
+                        Row(modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp)) {
+                            Icon(Icons.Default.MonitorHeart, contentDescription = "Edit")
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Temperature and Humidity", fontSize = 20.sp
+                                text = "Overall Health Estimation",
+                                fontSize = 20.sp,
                             )
                         }
-                        Row(Modifier.padding(horizontal = 8.dp)) {
-                            // temperature (text field)
-                            OutlinedTextField(
-                                value = inspection.hiveConditions.temperatureFahrenheit?.toString()
-                                    ?: "",
-                                onValueChange = {
-                                    hiveViewModel.onDoubleValueChange(
-                                        inspection.hiveConditions.temperatureFahrenheit?.toString()
-                                            ?: "", it
-                                    ) { result ->
-                                        hiveViewModel.updateSelectedInspection(
-                                            inspection.copy(
-                                                hiveConditions = inspection.hiveConditions.copy(
-                                                    temperatureFahrenheit = result
-                                                )
-                                            )
-                                        )
-                                    }
-                                },
-                                label = { Text("Temperature") },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .weight(1f),
-                                singleLine = true,
-                                maxLines = 1,
-                                // set keyboard to number
-                                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                            )
 
-                            Spacer(modifier = Modifier.width(8.dp))
-
-                            // humidity (text field number)
-                            OutlinedTextField(
-                                value = inspection.hiveConditions.humidity?.toString() ?: "",
-                                onValueChange = {
-                                    hiveViewModel.onDoubleValueChange(
-                                        inspection.hiveConditions.humidity?.toString() ?: "", it
-                                    ) { result ->
-                                        hiveViewModel.updateSelectedInspection(
-                                            inspection.copy(
-                                                hiveConditions = inspection.hiveConditions.copy(
-                                                    humidity = result
-                                                )
-                                            )
-                                        )
-                                    }
-                                },
-                                label = { Text("Humidity") },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .weight(1f),
-                                singleLine = true,
-                                maxLines = 1,
-                                // set keyboard to number
-                                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                            )
+                        var sliderPosition by remember {
+                            mutableFloatStateOf(inspection.hiveHealth.healthEstimation)
                         }
-                    }
 
-                    // wind amount
-                    DataEntryChip(
-                        title = "Wind Speed",
-                        selectedValue = inspection.hiveConditions.windSpeed,
-                        enumClass = WindSpeed::class.java,
-                        onChipSelected = {
-                            hiveViewModel.updateSelectedInspection(
-                                inspection.copy(
-                                    hiveConditions = inspection.hiveConditions.copy(
-                                        windSpeed = it
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(horizontal = 32.dp)
+                        ) {
+                            Slider(
+                                value = sliderPosition,
+                                onValueChange = {
+                                    sliderPosition = floor(it)
+                                    hiveViewModel.updateHiveHealthEstimation(sliderPosition)
+                                },
+                                colors = SliderDefaults.colors(
+                                    thumbColor = MaterialTheme.colorScheme.secondary,
+                                    activeTrackColor = MaterialTheme.colorScheme.secondary,
+                                    inactiveTrackColor = MaterialTheme.colorScheme.secondaryContainer,
+                                ),
+                                steps = 9,
+                                valueRange = 0f..10f
+                            )
+                            Text(text = sliderPosition.toString())
+                        }
+                        // diseases (select many)
+                        MultiDataEntryChip(
+                            title = "Diseases (select many)",
+                            enumClass = HiveDisease::class.java,
+                            selectedValues = inspection.hiveHealth.diseases,
+                            onChipSelected = {
+                                hiveViewModel.updateSelectedInspection(
+                                    inspection.copy(
+                                        hiveHealth = inspection.hiveHealth.copy(
+                                            diseases = it
+                                        )
                                     )
                                 )
-                            )
-                        },
-                        icon = {
-                            Icon(Icons.Default.Air, contentDescription = "Edit Hive Details")
-                        },
-                        divider = Divider(top = true, bottom = true)
-                    )
-                    // What's blooming now
-                    OutlinedTextField(
-                        value = inspection.hiveConditions.bloomingNow ?: "",
-                        onValueChange = {
-                            hiveViewModel.updateSelectedInspection(
-                                inspection.copy(
-                                    hiveConditions = inspection.hiveConditions.copy(
-                                        bloomingNow = it.trimStart()
-                                    )
-                                )
-                            )
-                        },
-                        label = { Text("What's blooming now?") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp),
-                        singleLine = false,
-                        maxLines = 4,
-                    )
-                    HorizontalDivider()
-
-                }
-
-                HiveLogSection(title = "Hive Conditions") {
-
-
-                    DataEntryChip(
-                        title = "Odor",
-                        selectedValue = inspection.hiveConditions.odor,
-                        enumClass = Odor::class.java,
-                        onChipSelected = {
-                            hiveViewModel.updateSelectedInspection(
-                                inspection.copy(
-                                    hiveConditions = inspection.hiveConditions.copy(
-                                        odor = it
-                                    )
-                                )
-                            )
-                        },
-                        // show the divider on top
-                        divider = Divider(top = true, bottom = true)
-                    )
-
-                    // equipment condition
-                    DataEntryChip(title = "Equipment Condition",
-                        selectedValue = inspection.hiveConditions.equipmentCondition,
-                        enumClass = EquipmentCondition::class.java,
-                        onChipSelected = {
-                            hiveViewModel.updateSelectedInspection(
-                                inspection.copy(
-                                    hiveConditions = inspection.hiveConditions.copy(
-                                        equipmentCondition = it
-                                    )
-                                )
-                            )
-                        })
-
-                    // frames and combs
-                    DataEntryChip(title = "Frames",
-                        selectedValue = inspection.hiveConditions.frames,
-                        enumClass = FramesAndCombs::class.java,
-                        onChipSelected = {
-                            hiveViewModel.updateSelectedInspection(
-                                inspection.copy(
-                                    hiveConditions = inspection.hiveConditions.copy(
-                                        frames = it
-                                    )
-                                )
-                            )
-                        })
-
-                    // foundation type
-                    DataEntryChip(title = "Foundation Type",
-                        selectedValue = inspection.hiveConditions.foundationType,
-                        enumClass = FoundationType::class.java,
-                        onChipSelected = {
-                            hiveViewModel.updateSelectedInspection(
-                                inspection.copy(
-                                    hiveConditions = inspection.hiveConditions.copy(
-                                        foundationType = it
-                                    )
-                                )
-                            )
-                        })
-
-                    // temperament
-                    DataEntryChip(title = "Temperament",
-                        selectedValue = inspection.hiveConditions.temperament,
-                        enumClass = Temperament::class.java,
-                        onChipSelected = {
-                            hiveViewModel.updateSelectedInspection(
-                                inspection.copy(
-                                    hiveConditions = inspection.hiveConditions.copy(
-                                        temperament = it
-                                    )
-                                )
-                            )
-                        })
-
-                    // population
-                    DataEntryChip(title = "Population",
-                        selectedValue = inspection.hiveConditions.population,
-                        enumClass = Population::class.java,
-                        onChipSelected = {
-                            hiveViewModel.updateSelectedInspection(
-                                inspection.copy(
-                                    hiveConditions = inspection.hiveConditions.copy(
-                                        population = it
-                                    )
-                                )
-                            )
-                        })
-
-                    // queen cells
-                    DataEntryChip(title = "Queen Cells",
-                        selectedValue = inspection.hiveConditions.queenCells,
-                        enumClass = QueenCells::class.java,
-                        onChipSelected = {
-                            hiveViewModel.updateSelectedInspection(
-                                inspection.copy(
-                                    hiveConditions = inspection.hiveConditions.copy(
-                                        queenCells = it
-                                    )
-                                )
-                            )
-                        })
-
-                    // queen spotted
-                    DataEntryChip(title = "Queen Spotted",
-                        stringValues = listOf("Yes", "No"),
-                        selectedValue = inspection.hiveConditions.queenSpotted?.let { if (it) "Yes" else "No" },
-                        onChipSelected = {
-                            hiveViewModel.updateSelectedInspection(
-                                inspection.copy(
-                                    hiveConditions = inspection.hiveConditions.copy(
-                                        queenSpotted = it == "Yes"
-                                    )
-                                )
-                            )
-                        })
-
-                    // queen marker
-                    DataEntryChip(title = "Queen Marker",
-                        selectedValue = inspection.hiveConditions.queenMarker,
-                        enumClass = QueenMarker::class.java,
-                        onChipSelected = {
-                            hiveViewModel.updateSelectedInspection(
-                                inspection.copy(
-                                    hiveConditions = inspection.hiveConditions.copy(
-                                        queenMarker = it
-                                    )
-                                )
-                            )
-                        })
-
-                    // laying pattern
-                    DataEntryChip(title = "Laying Pattern",
-                        selectedValue = inspection.hiveConditions.layingPattern,
-                        enumClass = LayingPattern::class.java,
-                        onChipSelected = {
-                            hiveViewModel.updateSelectedInspection(
-                                inspection.copy(
-                                    hiveConditions = inspection.hiveConditions.copy(
-                                        layingPattern = it
-                                    )
-                                )
-                            )
-                        })
-
-                    // brood stage
-                    DataEntryChip(title = "Brood Stage",
-                        selectedValue = inspection.hiveConditions.broodStage,
-                        enumClass = BroodStage::class.java,
-                        onChipSelected = {
-                            hiveViewModel.updateSelectedInspection(
-                                inspection.copy(
-                                    hiveConditions = inspection.hiveConditions.copy(
-                                        broodStage = it
-                                    )
-                                )
-                            )
-                        })
-                }
-
-                // Diseases and treatments category
-                HiveLogSection(title = "Hive Health") {
-                    HorizontalDivider()
-
-                    Row(modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp)) {
-                        Icon(Icons.Default.MonitorHeart, contentDescription = "Edit")
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Overall Health Estimation",
-                            fontSize = 20.sp,
-                        )
-                    }
-
-                    var sliderPosition by remember {
-                        mutableFloatStateOf(inspection.hiveHealth.healthEstimation)
-                    }
-
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(horizontal = 32.dp)
-                    ) {
-                        Slider(
-                            value = sliderPosition,
-                            onValueChange = {
-                                sliderPosition = floor(it)
-                                hiveViewModel.updateHiveHealthEstimation(sliderPosition)
                             },
-                            colors = SliderDefaults.colors(
-                                thumbColor = MaterialTheme.colorScheme.secondary,
-                                activeTrackColor = MaterialTheme.colorScheme.secondary,
-                                inactiveTrackColor = MaterialTheme.colorScheme.secondaryContainer,
-                            ),
-                            steps = 9,
-                            valueRange = 0f..10f
+                            divider = Divider(top = true, bottom = true)
                         )
-                        Text(text = sliderPosition.toString())
-                    }
-                    // diseases (select many)
-                    MultiDataEntryChip(
-                        title = "Diseases (select many)",
-                        enumClass = HiveDisease::class.java,
-                        selectedValues = inspection.hiveHealth.diseases,
-                        onChipSelected = {
-                            hiveViewModel.updateSelectedInspection(
-                                inspection.copy(
-                                    hiveHealth = inspection.hiveHealth.copy(
-                                        diseases = it
+
+
+                        // treatments (select many)
+                        MultiDataEntryChip(
+                            title = "Treatments (select many)",
+                            enumClass = Treatment::class.java,
+                            selectedValues = inspection.hiveTreatments,
+                            onChipSelected = {
+                                hiveViewModel.updateSelectedInspection(
+                                    inspection.copy(
+                                        hiveTreatments = it
                                     )
                                 )
-                            )
-                        },
-                        divider = Divider(top = true, bottom = true)
-                    )
-
-
-                    // treatments (select many)
-                    MultiDataEntryChip(
-                        title = "Treatments (select many)",
-                        enumClass = Treatment::class.java,
-                        selectedValues = inspection.hiveTreatments,
-                        onChipSelected = {
-                            hiveViewModel.updateSelectedInspection(
-                                inspection.copy(
-                                    hiveTreatments = it
-                                )
-                            )
-                        },
-                    )
+                            },
+                        )
+                    }
+                    // This is a spacer to push the FAB up a bit so it doesn't cover the last entry
+                    Spacer(modifier = Modifier.height(64.dp))
                 }
-                // This is a spacer to push the FAB up a bit so it doesn't cover the last entry
-                Spacer(modifier = Modifier.height(64.dp))
             }
         }
     }
+
+    // Save Inspection FAB
     Box(Modifier.fillMaxSize()) {
         ExtendedFloatingActionButton(
             onClick = {
