@@ -121,7 +121,8 @@ class TasksViewModel @Inject constructor(
                 )
             )
         }
-            saveUserDataToLocal()
+
+        saveUserDataToLocal()
         saveUserDataToRemote()
     }
 
@@ -153,6 +154,7 @@ class TasksViewModel @Inject constructor(
                 )
             )
         }
+
         saveUserDataToLocal()
         saveUserDataToRemote()
     }

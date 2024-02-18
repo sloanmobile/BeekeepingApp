@@ -559,6 +559,7 @@ class HiveViewModel @Inject constructor(
             is HiveScreenEvent.OnNavigateToHiveInspectionScreen -> {
                 viewModelScope.launch {
                     getUserDataFromLocal()
+                    setSelectedHive(event.hiveId)
                 }
             }
         }
