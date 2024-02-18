@@ -18,7 +18,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DropdownMenu
@@ -151,9 +150,9 @@ fun HomeScreen(
             ) {
                 item {
                     state.userData.tasks.filter { it.isToday() }.forEach { task ->
-                        TaskItem(task = task, onClick = {
+                        TaskItem(task = task) {
                             onEvent(HomeScreenEvent.OnTaskClicked(it))
-                        })
+                        }
                     }
                 }
             }
