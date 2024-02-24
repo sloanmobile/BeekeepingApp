@@ -3,4 +3,16 @@
     <string name="default_web_client_id">758717577670-4bm8tc2k01gsujgpgk0m0qrjs4m1slos.apps.googleusercontent.com</string>
     <string name="admob_interstitial_ad">ca-app-pub-3632086592843305/9495817302</string>
     <string name="admob_banner_id">ca-app-pub-3632086592843305/2812394424</string>
+    <string name="permission_required">Permission required</string>
+    <string name="go_to_app_settings">Go to app settings</string>
+    <string name="confirm">Confirm</string>
+    <string name="cancel">Cancel</string>
+    <string name="all_hives">All Hives</string>
+    <string name="all_tasks">All Tasks</string>
+    <string name="todays_tasks">Today\'s Tasks</string>
+    <string name="sign_out">Sign out</string>
+    <string name="home">Home</string>
+    <string name="notice">Notice</string>
+    <string name="submit_feedback">Submit Feedback</string>
+    <string name="limited_test_notice_desc">This is the limited test version of the app. Please use the app as you would normally and provide feedback using the button below.</string>
 </resources>

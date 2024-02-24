@@ -48,11 +48,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import com.reedsloan.beekeepingapp.R
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
 import com.reedsloan.beekeepingapp.data.local.tasks.Task.Companion.isToday
 import com.reedsloan.beekeepingapp.presentation.sign_in.SignInViewModel
@@ -72,7 +74,7 @@ fun HomeScreen(
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
             title = {
-                Text(text = "Home")
+                Text(text = stringResource(R.string.home))
             },
             navigationIcon = {
                 IconButton(onClick = {
@@ -101,9 +103,12 @@ fun HomeScreen(
                         isContextMenuVisible = false
                         signInViewModel.signOut(navController)
                     }, text = {
-                        Text(text = "Sign out")
+                        Text(text = stringResource(R.string.sign_out))
                     }, leadingIcon = {
-                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Sign Out")
+                        Icon(
+                            Icons.AutoMirrored.Filled.Logout,
+                            contentDescription = stringResource(R.string.sign_out)
+                        )
                     })
                 }
             },
@@ -124,7 +129,7 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "Today's Tasks",
+                    text = stringResource(R.string.todays_tasks),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -133,13 +138,15 @@ fun HomeScreen(
                 }) {
 
                     Text(
-                        text = "All Tasks", style = MaterialTheme.typography.titleMedium.copy(
+                        text = stringResource(R.string.all_tasks),
+                        style = MaterialTheme.typography.titleMedium.copy(
                             color = MaterialTheme.colorScheme.primary
-                        ), modifier = Modifier.padding(end = 8.dp)
+                        ),
+                        modifier = Modifier.padding(end = 8.dp)
                     )
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-                        contentDescription = "All Tasks",
+                        contentDescription = stringResource(R.string.all_tasks),
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
@@ -147,6 +154,7 @@ fun HomeScreen(
             }
             val tasksToday = state.userData.tasks.filter { it.isToday() }
             Text(
+                // Using a string template for now until additional languages are added
                 text = "You have ${tasksToday.count()} ${if (tasksToday.size > 1) "tasks" else "task"} today",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -171,13 +179,15 @@ fun HomeScreen(
                 onEvent(HomeScreenEvent.OnAllHivesClicked)
             }) {
                 Text(
-                    text = "All Hives", style = MaterialTheme.typography.titleMedium.copy(
+                    text = stringResource(R.string.all_hives),
+                    style = MaterialTheme.typography.titleMedium.copy(
                         color = MaterialTheme.colorScheme.primary
-                    ), modifier = Modifier.padding(end = 8.dp)
+                    ),
+                    modifier = Modifier.padding(end = 8.dp)
                 )
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-                    contentDescription = "All Hives",
+                    contentDescription = stringResource(R.string.all_hives),
                     modifier = Modifier.size(16.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
@@ -214,14 +224,14 @@ private fun NoticeCard() {
             ) {
                 // Title of the Card
                 Text(
-                    text = "Notice",
+                    text = stringResource(R.string.notice),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 // Body of the Card
                 Text(
-                    text = "This is the limited test version of the app. Please use the app as you would normally and provide feedback using the button below.",
+                    text = stringResource(R.string.limited_test_notice_desc),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -237,13 +247,15 @@ private fun NoticeCard() {
                     openUrlLauncher.launch(intent)
                 }) {
                     Text(
-                        text = "Submit Feedback", style = MaterialTheme.typography.titleMedium.copy(
+                        text = stringResource(R.string.submit_feedback),
+                        style = MaterialTheme.typography.titleMedium.copy(
                             color = MaterialTheme.colorScheme.primary
-                        ), modifier = Modifier.padding(end = 8.dp)
+                        ),
+                        modifier = Modifier.padding(end = 8.dp)
                     )
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-                        contentDescription = "Submit Feedback",
+                        contentDescription = stringResource(R.string.submit_feedback),
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )

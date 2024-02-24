@@ -7,9 +7,12 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.reedsloan.beekeepingapp.R
 import com.reedsloan.beekeepingapp.presentation.common.data.PermissionRequest
 
 @Composable
@@ -23,7 +26,7 @@ fun PermissionDialog(
     AlertDialog(onDismissRequest = {
         onDismiss()
     }, title = {
-        Text(text = "Permission required")
+        Text(text = stringResource(R.string.permission_required))
     }, text = {
         Text(
             text = if (isPermanentlyDeclined) {
@@ -50,17 +53,17 @@ fun PermissionDialog(
             }) {
                 Text(
                     text = if (isPermanentlyDeclined) {
-                        "Go to app settings"
+                        stringResource(R.string.go_to_app_settings)
                     } else {
-                        "Confirm"
+                        stringResource(R.string.confirm)
                     }
                 )
             }
         }, dismissButton = {
-            Button(onClick = {
+            TextButton(onClick = {
                 onDismiss()
             }) {
-                Text(text = "Cancel")
+                Text(text = stringResource(R.string.cancel))
             }
         })
 }
