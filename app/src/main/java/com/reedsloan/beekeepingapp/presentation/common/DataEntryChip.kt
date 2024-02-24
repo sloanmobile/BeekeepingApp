@@ -71,7 +71,9 @@ fun <T : Enum<T>> DataEntryChip(
                         leadingIcon = { LeadingIcon(selected) },
                         selected = selected,
                         onClick = {
-                            onChipSelected(enumValue)
+                            onChipSelected(
+                                if (selected) null else enumValue
+                            )
                         },
                         label = {
                             val firstPropertyName = enumClass.declaredFields.first().name
