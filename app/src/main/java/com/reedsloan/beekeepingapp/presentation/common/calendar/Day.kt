@@ -11,6 +11,7 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,6 +68,10 @@ fun Day(
                 modifier = Modifier.size(48.dp),
                 elevation = ButtonDefaults.buttonElevation(2.dp, 2.dp, 2.dp, 2.dp),
                 contentPadding = PaddingValues(0.dp), // this is necessary for the text to fit
+                colors = ButtonDefaults.elevatedButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(elevation = 3.dp),
+                    contentColor = MaterialTheme.colorScheme.primary
+                ),
             ) {
                 Text(
                     text = day.date.dayOfMonth.toString(),
