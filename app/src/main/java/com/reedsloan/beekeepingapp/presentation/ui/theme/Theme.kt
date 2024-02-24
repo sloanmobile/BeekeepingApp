@@ -2,9 +2,10 @@ package com.reedsloan.beekeepingapp.presentation.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+
 
 private val LightColors = lightColorScheme(
     primary = md_theme_light_primary,
@@ -35,7 +36,7 @@ private val LightColors = lightColorScheme(
     inversePrimary = md_theme_light_inversePrimary,
     surfaceTint = md_theme_light_surfaceTint,
     outlineVariant = md_theme_light_outlineVariant,
-    scrim = md_theme_light_scrim,
+    scrim = md_theme_light_scrim
 )
 
 
@@ -76,12 +77,11 @@ fun AppTheme(
     useDarkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable() () -> Unit
 ) {
-//    val colors = if (!useDarkTheme) {
-//        LightColors
-//    } else {
-//        DarkColors
-//    }
-    val colors = DarkColors
+    val colors = if (!useDarkTheme) {
+        LightColors
+    } else {
+        DarkColors
+    }
 
     MaterialTheme(
         colorScheme = colors,
