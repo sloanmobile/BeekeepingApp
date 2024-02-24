@@ -41,7 +41,7 @@ fun Day(
                 colors = ButtonDefaults.outlinedButtonColors(
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                )
+                ),
             ) {
                 Text(
                     text = day.date.dayOfMonth.toString(),
@@ -66,7 +66,7 @@ fun Day(
                 onClick = { onClick(day) },
                 modifier = Modifier.size(48.dp),
                 elevation = ButtonDefaults.buttonElevation(2.dp, 2.dp, 2.dp, 2.dp),
-                contentPadding = PaddingValues(0.dp) // this is necessary for the text to fit
+                contentPadding = PaddingValues(0.dp), // this is necessary for the text to fit
             ) {
                 Text(
                     text = day.date.dayOfMonth.toString(),
