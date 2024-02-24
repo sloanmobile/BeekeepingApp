@@ -946,4 +946,12 @@ class HiveViewModel @Inject constructor(
         closeOpenMenus()
         navController.navigate(Screen.InspectionInsightsScreen.route)
     }
+
+    fun resetDateToToday() {
+        updateSelectedInspection(
+            state.value.selectedHiveInspection!!.copy(
+                date = LocalDate.now().toString()
+            )
+        )
+    }
 }
