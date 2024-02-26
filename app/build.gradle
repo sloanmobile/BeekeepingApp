@@ -148,7 +148,7 @@ dependencies {
     // Dagger - Hilt
     implementation "com.google.dagger:hilt-android:$hilt_version"
     ksp "com.google.dagger:hilt-android-compiler:$hilt_version"
-    ksp "androidx.hilt:hilt-compiler:1.1.0"
+    ksp "androidx.hilt:hilt-compiler:1.2.0"
     implementation 'androidx.hilt:hilt-navigation-compose:1.1.0'
 
     // Ktor Client
