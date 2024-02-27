@@ -1,8 +1,10 @@
 package com.reedsloan.beekeepingapp.presentation.hives_screen
 
+import android.Manifest
 import android.app.Activity
 import android.app.Application
 import android.content.Context
+import android.content.pm.PackageManager
 import android.content.res.Resources.NotFoundException
 import android.graphics.Bitmap
 import android.icu.text.DateFormat
@@ -18,11 +20,14 @@ import androidx.core.content.FileProvider.getUriForFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.reedsloan.beekeepingapp.R
 import com.reedsloan.beekeepingapp.data.TimeFormat
 import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.TemperatureMeasurement
 import com.reedsloan.beekeepingapp.data.local.UserData
 import com.reedsloan.beekeepingapp.data.local.hive.*
+import com.reedsloan.beekeepingapp.data.repo.remote.user_data_repo.WeatherRepository
 import com.reedsloan.beekeepingapp.domain.repo.LocalUserDataRepository
 import com.reedsloan.beekeepingapp.domain.repo.UserDataRepository
 import com.reedsloan.beekeepingapp.presentation.HiveScreenState
@@ -43,7 +48,9 @@ import javax.inject.Inject
 class HiveViewModel @Inject constructor(
     private val app: Application,
     private val localUserDataRepository: LocalUserDataRepository,
-    private val remoteUserDataRepository: UserDataRepository
+    private val remoteUserDataRepository: UserDataRepository,
+    private val weatherRepository: WeatherRepository,
+    private val fusedLocationProviderClient: FusedLocationProviderClient
 ) : ViewModel() {
     private val _state = MutableStateFlow(HiveScreenState())
     val state = _state.asStateFlow()
@@ -539,6 +546,7 @@ class HiveViewModel @Inject constructor(
 
     fun onEvent(event: HiveScreenEvent) {
         when (event) {
+
             is HiveScreenEvent.OnUpdateUserData -> {
                 updateUserData(event.userData)
             }
@@ -560,6 +568,58 @@ class HiveViewModel @Inject constructor(
                 viewModelScope.launch {
                     getUserDataFromLocal()
                     setSelectedHive(event.hiveId)
+                }
+            }
+
+            is HiveScreenEvent.OnNavigateToLogInspectionScreen -> {
+                viewModelScope.launch {
+                    getWeatherData()
+                }
+            }
+        }
+    }
+
+    private suspend fun getWeatherData() {
+        runCatching {
+            if (ActivityCompat.checkSelfPermission(
+                    app.applicationContext,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                    app.applicationContext,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                // TODO: Implement permission request dialog
+                Toast.makeText(app,
+                    app.getString(R.string.no_location_permission), Toast.LENGTH_SHORT).show()
+                return
+            }
+            fusedLocationProviderClient.lastLocation.addOnSuccessListener { location ->
+                viewModelScope.launch {
+                    location?.let {
+                        // Latitude and Longitude (Decimal degree) e.g: q=48.8567,2.3508
+                        val locationString = "${location.latitude},${location.longitude}"
+
+                        weatherRepository.getWeatherData(locationString)
+                            .onSuccess { weatherResponse ->
+                                Log.d(
+                                    this::class.simpleName,
+                                    "Weather data: $weatherResponse"
+                                )
+
+                                _state.update {
+                                    it.copy(
+                                        weatherResponse = weatherResponse
+                                    )
+                                }
+
+                            }.onFailure {
+                            Log.e(
+                                this::class.simpleName,
+                                "Error getting weather data: ${it.stackTraceToString()}"
+                            )
+                        }
+                    }
                 }
             }
         }

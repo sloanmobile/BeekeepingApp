@@ -1,11 +1,14 @@
 package com.reedsloan.beekeepingapp.presentation
 
+import android.location.Location
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.google.android.gms.tasks.Task
 import com.reedsloan.beekeepingapp.BuildConfig
 import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.UserData
 import com.reedsloan.beekeepingapp.data.local.hive.Hive
 import com.reedsloan.beekeepingapp.data.local.hive.HiveInspection
+import com.reedsloan.beekeepingapp.data.remote.WeatherResponse
 import com.reedsloan.beekeepingapp.presentation.common.MenuState
 import com.reedsloan.beekeepingapp.presentation.common.Screen
 
@@ -30,8 +33,8 @@ data class HiveScreenState(
     val editingTextField: Boolean = false,
     val showDeleteHiveDialog: Boolean = false,
     val selectedHiveInspection: HiveInspection? = null,
+    val weatherResponse: WeatherResponse? = null,
 )
-
 data class ContextMenuItem(
     val title: String,
     val icon: ImageVector? = null,

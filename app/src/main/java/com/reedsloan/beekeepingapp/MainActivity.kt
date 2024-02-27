@@ -159,6 +159,13 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
                             }
+                            Screen.LogInspectionScreen.route -> {
+                                hiveScreenState.selectedHiveInspection?.let {
+                                    hiveViewModel.onEvent(
+                                        HiveScreenEvent.OnNavigateToLogInspectionScreen(it.id)
+                                    )
+                                }
+                            }
                             Screen.TasksScreen.route -> {
                                 tasksViewModel.onEvent(
                                     TasksScreenEvent.OnNavigateToScreen, navController

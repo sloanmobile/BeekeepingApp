@@ -15,4 +15,6 @@
     <string name="notice">Notice</string>
     <string name="submit_feedback">Submit Feedback</string>
     <string name="limited_test_notice_desc">This is the limited test version of the app. Please use the app as you would normally and provide feedback using the button below.</string>
+    <string name="no_location_permission">Location permission not granted. Please enable it in the apps settings.</string>
+    <string name="weather_api_key">ccf5f9398a8740d4b52230944242602</string>
 </resources>
