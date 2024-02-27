@@ -54,13 +54,14 @@ import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import com.reedsloan.beekeepingapp.core.util.TestTags
 import com.reedsloan.beekeepingapp.data.local.hive.HiveInspection
+import com.reedsloan.beekeepingapp.presentation.hives_screen.HiveScreenEvent
 import com.reedsloan.beekeepingapp.presentation.hives_screen.HiveViewModel
 import java.time.LocalDate
 import kotlin.time.Duration.Companion.days
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InspectionsScreen(navController: NavController, hiveViewModel: HiveViewModel) {
+fun InspectionsScreen(navController: NavController, hiveViewModel: HiveViewModel, onEvent: (HiveScreenEvent) -> Unit) {
     val state by hiveViewModel.state.collectAsState()
     val hive = state.selectedHive ?: return
 
@@ -70,7 +71,9 @@ fun InspectionsScreen(navController: NavController, hiveViewModel: HiveViewModel
             .zIndex(1F)
     ) {
         ExtendedFloatingActionButton(
-            onClick = { hiveViewModel.onTapAddInspectionButton() },
+            onClick = {
+                onEvent(HiveScreenEvent.OnCreateNewInspection(hive.id, navController))
+            },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)

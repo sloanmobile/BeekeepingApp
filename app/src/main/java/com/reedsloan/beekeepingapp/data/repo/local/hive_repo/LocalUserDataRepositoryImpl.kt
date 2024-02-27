@@ -84,7 +84,7 @@ class LocalUserDataRepositoryImpl @Inject constructor(
             inspection.map { it.hiveConditions.weatherCondition?.displayValue }.toColumn(),
             inspection.map { it.hiveConditions.humidity.toString() }.toColumn(),
             inspection.map { it.hiveConditions.windSpeed?.displayValue }.toColumn(),
-            inspection.map { it.hiveConditions.temperatureFahrenheit.toString() }.toColumn(),
+            inspection.map { it.hiveConditions.temperature.toString() }.toColumn(),
             inspection.map { hiveInspection ->
                 hiveInspection.hiveHealth.diseases.map { it?.displayValue }
             }.toColumn(),

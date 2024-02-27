@@ -26,7 +26,7 @@ fun InspectionInsightsScreen(
 
     val humidityValues = state.inspections.mapNotNull { it.hiveConditions.humidity?.toFloat() }
     val temperatureValues =
-        state.inspections.mapNotNull { it.hiveConditions.temperatureFahrenheit?.toFloat() }
+        state.inspections.mapNotNull { it.hiveConditions.temperature?.toFloat() }
     val dates = state.inspections.map { it.date }
     val healthEstimation = state.inspections.map { it.hiveHealth.healthEstimation }
 

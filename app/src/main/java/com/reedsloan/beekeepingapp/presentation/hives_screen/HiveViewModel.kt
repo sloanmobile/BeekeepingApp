@@ -430,10 +430,10 @@ class HiveViewModel @Inject constructor(
         ).format(dateMillis.toLong()) else "")
     }
 
-    fun getTemperatureValue(temperatureFahrenheit: Double): Double {
+    fun getTemperatureValue(temperatureCelsius: Double): Double {
         return when (state.value.userPreferences.temperatureMeasurement) {
-            TemperatureMeasurement.FAHRENHEIT -> temperatureFahrenheit
-            TemperatureMeasurement.CELSIUS -> (temperatureFahrenheit - 32) * 5 / 9
+            TemperatureMeasurement.CELSIUS -> temperatureCelsius
+            TemperatureMeasurement.FAHRENHEIT -> temperatureCelsius * 9 / 5 + 32
         }
     }
 
@@ -571,8 +571,12 @@ class HiveViewModel @Inject constructor(
                 }
             }
 
-            is HiveScreenEvent.OnNavigateToLogInspectionScreen -> {
+            is HiveScreenEvent.OnCreateNewInspection -> {
                 viewModelScope.launch {
+                    closeOpenMenus()
+                    // make a toast notification
+                    Toast.makeText(app, "New inspection created.", Toast.LENGTH_SHORT).show()
+                    createInspection()
                     getWeatherData()
                 }
             }
@@ -590,8 +594,10 @@ class HiveViewModel @Inject constructor(
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
                 // TODO: Implement permission request dialog
-                Toast.makeText(app,
-                    app.getString(R.string.no_location_permission), Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    app,
+                    app.getString(R.string.no_location_permission), Toast.LENGTH_SHORT
+                ).show()
                 return
             }
             fusedLocationProviderClient.lastLocation.addOnSuccessListener { location ->
@@ -609,20 +615,63 @@ class HiveViewModel @Inject constructor(
 
                                 _state.update {
                                     it.copy(
-                                        weatherResponse = weatherResponse
+                                        weatherResponse = weatherResponse,
+                                        selectedHiveInspection = state.value.selectedHiveInspection?.copy(
+                                            hiveConditions = state.value.selectedHiveInspection!!.hiveConditions.copy(
+                                                temperature = getTemperatureValue(
+                                                    weatherResponse.data.values.temperature
+                                                ),
+                                                weatherCondition = weatherCodeToWeatherCondition(
+                                                    weatherResponse.data.values.weatherCode
+                                                ),
+                                                humidity = weatherResponse.data.values.humidity,
+                                            )
+                                        )
                                     )
                                 }
 
                             }.onFailure {
-                            Log.e(
-                                this::class.simpleName,
-                                "Error getting weather data: ${it.stackTraceToString()}"
-                            )
-                        }
+                                Log.e(
+                                    this::class.simpleName,
+                                    "Error getting weather data: ${it.stackTraceToString()}"
+                                )
+                            }
                     }
                 }
             }
         }
+    }
+
+    private fun weatherCodeToWeatherCondition(weatherCode: Int): WeatherCondition {
+        val weatherCodes = mapOf(
+            0 to "Unknown",
+            1000 to "Clear, Sunny",
+            1100 to "Mostly Clear",
+            1101 to "Partly Cloudy",
+            1102 to "Mostly Cloudy",
+            1001 to "Cloudy",
+            2000 to "Fog",
+            2100 to "Light Fog",
+            4000 to "Drizzle",
+            4001 to "Rain",
+            4200 to "Light Rain",
+            4201 to "Heavy Rain",
+            5000 to "Snow",
+            5001 to "Flurries",
+            5100 to "Light Snow",
+            5101 to "Heavy Snow",
+            6000 to "Freezing Drizzle",
+            6001 to "Freezing Rain",
+            6200 to "Light Freezing Rain",
+            6201 to "Heavy Freezing Rain",
+            7000 to "Ice Pellets",
+            7101 to "Heavy Ice Pellets",
+            7102 to "Light Ice Pellets",
+            8000 to "Thunderstorm"
+        )
+
+        return WeatherCondition.entries.find { it.displayValue == weatherCodes[weatherCode] }
+            ?: WeatherCondition.UNKNOWN
     }
 
     private fun updateUserData(userData: UserData) {
@@ -950,29 +999,30 @@ class HiveViewModel @Inject constructor(
         navController.navigate(Screen.InspectionsScreen.route)
     }
 
-    fun onTapAddInspectionButton() {
-        closeOpenMenus()
-        // make a toast notification
-        Toast.makeText(app, "New inspection created.", Toast.LENGTH_SHORT).show()
-        createInspection()
-    }
-
     /**
      * Creates a new hive inspection for the selected hive.
      * @see [HiveInspection]
      */
     private fun createInspection() {
+        val newInspection = getDefaultInspection()
         updateUserData(state.value.userData.copy(
             hives = hives.value.map {
                 if (it.id == state.value.selectedHive?.id) {
                     it.copy(
-                        hiveInspections = it.hiveInspections + getDefaultInspection()
+                        hiveInspections = it.hiveInspections + newInspection
                     )
                 } else {
                     it
                 }
             }
         ))
+
+        // We must update the selected inspection so we can apply changes to it.
+        _state.update {
+            it.copy(
+                selectedHiveInspection = newInspection
+            )
+        }
     }
 
     fun onTapTasksButton(navController: NavController) {

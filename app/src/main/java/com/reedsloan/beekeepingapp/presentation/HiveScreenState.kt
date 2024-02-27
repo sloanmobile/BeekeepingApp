@@ -1,8 +1,6 @@
 package com.reedsloan.beekeepingapp.presentation
 
-import android.location.Location
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.google.android.gms.tasks.Task
 import com.reedsloan.beekeepingapp.BuildConfig
 import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.UserData

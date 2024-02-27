@@ -5,6 +5,7 @@ import android.util.Log
 import com.reedsloan.beekeepingapp.R
 import com.reedsloan.beekeepingapp.data.remote.WeatherResponse
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
@@ -21,19 +22,16 @@ class WeatherRepository
     app: Application
 ) {
     private val apiKey = app.getString(R.string.weather_api_key)
-    private val baseUrl = "http://api.weatherapi.com/v1/current.json"
+    private val baseUrl = "https://api.tomorrow.io/v4"
+    private val realtimeWeatherRoute = "/weather/realtime?location=45.52,-122.31&units=metric"
 
     suspend fun getWeatherData(location: String): Result<WeatherResponse> {
         return runCatching {
             withContext(Dispatchers.IO) {
-                val url = "$baseUrl?key=$apiKey&q=$location"
-                val response: HttpResponse = client.get(url)
-                if (response.status.value == 200) {
-                    Log.d(this::class.simpleName, "response: ${response.bodyAsText()}")
-                    Json.decodeFromString(WeatherResponse.serializer(), response.bodyAsText())
-                } else {
-                    throw Exception("Error getting weather data, status code: ${response.bodyAsText()}")
-                }
+                val url = "$baseUrl$realtimeWeatherRoute&apikey=$apiKey"
+                val response = client.get(url).body<WeatherResponse>()
+                    .also { Log.d("WeatherRepository", it.toString()) }
+                return@withContext response
             }
         }
     }
