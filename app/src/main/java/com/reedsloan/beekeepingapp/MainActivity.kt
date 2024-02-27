@@ -140,18 +140,24 @@ class MainActivity : ComponentActivity() {
                     LaunchedEffect(key1 = navControllerFlow.value) {
                         when (navControllerFlow.value?.destination?.route) {
                             Screen.HivesScreen.route -> {
-                                val hiveId = navController.currentBackStackEntry?.arguments?.getString("hiveId")
+                                val hiveId =
+                                    navController.currentBackStackEntry?.arguments?.getString("hiveId")
                                 // log navigation event
-                                Log.d("MainActivity", "Navigated to HiveDetailsScreen with hiveId: $hiveId")
+                                Log.d(
+                                    "MainActivity",
+                                    "Navigated to HiveDetailsScreen with hiveId: $hiveId"
+                                )
                                 hiveViewModel.onEvent(
                                     HiveScreenEvent.OnNavigateToHivesScreen
                                 )
                             }
+
                             Screen.HomeScreen.route -> {
                                 homeScreenViewModel.onEvent(
                                     HomeScreenEvent.OnNavigateToScreen, navController
                                 )
                             }
+
                             Screen.InspectionsScreen.route -> {
                                 hiveScreenState.selectedHive?.let {
                                     hiveViewModel.onEvent(
@@ -159,28 +165,31 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
                             }
-                            Screen.LogInspectionScreen.route -> {
-                                hiveScreenState.selectedHiveInspection?.let {
-                                    hiveViewModel.onEvent(
-                                        HiveScreenEvent.OnNavigateToLogInspectionScreen(it.id)
-                                    )
-                                }
-                            }
+
                             Screen.TasksScreen.route -> {
                                 tasksViewModel.onEvent(
                                     TasksScreenEvent.OnNavigateToScreen, navController
                                 )
                             }
+
                             Screen.HiveDetailsScreen.route -> {
-                                val hiveId = navController.currentBackStackEntry?.arguments?.getString("hiveId")
+                                val hiveId =
+                                    navController.currentBackStackEntry?.arguments?.getString("hiveId")
                                 // log navigation event
-                                Log.d("MainActivity", "Navigated to HiveDetailsScreen with hiveId: $hiveId")
+                                Log.d(
+                                    "MainActivity",
+                                    "Navigated to HiveDetailsScreen with hiveId: $hiveId"
+                                )
                                 hiveViewModel.onEvent(
                                     HiveScreenEvent.OnNavigateToHiveDetailsScreen(hiveId!!)
                                 )
                             }
+
                             else -> {
-                                Log.d("MainActivity", "No matching route found for ${navController.currentBackStackEntry?.destination?.route}")
+                                Log.d(
+                                    "MainActivity",
+                                    "No matching route found for ${navController.currentBackStackEntry?.destination?.route}"
+                                )
                             }
                         }
                     }
@@ -404,10 +413,10 @@ class MainActivity : ComponentActivity() {
 
                     LaunchedEffect(key1 = firebaseAuth.currentUser) {
                         if (firebaseAuth.currentUser != null && !signInState.isSignInSuccessful) {
-                           homeScreenViewModel.onEvent(
-                               HomeScreenEvent.OnSignInSuccess,
-                               navController
-                           )
+                            homeScreenViewModel.onEvent(
+                                HomeScreenEvent.OnSignInSuccess,
+                                navController
+                            )
                             navController.navigate(Screen.HomeScreen.route) {
                                 popUpTo(Screen.SignInScreen.route) {
                                     inclusive = true
@@ -528,7 +537,12 @@ class MainActivity : ComponentActivity() {
                                 composable(
                                     route = Screen.InspectionsScreen.route
                                 ) {
-                                    InspectionsScreen(navController, hiveViewModel)
+                                    InspectionsScreen(
+                                        navController,
+                                        hiveViewModel
+                                    ) {
+                                        hiveViewModel.onEvent(it)
+                                    }
                                 }
                                 composable(
                                     route = Screen.LogInspectionScreen.route

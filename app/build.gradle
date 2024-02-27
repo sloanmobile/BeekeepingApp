@@ -157,6 +157,7 @@ dependencies {
     implementation "io.ktor:ktor-client-cio:$ktor_version"
     implementation "io.ktor:ktor-client-content-negotiation:$ktor_version"
     implementation "io.ktor:ktor-serialization-gson:$ktor_version"
+
     // Serialization
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3"
 

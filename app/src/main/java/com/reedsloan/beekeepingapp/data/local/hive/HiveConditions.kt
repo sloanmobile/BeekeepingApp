@@ -17,6 +17,7 @@ data class HiveConditions (
     val weatherCondition: WeatherCondition? = null,
     val humidity: Double? = null,
     val windSpeed: WindSpeed? = null,
-    val temperatureFahrenheit: Double? = null,
+    // This is the temperature of the hive (C or F) based on the user's settings
+    val temperature: Double? = null,
     val bloomingNow: String? = null,
 )
