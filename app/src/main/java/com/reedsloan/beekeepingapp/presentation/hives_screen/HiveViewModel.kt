@@ -27,6 +27,7 @@ import com.reedsloan.beekeepingapp.data.UserPreferences
 import com.reedsloan.beekeepingapp.data.local.TemperatureMeasurement
 import com.reedsloan.beekeepingapp.data.local.UserData
 import com.reedsloan.beekeepingapp.data.local.hive.*
+import com.reedsloan.beekeepingapp.data.remote.WeatherResponse
 import com.reedsloan.beekeepingapp.data.repo.remote.user_data_repo.WeatherRepository
 import com.reedsloan.beekeepingapp.domain.repo.LocalUserDataRepository
 import com.reedsloan.beekeepingapp.domain.repo.UserDataRepository
@@ -600,49 +601,72 @@ class HiveViewModel @Inject constructor(
                 ).show()
                 return
             }
-            fusedLocationProviderClient.lastLocation.addOnSuccessListener { location ->
-                viewModelScope.launch {
-                    location?.let {
-                        // Latitude and Longitude (Decimal degree) e.g: q=48.8567,2.3508
-                        val locationString = "${location.latitude},${location.longitude}"
-
-                        weatherRepository.getWeatherData(locationString)
-                            .onSuccess { weatherResponse ->
-                                Log.d(
-                                    this::class.simpleName,
-                                    "Weather data: $weatherResponse"
-                                )
-
-                                _state.update {
-                                    it.copy(
-                                        weatherResponse = weatherResponse,
-                                        selectedHiveInspection = state.value.selectedHiveInspection?.copy(
-                                            hiveConditions = state.value.selectedHiveInspection!!.hiveConditions.copy(
-                                                temperature = getTemperatureValue(
-                                                    weatherResponse.data.values.temperature
-                                                ),
-                                                weatherCondition = weatherCodeToWeatherCondition(
-                                                    weatherResponse.data.values.weatherCode
-                                                ),
-                                                humidity = weatherResponse.data.values.humidity,
-                                            )
-                                        )
-                                    )
+            fusedLocationProviderClient
+                .lastLocation
+                .addOnSuccessListener { location ->
+                    viewModelScope.launch {
+                        location?.let {
+                            // Latitude and Longitude (Decimal degree) e.g: q=48.8567,2.3508
+                            val locationString = "${location.latitude},${location.longitude}"
+                            val temperatureUnit =
+                                if (state
+                                        .value
+                                        .userPreferences
+                                        .temperatureMeasurement == TemperatureMeasurement.CELSIUS
+                                ) {
+                                    "metric"
+                                } else {
+                                    "imperial"
                                 }
 
-                            }.onFailure {
-                                Log.e(
-                                    this::class.simpleName,
-                                    "Error getting weather data: ${it.stackTraceToString()}"
-                                )
-                            }
+                            weatherRepository.getWeatherData(locationString, temperatureUnit)
+                                .onSuccess { weatherResponse ->
+                                    Log.d(
+                                        this::class.simpleName,
+                                        "Weather data: $weatherResponse"
+                                    )
+
+                                    updateWeatherConditions(weatherResponse)
+                                }.onFailure {
+                                    Log.e(
+                                        this::class.simpleName,
+                                        "Error getting weather data: ${it.stackTraceToString()}"
+                                    )
+                                }
+                        }
                     }
                 }
-            }
         }
     }
 
-    private fun weatherCodeToWeatherCondition(weatherCode: Int): WeatherCondition {
+    private fun updateWeatherConditions(weatherResponse: WeatherResponse) {
+        val updatedHiveConditions = state.value.selectedHiveInspection!!.hiveConditions.copy(
+            temperature = weatherResponse.data.values.temperature,
+            weatherCondition = getWeatherCondition(weatherResponse.data.values.weatherCode),
+            humidity = weatherResponse.data.values.humidity
+        )
+
+        val updatedHiveInspection =
+            state.value.selectedHiveInspection!!.copy(hiveConditions = updatedHiveConditions)
+
+        _state.update {
+            it.copy(
+                weatherResponse = weatherResponse,
+                selectedHiveInspection = updatedHiveInspection
+            )
+        }
+    }
+
+    /**
+     * This function converts the weather code from the Tomorrow.io API to a [WeatherCondition].
+     * @param [weatherCode] The weather code from the Tomorrow.io API.
+     * @return [WeatherCondition] The weather condition.
+     * @see [WeatherCondition]
+     * @see [WeatherResponse]
+     * @see [WeatherRepository]
+     * @see [WeatherRepository.getWeatherData]
+     */
+    private fun getWeatherCondition(weatherCode: Int): WeatherCondition {
         val weatherCodes = mapOf(
             0 to "Unknown",
             1000 to "Clear, Sunny",
@@ -837,13 +861,16 @@ class HiveViewModel @Inject constructor(
 
     private fun updateHiveInspection(hiveInspection: HiveInspection) {
         runCatching {
-            updateHive(hive = state.value.selectedHive!!.copy(hiveInspections = state.value.selectedHive!!.hiveInspections.map {
-                if (it.date == hiveInspection.date) {
-                    hiveInspection
-                } else {
-                    it
-                }
-            }))
+            updateHive(
+                hive = state.value.selectedHive!!
+                    .copy(hiveInspections = state.value.selectedHive!!.hiveInspections.map {
+                        if (it.date == hiveInspection.date) {
+                            hiveInspection
+                        } else {
+                            it
+                        }
+                    })
+            )
         }.onSuccess {
             showSuccess()
         }.onFailure {
