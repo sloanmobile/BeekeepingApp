@@ -566,6 +566,17 @@ class HiveViewModel @Inject constructor(
 
             is HiveScreenEvent.OnNavigateToHiveInspectionScreen -> {
                 viewModelScope.launch {
+                    // Request the location permission if it is not granted
+                    if (ActivityCompat.checkSelfPermission(
+                            app.applicationContext,
+                            Manifest.permission.ACCESS_FINE_LOCATION
+                        ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                            app.applicationContext,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                        ) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        visiblePermissionDialogQueue.add(PermissionRequest.LocationPermissionRequest)
+                    }
                     getUserDataFromLocal()
                     setSelectedHive(event.hiveId)
                 }
