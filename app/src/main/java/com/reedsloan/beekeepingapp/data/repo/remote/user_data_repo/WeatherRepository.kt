@@ -7,6 +7,7 @@ import com.reedsloan.beekeepingapp.data.remote.WeatherResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
+import io.ktor.http.isSuccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -26,10 +27,14 @@ class WeatherRepository
         return runCatching {
             withContext(Dispatchers.IO) {
                 val url =
-                    "$baseUrl$realtimeWeatherRoute&apikey=$apiKey?location=$location&units=$units"
+                    "$baseUrl$realtimeWeatherRoute?location=$location&apikey=$apiKey&units=$units"
+                val response = client.get(url)
 
-                return@withContext client.get(url).body<WeatherResponse>()
-                    .also<WeatherResponse> { Log.d("WeatherRepository", it.toString()) }
+                if (!response.status.isSuccess()) {
+                    throw Exception("${response.status.value}")
+                }
+
+                return@withContext response.body<WeatherResponse>()
             }
         }
     }
