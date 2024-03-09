@@ -57,14 +57,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester.Companion.createRefs
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
@@ -184,46 +182,34 @@ fun LogInspectionScreen(
                                 fontSize = 20.sp,
                             )
                         }
-                        ConstraintLayout(
+//                        val dateConstraint = createR
+//                        ConstraintLayout(constraintSet = ) {
+//
+//                        }
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(8.dp)
+                                .padding(8.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            val (text, button) = createRefs()
-
                             Text(
                                 text = inspection.date,
                                 style = MaterialTheme.typography.headlineMedium,
-                                modifier = Modifier.constrainAs(text) {
-                                    top.linkTo(parent.top)
-                                    bottom.linkTo(parent.bottom)
-                                    start.linkTo(parent.start)
-                                    end.linkTo(parent.end)
-                                }
                             )
-
+                            Spacer(modifier = Modifier.width(8.dp))
                             // reset the date to today
                             ElevatedButton(
                                 onClick = {
                                     hiveViewModel.resetDateToToday()
                                 },
-                                modifier = Modifier
-                                    .padding(start = 8.dp)
-                                    .constrainAs(button) {
-                                        top.linkTo(parent.top)
-                                        bottom.linkTo(parent.bottom)
-                                        start.linkTo(text.end)
-                                    },
+                                modifier = Modifier.size(36.dp),
                                 elevation = ButtonDefaults.buttonElevation(2.dp, 2.dp, 2.dp, 2.dp),
-                                contentPadding = PaddingValues(8.dp)
+                                contentPadding = PaddingValues(0.dp), // this is necessary for the text to fit
                             ) {
                                 Icon(
                                     Icons.Default.Restore,
                                     contentDescription = "Restore"
-                                )
-                                Spacer(modifier = Modifier.size(4.dp))
-                                Text(
-                                    text = "Today"
                                 )
                             }
                         }

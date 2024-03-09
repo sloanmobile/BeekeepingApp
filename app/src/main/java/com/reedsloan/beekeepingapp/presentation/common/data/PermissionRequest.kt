@@ -28,10 +28,4 @@ sealed class PermissionRequest(
         isPermanentlyDeniedMessage = "Notification permission is required to receive notifications about your hives. Please enable it in your device settings."
     )
 
-    // Location permission is not required for the app to function, but is required to fetch weather data for the user's hives.
-    data object LocationPermissionRequest : PermissionRequest(
-        permission = Manifest.permission.ACCESS_FINE_LOCATION,
-        message = "Location permission is required to fetch weather data for your hives.",
-        isPermanentlyDeniedMessage = "Location permission is required to fetch weather data for your hives. Please enable it in your device settings."
-    )
 }

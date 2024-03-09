@@ -46,7 +46,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.DpOffset
@@ -62,11 +61,7 @@ import kotlin.time.Duration.Companion.days
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InspectionsScreen(
-    navController: NavController,
-    hiveViewModel: HiveViewModel,
-    onEvent: (HiveScreenEvent) -> Unit
-) {
+fun InspectionsScreen(navController: NavController, hiveViewModel: HiveViewModel, onEvent: (HiveScreenEvent) -> Unit) {
     val state by hiveViewModel.state.collectAsState()
     val hive = state.selectedHive ?: return
 
@@ -159,12 +154,8 @@ fun InspectionListItem(
 
     ElevatedCard(modifier = Modifier
         .fillMaxWidth()
-        .padding(horizontal = 8.dp, vertical = 8.dp),
-        onClick = {
-            hiveViewModel.onTapInspectionButton(inspection, navController)
-        }
-    )
-    {
+        .padding(horizontal = 8.dp, vertical = 8.dp)
+        .clickable { hiveViewModel.onTapInspectionButton(inspection, navController) }) {
         Box {
             Row(
                 modifier = Modifier

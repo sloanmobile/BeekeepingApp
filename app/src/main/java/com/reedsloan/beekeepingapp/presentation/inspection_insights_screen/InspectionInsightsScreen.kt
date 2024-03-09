@@ -36,18 +36,14 @@ fun InspectionInsightsScreen(
         entriesOf(*temperatureValues.toTypedArray()),
         entriesOf(*healthEstimation.toTypedArray()),
     )
-    val legendItems =
-        remember { mutableListOf("Humidity", "Temperature", "Hive Health Estimation") }
+    val legendItems = remember { mutableListOf("Humidity", "Temperature", "Hive Health Estimation") }
     val color1 by remember { mutableStateOf(Color(0xffb983ff)) }
     val color2 by remember { mutableStateOf(Color(0xff91b1fd)) }
     val color3 by remember { mutableStateOf(Color(0xff8fdaff)) }
     val chartColors by remember { mutableStateOf(listOf(color1, color2, color3)) }
 
     val defaultLines = currentChartStyle.lineChart.lines.mapIndexed { index, lineSpec ->
-        lineSpec.copy(
-            lineColor = chartColors.getOrElse(index) { color1 }.toLegacyInt(),
-            lineBackgroundShader = null
-        )
+        lineSpec.copy(lineColor = chartColors.getOrElse(index) { color1 }.toLegacyInt(), lineBackgroundShader = null)
     }
 
     Chart(
