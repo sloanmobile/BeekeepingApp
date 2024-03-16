@@ -583,18 +583,14 @@ class HiveViewModel @Inject constructor(
             }
 
             is HiveScreenEvent.OnCreateNewInspection -> {
-                viewModelScope.launch {
-                    closeOpenMenus()
-                    // make a toast notification
-                    Toast.makeText(app, "New inspection created.", Toast.LENGTH_SHORT).show()
-                    createInspection()
-                    getWeatherData()
-                }
+                createInspection()
+                // make a toast notification
+                Toast.makeText(app, "New inspection created.", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
-    private suspend fun getWeatherData() {
+    private fun getWeatherData() {
         runCatching {
             if (ActivityCompat.checkSelfPermission(
                     app.applicationContext,
@@ -604,50 +600,52 @@ class HiveViewModel @Inject constructor(
                     Manifest.permission.ACCESS_COARSE_LOCATION
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
-                // TODO: Implement permission request dialog
-                Toast.makeText(
-                    app,
-                    app.getString(R.string.no_location_permission), Toast.LENGTH_SHORT
-                ).show()
+                Log.d(this::class.simpleName, "Location permission not granted.")
                 return
             }
             fusedLocationProviderClient.lastLocation.addOnSuccessListener { location ->
                 viewModelScope.launch {
-                    location?.let {
-                        // Latitude and Longitude (Decimal degree) e.g: q=48.8567,2.3508
-                        val locationString = "${location.latitude},${location.longitude}"
+                    // Latitude and Longitude (Decimal degree) e.g: q=48.8567,2.3508
+                    val locationString = "${location.latitude},${location.longitude}"
+                    val temperatureUnit =
+                        if (state
+                                .value
+                                .userPreferences
+                                .temperatureMeasurement == TemperatureMeasurement.CELSIUS
+                        ) {
+                            "metric"
+                        } else {
+                            "imperial"
+                        }
 
-                        weatherRepository.getWeatherData(locationString)
-                            .onSuccess { weatherResponse ->
-                                Log.d(
-                                    this::class.simpleName,
-                                    "Weather data: $weatherResponse"
-                                )
+                    weatherRepository.getWeatherData(locationString, temperatureUnit)
+                        .onSuccess { weatherResponse ->
+                            Log.d(
+                                this::class.simpleName,
+                                "Weather data: $weatherResponse"
+                            )
 
-                                _state.update {
-                                    it.copy(
-                                        weatherResponse = weatherResponse,
-                                        selectedHiveInspection = state.value.selectedHiveInspection?.copy(
-                                            hiveConditions = state.value.selectedHiveInspection!!.hiveConditions.copy(
-                                                temperature = getTemperatureValue(
-                                                    weatherResponse.data.values.temperature
-                                                ),
-                                                weatherCondition = weatherCodeToWeatherCondition(
-                                                    weatherResponse.data.values.weatherCode
-                                                ),
-                                                humidity = weatherResponse.data.values.humidity,
-                                            )
+                            _state.update {
+                                it.copy(
+                                    weatherResponse = weatherResponse,
+                                    selectedHiveInspection = state.value.selectedHiveInspection!!.copy(
+                                        hiveConditions = state.value.selectedHiveInspection!!.hiveConditions.copy(
+                                            // The temperature returns in the correct unit from the API
+                                            temperature = weatherResponse.data.values.temperature,
+                                            weatherCondition = weatherCodeToWeatherCondition(
+                                                weatherResponse.data.values.weatherCode
+                                            ),
+                                            humidity = weatherResponse.data.values.humidity,
                                         )
                                     )
-                                }
-
-                            }.onFailure {
-                                Log.e(
-                                    this::class.simpleName,
-                                    "Error getting weather data: ${it.stackTraceToString()}"
                                 )
                             }
-                    }
+                        }.onFailure {
+                            Log.e(
+                                this::class.simpleName,
+                                "Error getting weather data: ${it.stackTraceToString()}"
+                            )
+                        }
                 }
             }
         }
@@ -921,7 +919,7 @@ class HiveViewModel @Inject constructor(
 
     private fun getDefaultInspection(): HiveInspection {
         return HiveInspection(
-            hiveId = state.value.selectedHive?.id ?: "",
+            hiveId = UUID.randomUUID().toString(),
             date = LocalDate.now().toString(),
             hiveConditions = HiveConditions(),
             hiveHealth = HiveHealth(),
@@ -1034,6 +1032,8 @@ class HiveViewModel @Inject constructor(
                 selectedHiveInspection = newInspection
             )
         }
+
+        getWeatherData()
     }
 
     fun onTapTasksButton(navController: NavController) {
