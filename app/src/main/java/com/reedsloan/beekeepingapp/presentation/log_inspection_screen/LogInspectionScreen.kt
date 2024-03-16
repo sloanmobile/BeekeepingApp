@@ -1,6 +1,7 @@
 package com.reedsloan.beekeepingapp.presentation.log_inspection_screen
 
 import android.app.Activity
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,12 +26,15 @@ import androidx.compose.material.icons.filled.Air
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Grass
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MonitorHeart
 import androidx.compose.material.icons.filled.NoteAlt
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Thermostat
+import androidx.compose.material.icons.filled.Yard
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -90,6 +94,7 @@ import com.reedsloan.beekeepingapp.presentation.common.calendar.Day
 import com.reedsloan.beekeepingapp.presentation.common.calendar.Month
 import com.reedsloan.beekeepingapp.presentation.hives_screen.HiveViewModel
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.time.YearMonth
 import kotlin.math.floor
 
@@ -440,27 +445,86 @@ fun LogInspectionScreen(
                         },
                         divider = Divider(top = true, bottom = true)
                     )
-                    // What's blooming now
-                    OutlinedTextField(
-                        value = inspection.hiveConditions.bloomingNow ?: "",
-                        onValueChange = {
-                            hiveViewModel.updateSelectedInspection(
-                                inspection.copy(
-                                    hiveConditions = inspection.hiveConditions.copy(
-                                        bloomingNow = it.trimStart()
+                    val localContext = LocalContext.current
+
+                    Column {
+                        Row(
+                            modifier = Modifier.padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Yard, contentDescription = "Plants in Bloom"
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Plants in Bloom", fontSize = 20.sp
+                            )
+
+                            val previousEntry = state.selectedHive?.hiveInspections?.sortedBy {
+                                LocalDate.parse(it.date)
+                            }?.get(state.selectedHive!!.hiveInspections.lastIndex-1)
+
+                            val previousBloomingNowEntry = previousEntry?.hiveConditions?.bloomingNow
+
+                            ElevatedButton(
+                                onClick = {
+                                    if (!previousBloomingNowEntry.isNullOrEmpty()) {
+                                        hiveViewModel.updateSelectedInspection(
+                                            inspection.copy(
+                                                hiveConditions = inspection.hiveConditions.copy(
+                                                    bloomingNow = previousEntry.hiveConditions.bloomingNow
+                                                )
+                                            )
+                                        )
+                                    } else if (previousEntry == null) {
+                                        val toast = Toast.makeText(
+                                            localContext,
+                                            "No previous entry to copy from",
+                                            Toast.LENGTH_SHORT
+                                        )
+                                        toast.show()
+                                    } else {
+                                        val toast = Toast.makeText(
+                                            localContext,
+                                            "Last entry has no blooming now data",
+                                            Toast.LENGTH_SHORT
+                                        )
+                                        toast.show()
+                                    }
+                                },
+                                modifier = Modifier
+                                    .padding(start = 8.dp),
+                                elevation = ButtonDefaults.buttonElevation(2.dp, 2.dp, 2.dp, 2.dp),
+                                contentPadding = PaddingValues(8.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.History, contentDescription = "Last entry"
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(text = "Set to last entry")
+                            }
+                        }
+                        // What's blooming now
+                        OutlinedTextField(
+                            value = inspection.hiveConditions.bloomingNow ?: "",
+                            onValueChange = {
+                                hiveViewModel.updateSelectedInspection(
+                                    inspection.copy(
+                                        hiveConditions = inspection.hiveConditions.copy(
+                                            bloomingNow = it.trimStart()
+                                        )
                                     )
                                 )
-                            )
-                        },
-                        label = { Text("What's blooming now?") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp),
-                        singleLine = false,
-                        maxLines = 4,
-                    )
-                    HorizontalDivider()
-
+                            },
+                            label = { Text("Lavender, sunflowers, blackberries, etc.") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp),
+                            singleLine = false,
+                            maxLines = 4,
+                        )
+                        HorizontalDivider()
+                    }
                 }
 
                 HiveLogSection(title = "Hive Conditions") {
