@@ -63,7 +63,7 @@ class HiveViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             getUserPreferences()
-            if (!doesUserHavePermission(android.Manifest.permission.POST_NOTIFICATIONS)) {
+            if (!doesUserHavePermission(Manifest.permission.POST_NOTIFICATIONS)) {
                 visiblePermissionDialogQueue.add(PermissionRequest.NotificationPermissionRequest)
             }
         }
@@ -72,7 +72,7 @@ class HiveViewModel @Inject constructor(
     private fun doesUserHavePermission(permission: String): Boolean {
         return ActivityCompat.checkSelfPermission(
             app, permission
-        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) == PackageManager.PERMISSION_GRANTED
     }
 
     fun isPermissionPermanentlyDeclined(
