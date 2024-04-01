@@ -23,7 +23,7 @@ BeeJournal is an in-development Android application designed for beekeepers to c
 
 ## Getting Started
 - Clone the repository: `git clone https://github.com/sloanmobile/BeekeepingApp.git`
-- Open the project in Android Studio
+- Open the project in Android Studio set Gradle JDK to 18
 - Build and run the app on your device or emulator
 
 ## License
