@@ -6,7 +6,7 @@ BeeJournal is an in-development Android application designed for beekeepers to c
 - **User-friendly Interfaces:** Designed with Google's Material Design standards for intuitive user interaction.
 - **Full-Stack Development:** Utilized Kotlin for Android development, along with Hilt for dependency injection, and Clean Architecture for maintainable code.
 - **Hive Data Logging and Exporting:** Implemented features for logging hive data and exporting logs in CSV format for compatibility with master beekeeping programs.
-- **User Feedback Integration:** Actively incorporated user feedback into the design and implementation of features.
+- **User Feedback Pipeline:** Created a user feedback pipeline using Google forms within the app for when the first release is made.
 - **Automated Testing:** Used JUnit and Espresso for UI testing, with GitHub Actions for automated CI/CD to increase Mean Time to Recovery (MTTR).
 - **Ongoing Development:** Currently managing the app's production and updates to continually enhance its functionality and meet user needs.
 - **Ad Integration:** Implemented ad integration using Google AdMob.
