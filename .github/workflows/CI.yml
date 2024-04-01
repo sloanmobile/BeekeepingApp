@@ -6,14 +6,11 @@ env:
   JAVA_DIST: adopt
 
 jobs:
-  instrumented-tests:
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        api-level: [ 34 ]
+  ui-tests:
+    name: Run UI Tests
+    runs-on: ubuntu-20.04
     steps:
-      - name: checkout
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v2
 
       - name: Set up JDK
         uses: actions/setup-java@v2
@@ -22,38 +19,31 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache: gradle
 
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
       - name: Gradle cache
         uses: gradle/gradle-build-action@v2
 
-      - name: AVD cache
-        uses: actions/cache@v3
-        id: avd-cache
-        with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: avd-${{ matrix.api-level }}
+      - name: Build app
+        run: ./gradlew assembleDebug assembleAndroidTest
 
-      - name: create AVD and generate snapshot for caching
-        if: steps.avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: ${{ matrix.api-level }}
-          arch: x86_64
-          force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: false
-          script: echo "Generated AVD snapshot for caching."
+      # Used in debugging the workflow
+      - name: List files in directory
+        run: ls -R app/build/outputs/apk/
 
-      - name: run tests
-        uses: reactivecircus/android-emulator-runner@v2
+      - name: Run tests
+        uses: emulator-wtf/run-tests@v0.9.9
         with:
-          api-level: ${{ matrix.api-level }}
-          arch: x86_64
-          force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: true
-          script: ./gradlew connectedCheck --info
+          api-token: ${{ secrets.EW_API_TOKEN }}
+          app: app/build/outputs/apk/debug/app-debug.apk
+          test: app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+          outputs-dir: build/test-results
+      - name: Publish test report
+        uses: mikepenz/action-junit-report@v2
+        if: always() # always run even if the tests fail
+        with:
+          report_paths: 'build/test-results/**/*.xml'
 
   unit-tests:
     name: Run Unit Tests
@@ -68,6 +58,9 @@ jobs:
           distribution: ${{ env.JAVA_DIST }}
           java-version: ${{ env.JAVA_VERSION }}
           cache: gradle
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
 
       - name: Gradle cache
         uses: gradle/gradle-build-action@v2
