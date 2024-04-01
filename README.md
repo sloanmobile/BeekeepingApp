@@ -12,22 +12,13 @@ BeeJournal is an in-development Android application designed for beekeepers to c
 - **Ad Integration:** Implemented ad integration using Google AdMob.
 
 ## Development Photos
+
 <div style="display: flex; flex-wrap: wrap;">
-    <div style="width: 33.33%;">
-        <img src="docs/1.png" style="width: 100%;" alt="Image 1">
-    </div>
-    <div style="width: 33.33%;">
-        <img src="docs/2.png" style="width: 100%;" alt="Image 2">
-    </div>
-    <div style="width: 33.33%;">
-        <img src="docs/3.png" style="width: 100%;" alt="Image 3">
-    </div>
-    <div style="width: 33.33%;">
-        <img src="docs/4.png" style="width: 100%;" alt="Image 4">
-    </div>
-    <div style="width: 33.33%;">
-        <img src="docs/5.png" style="width: 100%;" alt="Image 5">
-    </div>
+    <img src="docs/1.png" style="width: 25%;" alt="Image 1">
+    <img src="docs/2.png" style="width: 25%;" alt="Image 2">
+    <img src="docs/3.png" style="width: 25%;" alt="Image 3">
+    <img src="docs/4.png" style="width: 25%;" alt="Image 4">
+    <img src="docs/5.png" style="width: 25%;" alt="Image 5">
 </div>
 
 ## Getting Started
