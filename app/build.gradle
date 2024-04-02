@@ -202,5 +202,5 @@ dependencies {
     implementation("com.patrykandpatrick.vico:views:1.13.0-alpha.9")
 
     // Weather API
-    implementation 'com.google.android.gms:play-services-location:21.1.0'
+    implementation 'com.google.android.gms:play-services-location:21.2.0'
 }
