@@ -114,7 +114,7 @@ dependencies {
     implementation("com.google.firebase:firebase-appdistribution-api-ktx:16.0.0-beta12")
 
     // google ads
-    implementation("com.google.android.gms:play-services-ads:22.6.0")
+    implementation("com.google.android.gms:play-services-ads:23.0.0")
 
     // Local unit tests
     testImplementation "androidx.test:core:1.5.0"
